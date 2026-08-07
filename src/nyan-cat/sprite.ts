@@ -16,7 +16,7 @@ export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor
 // M = pink body, D = magenta body dot, H = cat fur, R/O/Y/G/C/P = rainbow.
 const NYAN_COLORS: Record<string, string> = {
   K: "#000000FF",
-  T: "#E8C48AFF", // light tan crust
+  T: "#F5E1B8FF", // light tan crust
 
   M: "#FFB3D9FF",
   D: "#E040C0FF",
