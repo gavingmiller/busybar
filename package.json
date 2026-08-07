@@ -6,6 +6,8 @@
   "private": true,
   "scripts": {
     "hello-world": "bun src/hello-world/index.ts",
+    "nyan-cat:stationary": "bun src/nyan-cat/index.ts stationary",
+    "nyan-cat:flying": "bun src/nyan-cat/index.ts flying",
     "test": "bun test"
   },
   "devDependencies": {

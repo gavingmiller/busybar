@@ -1,3 +1,5 @@
+import { drawElements } from "../lib/busybar-client.ts";
+
 interface TextElement {
   id: string;
   type: "text";
@@ -40,15 +42,7 @@ export function helloWorldPayload(): DisplayElements {
 }
 
 export async function drawHelloWorld(baseUrl: string, fetchImpl: typeof fetch = fetch): Promise<void> {
-  const res = await fetchImpl(`${baseUrl}/api/display/draw`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(helloWorldPayload()),
-  });
-
-  if (!res.ok) {
-    throw new Error(`BUSY Bar rejected draw request: ${res.status} ${await res.text()}`);
-  }
+  await drawElements(baseUrl, helloWorldPayload(), fetchImpl);
 }
 
 if (import.meta.main) {
