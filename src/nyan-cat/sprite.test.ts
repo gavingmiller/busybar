@@ -78,18 +78,19 @@ describe("nyanCatElements", () => {
   });
 
   it("vertically centers the trail within the cat's height", () => {
-    // The trail is now shorter than the cat (6 uniform 2px bands = 12 rows
-    // vs the cat's 14), and it was top-aligned with the cat by default,
-    // pinning the red band's top row right against the bezel-clipped edge —
-    // invisible at 2px thick where it used to be masked by a 4px band.
-    // Center it instead so there's equal breathing room top and bottom.
+    // The trail canvas (band stack + 1 row of wave headroom) is shorter
+    // than the cat, and was top-aligned with it by default, pinning the red
+    // band's top row right against the bezel-clipped edge — invisible at
+    // 2px thick where it used to be masked by a 4px band. Center it instead
+    // so there's roughly equal breathing room top and bottom (allow
+    // off-by-one: an odd height difference can only split evenly one way).
     const trail = elements.filter((el) => el.id.startsWith("trail-"));
     const trailTop = Math.min(...trail.map((el) => el.y));
     const trailBottom = Math.max(...trail.map((el) => el.y + el.height));
     const originY = 0; // matches nyanCatElements(40, 0) above
     const topGap = trailTop - originY;
     const bottomGap = originY + CAT_HEIGHT - trailBottom;
-    expect(topGap).toBe(bottomGap);
+    expect(Math.abs(topGap - bottomGap)).toBeLessThanOrEqual(1);
   });
 
   it("positions blue above purple in the trail (swapped from the previous order)", () => {

@@ -44,8 +44,9 @@ const TRAIL_BANDS: Array<{ char: string; rows: number }> = [
 ];
 const TRAIL_HEIGHT = TRAIL_BANDS.reduce((sum, band) => sum + band.rows, 0);
 
-/** The band character at canonical (unshifted) row `row`, or null past the last band. */
+/** The band character at canonical (unshifted) row `row`, or null outside the band stack. */
 function trailBandCharAt(row: number): string | null {
+  if (row < 0) return null;
   let r = row;
   for (const band of TRAIL_BANDS) {
     if (r < band.rows) return band.char;
@@ -54,14 +55,17 @@ function trailBandCharAt(row: number): string | null {
   return null;
 }
 
-// A repeating square wave, columns per full cycle: half the columns sample
-// the canonical band pattern, half sample it shifted by WAVE_AMPLITUDE rows.
+// A repeating square wave: half the columns show the canonical band stack
+// pushed up by WAVE_AMPLITUDE rows, half show it at its resting position.
 // Reproduces the reference Nyan Cat art's scalloped/stepped rainbow edges —
-// see the 2026-08 reference image. Boundaries between bands (and between the
-// trail and the background) are where the shift becomes visible; a thick
-// band shifted by 1px still shows the same color on most of its rows.
+// see the 2026-08 reference image. The canvas is WAVE_AMPLITUDE rows taller
+// than the band stack so the top band (red) has headroom to poke upward for
+// the pushed-up columns; those same columns lose their bottom row (purple)
+// since the whole stack moved up within a fixed-height canvas. The resting
+// columns are the mirror image: full bottom row, empty headroom at top.
 export const WAVE_PERIOD = 16;
 const WAVE_AMPLITUDE = 1;
+const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE;
 
 export function waveShift(x: number): number {
   const phase = Math.floor(x / (WAVE_PERIOD / 2)) % 2;
@@ -72,7 +76,8 @@ function paintWavyTrail(canvas: Canvas): void {
   for (let x = 0; x < canvas.width; x++) {
     const shift = waveShift(x);
     for (let row = 0; row < canvas.height; row++) {
-      const char = trailBandCharAt(row + shift);
+      const canonicalRow = row - (WAVE_AMPLITUDE - shift);
+      const char = trailBandCharAt(canonicalRow);
       if (char) canvas.setPixel(x, row, NYAN_COLORS[char]!);
     }
   }
@@ -87,20 +92,20 @@ export const CAT_HEIGHT = 14;
 // dropped by request — the ground line under the whole sprite (row 12) and
 // the leg separators (row 13) are a different feature and stay.
 const CAT_GRID = [
-  "RRRTTTTTTTTTTTTTTTTTTTTT..........",
-  "RRTTTTTTTTTTTTTTTTTTTTTTT.........",
-  "TTTTTMMMMMMMMMMMMMMMTTTTTT........",
+  "...TTTTTTTTTTTTTTTTTTTTT..........",
+  "..TTTTTTTTTTTTTTTTTTTTTTT.........",
+  "TTTTMMMMMMMMMMMMMMMMTTTTTT........",
   "TTTMMDMMMMMMMMMMMMMDMMMMTT........",
-  "TTTMMMMMMDMMMMMMMMMMMMMMTT........",
-  "TTTMMMMMMMMMMMMMHHHHHMMMTHHHHHH...",
-  "TTTMMMMDMMMDDMMMHHHHHHHHHHHHHHH...",
-  "TTTMMMMMMMMMMDMHHHHHHHHHHHHHHHHH..",
-  "TTTMDMMMMMMMMMMHHHH.HHHHHHH.HHHH..",
-  "TTTMMMMMMMMMMMMHHHHHHHHHHHHHHHHH..",
-  "TTTTMDMMMMMMMMMHHHHHHHHHHHHHHHHH..",
-  "TTTTTMMMMMMMMMMMHHHHHHHHHHHHHHH...",
-  "HHHKKKHHKKKKKKKKKKKHHKKKKHHKK.....",
-  "HHHKKKHHKKKKKKKKKKKHHKKKKHHK......",
+  "TTTMMMMMMDMMMMMMMMHHMMMMTTHH......",
+  "TTTMMMMMMMMMMMMMMHHHHMMMTHHHHH....",
+  "TTTMMMMDMMMDDMMMMHHHHHHHHHHHHH....",
+  "TTTMMMMMMMMMMDMMHHHHHHHHHHHHHHH...",
+  "TTTMDMMMMMMMMMMMHHH.HHHHHHH.HHH...",
+  "TTTMMMMMMMMMMMMMHHHHHHHHHHHHHHH...",
+  "TTTTMDMMMMDMMMMMHHHHHHHHHHHHHHH...",
+  "TTTTTMMMMMMMMMMMMHHHHHHHHHHHHH....",
+  ".HHKKKHHKKKKKKKKKKKHHKKKKHHKK.....",
+  ".HHKKKHHKKKKKKKKKKKHHKKKKHHK......",
 ];
 
 /**
@@ -114,16 +119,16 @@ export function nyanCatElements(
   originY: number,
   trailLength: number = DEFAULT_TRAIL_LENGTH
 ): RectangleElement[] {
-  const trailCanvas = new Canvas(trailLength, TRAIL_HEIGHT);
+  const trailCanvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
   paintWavyTrail(trailCanvas);
 
   const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
   catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
 
-  // The trail (6 uniform 2px bands) is shorter than the cat — center it
-  // vertically within the cat's height rather than top-aligning it, so it
-  // isn't pinned right against the bezel-clipped top edge.
-  const trailOriginY = originY + Math.floor((CAT_HEIGHT - TRAIL_HEIGHT) / 2);
+  // The trail is shorter than the cat — center it vertically within the
+  // cat's height rather than top-aligning it, so it isn't pinned right
+  // against the bezel-clipped top edge.
+  const trailOriginY = originY + Math.floor((CAT_HEIGHT - TRAIL_CANVAS_HEIGHT) / 2);
 
   return [
     ...trailCanvas.toElements("trail", originX - trailLength, trailOriginY),
