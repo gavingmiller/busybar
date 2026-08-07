@@ -14,6 +14,12 @@ describe("helloWorldPayload", () => {
     expect(el.display).toBe("front");
     expect(el.align).toBe("center");
     expect(el.id).toBeTruthy();
+
+    // Front display is 72x16px. `align: center` anchors the element's
+    // center point at (x, y) — omitting x/y defaults to (0, 0), pushing the
+    // text off the top-left edge of the screen. Anchor at the true center.
+    expect(el.x).toBe(36);
+    expect(el.y).toBe(8);
   });
 });
 

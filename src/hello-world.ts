@@ -6,7 +6,14 @@ interface TextElement {
   align: "top_left" | "top_mid" | "top_right" | "mid_left" | "center" | "mid_right" | "bottom_left" | "bottom_mid" | "bottom_right";
   display: "front" | "back";
   timeout: number;
+  x: number;
+  y: number;
 }
+
+// Front display is 72x16px (see docs-cache/busy/bar/tech-specs.md). `align`
+// only sets the anchor point of the element — x/y still position that
+// anchor relative to the top-left corner, and default to (0, 0).
+const FRONT_DISPLAY_CENTER = { x: 36, y: 8 };
 
 interface DisplayElements {
   application_name: string;
@@ -25,6 +32,8 @@ export function helloWorldPayload(): DisplayElements {
         align: "center",
         display: "front",
         timeout: 0,
+        x: FRONT_DISPLAY_CENTER.x,
+        y: FRONT_DISPLAY_CENTER.y,
       },
     ],
   };
