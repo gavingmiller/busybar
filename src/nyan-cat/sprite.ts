@@ -18,30 +18,15 @@ export interface DisplayPayload {
   priority: number;
 }
 
-// A draw is only accepted when its priority >= the currently active system
-// app's (an active BUSY/CUSTOM work session runs at 90) — draw high enough
-// to preempt that, since this is an explicit user-triggered custom app.
-export const DRAW_PRIORITY = 95;
-
 // Front display is a 72x16 RGB LED matrix (see tech-specs.md — the "LED
 // type: RGB" spec is the main display's pixels, not just the status LED).
 export const FRONT_DISPLAY_WIDTH = 72;
 export const FRONT_DISPLAY_HEIGHT = 16;
 
-// Cat + pop-tart bounding box, in local sprite coordinates.
-export const CAT_WIDTH = 16;
-export const CAT_HEIGHT = 16;
-
-export const DEFAULT_TRAIL_LENGTH = 28;
-
-const RAINBOW = [
-  "#FF0000FF", // red
-  "#FF8000FF", // orange
-  "#FFFF00FF", // yellow
-  "#00FF00FF", // green
-  "#0080FFFF", // blue
-  "#8000FFFF", // purple
-] as const;
+// A draw is only accepted when its priority >= the currently active system
+// app's (an active BUSY/CUSTOM work session runs at 90) — draw high enough
+// to preempt that, since this is an explicit user-triggered custom app.
+export const DRAW_PRIORITY = 95;
 
 // Confirmed empirically against the physical device: a #RRGGBBAA fill_colors
 // value renders with red and blue swapped (send red, get blue back). Colors
@@ -80,6 +65,141 @@ function rect(
   };
 }
 
+const BACKGROUND = ".";
+
+interface Run {
+  start: number;
+  length: number;
+  char: string;
+}
+
+function rowRuns(row: string): Run[] {
+  const runs: Run[] = [];
+  let runStart = 0;
+  for (let col = 1; col <= row.length; col++) {
+    if (col === row.length || row[col] !== row[runStart]) {
+      const ch = row[runStart]!;
+      if (ch !== BACKGROUND) runs.push({ start: runStart, length: col - runStart, char: ch });
+      runStart = col;
+    }
+  }
+  return runs;
+}
+
+/**
+ * Compiles a sprite authored as a grid of characters (one per pixel, "."
+ * for background/transparent) into the fewest RectangleElements: each row is
+ * run-length-encoded, then identical runs stacked on consecutive rows merge
+ * into one taller rectangle. Much easier to author and iterate on by eye
+ * than hand-placed rects, and keeps the element count well under the
+ * device's per-draw element cap for anything mostly solid-colored.
+ */
+export function gridToRectangles(
+  grid: string[],
+  colors: Record<string, string>,
+  idPrefix: string,
+  originX: number,
+  originY: number,
+  colOffset: number = 0
+): RectangleElement[] {
+  const elements: RectangleElement[] = [];
+  const active = new Map<string, { run: Run; startRow: number; height: number }>();
+
+  const flush = (key: string, endRow: number) => {
+    const entry = active.get(key)!;
+    active.delete(key);
+    elements.push(
+      rect(
+        `${idPrefix}-${entry.startRow}-${entry.run.start}`,
+        originX,
+        originY,
+        colOffset + entry.run.start,
+        entry.startRow,
+        entry.run.length,
+        endRow - entry.startRow,
+        colors[entry.run.char]!
+      )
+    );
+  };
+
+  grid.forEach((row, rowIndex) => {
+    const runs = rowRuns(row);
+    const currentKeys = new Set(runs.map((r) => `${r.start}:${r.length}:${r.char}`));
+
+    for (const key of active.keys()) {
+      if (!currentKeys.has(key)) flush(key, rowIndex);
+    }
+    for (const run of runs) {
+      const key = `${run.start}:${run.length}:${run.char}`;
+      const entry = active.get(key);
+      if (entry) entry.height += 1;
+      else active.set(key, { run, startRow: rowIndex, height: 1 });
+    }
+  });
+  for (const key of [...active.keys()]) flush(key, grid.length);
+
+  return elements;
+}
+
+// Sprite data derived from a reference Nyan Cat pixel-art grid, downsampled
+// to fit the 72x16 front display. K = black outline, T = pop-tart crust,
+// M = pink body, D = magenta body dot, H = cat fur, R/O/Y/G/C/P = rainbow.
+const NYAN_COLORS: Record<string, string> = {
+  K: "#000000FF",
+  T: "#C48240FF", // toasted golden-brown crust (was too pale/pastel)
+  M: "#FFB3D9FF",
+  D: "#E040C0FF",
+  H: "#B0B0B0FF", // true grey cat fur (was a dusty pink, wrong color entirely)
+  R: "#FF0000FF",
+  O: "#FF8000FF",
+  Y: "#FFFF00FF",
+  G: "#00FF00FF",
+  C: "#0080FFFF",
+  P: "#8000FFFF",
+};
+
+// The physical display's top/bottom row appears to be clipped by the bezel,
+// so sprites are drawn 1px in from the full 16px height rather than using
+// rows 0-15 edge to edge.
+export const VERTICAL_SAFE_MARGIN = 1;
+
+export const DEFAULT_TRAIL_LENGTH = 32;
+const TRAIL_GRID = [
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
+  "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
+  "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+  "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+  "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+  "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+  "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+  "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+  "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+  "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+];
+
+export const CAT_WIDTH = 34;
+export const CAT_HEIGHT = 14;
+const CAT_GRID = [
+  "RRRKKKKKKKKKKKKKKKKKKKKK..........",
+  "RRKTTTTTTTTTTTTTTTTTTTTTK.........",
+  "KKTTTMMMMMMMMMMMMMMMTTTTTK........",
+  "KKTMMDMMMMMMMMMMMMMDMMMMTK........",
+  "KKTMMMMMMDMMMMMMMKKMMMMMTK..KK....",
+  "KKTMMMMMMMMMMMMMKHHHKMMMTKKHHHK...",
+  "KKTMMMMDMMMDDMMMKHHHHKKKKKHHHHK...",
+  "KKTMMMMMMMMMMDMKHHHHHHHHHHHHHHHK..",
+  "KKTMDMMMMMMMMMMKHHH.KHHHHHH.KHHK..",
+  "KKTMMMMMMMMMMMMKHHHKKHHHHHHKKHHK..",
+  "KKTTMDMMMMMMMMMKHHHHHKHHKHKHHHHK..",
+  "KKTTTMMMMMMMMMMMKHHHHKKKKKKHHHK...",
+  "HHHKKKKKKKKKKKKKKKKKKKKKKKKKK.....",
+  "HHHK.KHHK.........KHHK..KHHK......",
+];
+
 /**
  * Builds the Nyan Cat sprite (pop-tart body + head + rainbow trail) anchored
  * so the cat's bounding box top-left sits at (originX, originY). The trail
@@ -91,26 +211,10 @@ export function nyanCatElements(
   originY: number,
   trailLength: number = DEFAULT_TRAIL_LENGTH
 ): RectangleElement[] {
-  const elements: RectangleElement[] = [];
-
-  RAINBOW.forEach((color, i) => {
-    elements.push(
-      rect(`trail-${i}`, originX, originY, -trailLength, 2 + i * 2, trailLength, 2, color)
-    );
-  });
-
-  elements.push(rect("head", originX, originY, 3, 0, 9, 2, "#B0B0B0FF"));
-  elements.push(rect("body-border", originX, originY, 0, 2, 15, 12, "#C68E5DFF"));
-  elements.push(rect("body-fill", originX, originY, 1, 3, 13, 10, "#FFB3D9FF"));
-  elements.push(rect("eye-left", originX, originY, 5, 0, 1, 1, "#000000FF"));
-  elements.push(rect("eye-right", originX, originY, 9, 0, 1, 1, "#000000FF"));
-  elements.push(rect("cheek-left", originX, originY, 4, 3, 1, 1, "#FF6FA5FF"));
-  elements.push(rect("cheek-right", originX, originY, 11, 3, 1, 1, "#FF6FA5FF"));
-  elements.push(rect("mouth", originX, originY, 7, 4, 2, 1, "#A83264FF"));
-  elements.push(rect("leg-left", originX, originY, 2, 14, 2, 2, "#FFB3D9FF"));
-  elements.push(rect("leg-right", originX, originY, 12, 14, 2, 2, "#FFB3D9FF"));
-
-  return elements;
+  return [
+    ...gridToRectangles(TRAIL_GRID, NYAN_COLORS, "trail", originX, originY, -trailLength),
+    ...gridToRectangles(CAT_GRID, NYAN_COLORS, "cat", originX, originY, 0),
+  ];
 }
 
 export function nyanCatPayload(
