@@ -5,8 +5,8 @@ import {
   FRONT_DISPLAY_HEIGHT,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
-  rect,
 } from "../lib/display.ts";
+import { Canvas } from "../lib/canvas.ts";
 
 export { FRONT_DISPLAY_WIDTH, FRONT_DISPLAY_HEIGHT };
 
@@ -74,23 +74,22 @@ export const PALETTE: Swatch[] = ROW_SPECS.flatMap((spec, row) => {
 
 const CELL_WIDTH = FRONT_DISPLAY_WIDTH / COLUMNS; // 6, exact
 const ROW_HEIGHTS = [3, 2, 2, 2, 2, 3]; // sums to 14 usable rows (16 minus 2x margin)
+const TOTAL_HEIGHT = ROW_HEIGHTS.reduce((a, b) => a + b, 0);
 
 export function colorGridElements(): RectangleElement[] {
-  const elements: RectangleElement[] = [];
-  let y = VERTICAL_SAFE_MARGIN;
+  const canvas = new Canvas(FRONT_DISPLAY_WIDTH, TOTAL_HEIGHT);
+  let y = 0;
 
   for (let row = 0; row < ROWS; row++) {
     const height = ROW_HEIGHTS[row]!;
     for (let col = 0; col < COLUMNS; col++) {
       const swatch = PALETTE[row * COLUMNS + col]!;
-      elements.push(
-        rect(`swatch-${row}-${col}`, 0, 0, col * CELL_WIDTH, y, CELL_WIDTH, height, swatch.color)
-      );
+      canvas.fillRect(col * CELL_WIDTH, y, CELL_WIDTH, height, swatch.color);
     }
     y += height;
   }
 
-  return elements;
+  return canvas.toElements("swatch", 0, VERTICAL_SAFE_MARGIN);
 }
 
 export function colorGridPayload(): DisplayPayload {

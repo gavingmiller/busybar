@@ -1,4 +1,5 @@
-import { drawElements, clearDisplay } from "../lib/busybar-client.ts";
+import { drawFrame } from "../lib/busybar-client.ts";
+import { runAnimation, installShutdownHandler, type AnimationHandle } from "../lib/animate.ts";
 import {
   nyanCatPayload,
   stationaryOriginX,
@@ -14,36 +15,19 @@ export async function runStationary(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch
 ): Promise<void> {
-  await clearDisplay(baseUrl, APPLICATION_NAME, fetchImpl);
-  await drawElements(
-    baseUrl,
-    nyanCatPayload(stationaryOriginX(), VERTICAL_SAFE_MARGIN),
-    fetchImpl
-  );
+  await drawFrame(baseUrl, nyanCatPayload(stationaryOriginX(), VERTICAL_SAFE_MARGIN), fetchImpl);
 }
 
 export async function runFlying(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch
-): Promise<() => Promise<void>> {
-  await clearDisplay(baseUrl, APPLICATION_NAME, fetchImpl);
-  let tick = 0;
-
-  const interval = setInterval(() => {
-    drawElements(
-      baseUrl,
-      nyanCatPayload(flyingOriginX(tick, undefined, FLYING_STEP_PX), VERTICAL_SAFE_MARGIN),
-      fetchImpl
-    ).catch(
-      (err) => console.error(`[nyan-cat] draw failed: ${err instanceof Error ? err.message : err}`)
-    );
-    tick++;
-  }, FRAME_INTERVAL_MS);
-
-  return async () => {
-    clearInterval(interval);
-    await clearDisplay(baseUrl, APPLICATION_NAME, fetchImpl);
-  };
+): Promise<AnimationHandle> {
+  return runAnimation(
+    baseUrl,
+    APPLICATION_NAME,
+    (tick) => nyanCatPayload(flyingOriginX(tick, undefined, FLYING_STEP_PX), VERTICAL_SAFE_MARGIN),
+    { intervalMs: FRAME_INTERVAL_MS, fetchImpl }
+  );
 }
 
 if (import.meta.main) {
@@ -55,13 +39,7 @@ if (import.meta.main) {
     console.log(`Nyan Cat drawn on ${baseUrl} (stationary)`);
   } else if (mode === "flying") {
     console.log(`Nyan Cat flying across ${baseUrl} on a loop — Ctrl+C to stop`);
-    const stop = await runFlying(baseUrl);
-    const shutdown = async () => {
-      await stop();
-      process.exit(0);
-    };
-    process.on("SIGINT", shutdown);
-    process.on("SIGTERM", shutdown);
+    installShutdownHandler(await runFlying(baseUrl));
   } else {
     console.error("Usage: bun src/nyan-cat/index.ts <stationary|flying>");
     process.exit(1);

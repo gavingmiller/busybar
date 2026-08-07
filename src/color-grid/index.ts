@@ -1,14 +1,11 @@
-import { drawElements, clearDisplay } from "../lib/busybar-client.ts";
+import { drawFrame } from "../lib/busybar-client.ts";
 import { colorGridPayload, HUES, ROW_LABELS } from "./palette.ts";
-
-const APPLICATION_NAME = "color_grid";
 
 export async function drawColorGrid(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch
 ): Promise<void> {
-  await clearDisplay(baseUrl, APPLICATION_NAME, fetchImpl);
-  await drawElements(baseUrl, colorGridPayload(), fetchImpl);
+  await drawFrame(baseUrl, colorGridPayload(), fetchImpl);
 }
 
 if (import.meta.main) {

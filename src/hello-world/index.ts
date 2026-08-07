@@ -1,4 +1,5 @@
-import { drawElements } from "../lib/busybar-client.ts";
+import { drawFrame } from "../lib/busybar-client.ts";
+import { DRAW_PRIORITY } from "../lib/display.ts";
 
 interface TextElement {
   id: string;
@@ -20,6 +21,7 @@ const FRONT_DISPLAY_CENTER = { x: 36, y: 8 };
 interface DisplayElements {
   application_name: string;
   elements: TextElement[];
+  priority: number;
 }
 
 export function helloWorldPayload(): DisplayElements {
@@ -38,11 +40,12 @@ export function helloWorldPayload(): DisplayElements {
         y: FRONT_DISPLAY_CENTER.y,
       },
     ],
+    priority: DRAW_PRIORITY,
   };
 }
 
 export async function drawHelloWorld(baseUrl: string, fetchImpl: typeof fetch = fetch): Promise<void> {
-  await drawElements(baseUrl, helloWorldPayload(), fetchImpl);
+  await drawFrame(baseUrl, helloWorldPayload(), fetchImpl);
 }
 
 if (import.meta.main) {

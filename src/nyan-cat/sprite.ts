@@ -5,87 +5,11 @@ import {
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
   toDeviceColor,
-  rect,
 } from "../lib/display.ts";
+import { Canvas } from "../lib/canvas.ts";
 
 export type { RectangleElement, DisplayPayload };
 export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor };
-
-const BACKGROUND = ".";
-
-interface Run {
-  start: number;
-  length: number;
-  char: string;
-}
-
-function rowRuns(row: string): Run[] {
-  const runs: Run[] = [];
-  let runStart = 0;
-  for (let col = 1; col <= row.length; col++) {
-    if (col === row.length || row[col] !== row[runStart]) {
-      const ch = row[runStart]!;
-      if (ch !== BACKGROUND) runs.push({ start: runStart, length: col - runStart, char: ch });
-      runStart = col;
-    }
-  }
-  return runs;
-}
-
-/**
- * Compiles a sprite authored as a grid of characters (one per pixel, "."
- * for background/transparent) into the fewest RectangleElements: each row is
- * run-length-encoded, then identical runs stacked on consecutive rows merge
- * into one taller rectangle. Much easier to author and iterate on by eye
- * than hand-placed rects, and keeps the element count well under the
- * device's per-draw element cap for anything mostly solid-colored.
- */
-export function gridToRectangles(
-  grid: string[],
-  colors: Record<string, string>,
-  idPrefix: string,
-  originX: number,
-  originY: number,
-  colOffset: number = 0
-): RectangleElement[] {
-  const elements: RectangleElement[] = [];
-  const active = new Map<string, { run: Run; startRow: number; height: number }>();
-
-  const flush = (key: string, endRow: number) => {
-    const entry = active.get(key)!;
-    active.delete(key);
-    elements.push(
-      rect(
-        `${idPrefix}-${entry.startRow}-${entry.run.start}`,
-        originX,
-        originY,
-        colOffset + entry.run.start,
-        entry.startRow,
-        entry.run.length,
-        endRow - entry.startRow,
-        colors[entry.run.char]!
-      )
-    );
-  };
-
-  grid.forEach((row, rowIndex) => {
-    const runs = rowRuns(row);
-    const currentKeys = new Set(runs.map((r) => `${r.start}:${r.length}:${r.char}`));
-
-    for (const key of active.keys()) {
-      if (!currentKeys.has(key)) flush(key, rowIndex);
-    }
-    for (const run of runs) {
-      const key = `${run.start}:${run.length}:${run.char}`;
-      const entry = active.get(key);
-      if (entry) entry.height += 1;
-      else active.set(key, { run, startRow: rowIndex, height: 1 });
-    }
-  });
-  for (const key of [...active.keys()]) flush(key, grid.length);
-
-  return elements;
-}
 
 // Sprite data derived from a reference Nyan Cat pixel-art grid, downsampled
 // to fit the 72x16 front display. K = black outline, T = pop-tart crust,
@@ -161,9 +85,15 @@ export function nyanCatElements(
   originY: number,
   trailLength: number = DEFAULT_TRAIL_LENGTH
 ): RectangleElement[] {
+  const trailCanvas = new Canvas(trailLength, TRAIL_GRID.length);
+  trailCanvas.paintGrid(TRAIL_GRID, NYAN_COLORS);
+
+  const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+  catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
+
   return [
-    ...gridToRectangles(TRAIL_GRID, NYAN_COLORS, "trail", originX, originY, -trailLength),
-    ...gridToRectangles(CAT_GRID, NYAN_COLORS, "cat", originX, originY, 0),
+    ...trailCanvas.toElements("trail", originX - trailLength, originY),
+    ...catCanvas.toElements("cat", originX, originY),
   ];
 }
 

@@ -21,22 +21,27 @@ describe("helloWorldPayload", () => {
     expect(el.x).toBe(36);
     expect(el.y).toBe(8);
   });
+
+  it("draws at high priority so it can preempt an active work session (priority 90)", () => {
+    expect(helloWorldPayload().priority).toBeGreaterThan(90);
+    expect(helloWorldPayload().priority).toBeLessThanOrEqual(100);
+  });
 });
 
 describe("drawHelloWorld", () => {
-  it("POSTs the hello-world payload to <baseUrl>/api/display/draw", async () => {
-    const fetchMock = mock(async (_url: string, _init: RequestInit) =>
-      new Response(JSON.stringify({ success: true }), { status: 200 })
-    );
+  it("clears every app's prior draw before drawing, then POSTs the payload", async () => {
+    const calls: Array<{ url: string; method: string }> = [];
+    const fetchMock = mock(async (url: string, init: RequestInit) => {
+      calls.push({ url, method: init.method! });
+      return new Response(JSON.stringify({ success: true }), { status: 200 });
+    });
 
     await drawHelloWorld("http://10.0.4.20", fetchMock as unknown as typeof fetch);
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("http://10.0.4.20/api/display/draw");
-    expect(init.method).toBe("POST");
-    expect(init.headers).toMatchObject({ "Content-Type": "application/json" });
-    expect(JSON.parse(init.body as string)).toEqual(helloWorldPayload());
+    expect(calls).toEqual([
+      { url: "http://10.0.4.20/api/display/draw", method: "DELETE" },
+      { url: "http://10.0.4.20/api/display/draw", method: "POST" },
+    ]);
   });
 
   it("throws with the response body when the device rejects the request", async () => {
