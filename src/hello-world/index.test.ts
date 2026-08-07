@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from "bun:test";
-import { helloWorldPayload, drawHelloWorld } from "./hello-world.ts";
+import { helloWorldPayload, drawHelloWorld } from "./index.ts";
 
 describe("helloWorldPayload", () => {
   it("draws a single text element saying Hello, World! on the front display", () => {

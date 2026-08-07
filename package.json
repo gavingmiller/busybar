@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "hello-world": "bun src/hello-world.ts",
+    "hello-world": "bun src/hello-world/index.ts",
     "test": "bun test"
   },
   "devDependencies": {
