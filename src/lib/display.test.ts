@@ -2,15 +2,23 @@ import { describe, it, expect } from "bun:test";
 import { toDeviceColor, rect, FRONT_DISPLAY_WIDTH, FRONT_DISPLAY_HEIGHT, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY } from "./display.ts";
 
 describe("toDeviceColor", () => {
-  it("swaps the R and B channels", () => {
-    // Confirmed empirically against the physical device: a #RRGGBBAA fill
-    // sent as-is renders with red and blue swapped (red draws as blue, a
-    // tan border draws steel-blue, etc). Compensate by swapping before send.
-    expect(toDeviceColor("#FF8000FF")).toBe("#0080FFFF");
+  it("passes the color through unchanged", () => {
+    // An earlier version of this function swapped R and B, based on a
+    // capture-script-derived "confirmation" that turned out to be wrong —
+    // the capture script itself had a matching R/B decode bug that made a
+    // truly-broken (swapped) device render look correct when read back
+    // through it. Re-verified live via the device's own web UI
+    // (http://10.0.4.20/) and a controlled 6-color test: unswapped colors
+    // sent as their true RGB values render correctly with no compensation
+    // needed. Kept as a named pass-through (not removed) as the one seam
+    // where real device color compensation would go if one is ever found
+    // again — don't reintroduce a swap here without re-confirming via the
+    // web UI or a physical photo, not just this project's own capture tooling.
+    expect(toDeviceColor("#FF8000FF")).toBe("#FF8000FF");
   });
 
-  it("leaves the alpha and green channels untouched", () => {
-    expect(toDeviceColor("#11223344")).toBe("#33221144");
+  it("is a no-op regardless of channel values", () => {
+    expect(toDeviceColor("#11223344")).toBe("#11223344");
   });
 });
 

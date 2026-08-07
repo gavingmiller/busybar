@@ -35,16 +35,18 @@ export const VERTICAL_SAFE_MARGIN = 1;
 // use it unconditionally rather than re-chasing this each time it happens.
 export const DRAW_PRIORITY = 100;
 
-// Confirmed empirically against the physical device: a #RRGGBBAA fill_colors
-// value renders with red and blue swapped (send red, get blue back). Colors
-// throughout this codebase are written as their true intended RGB and
-// converted here at the one point they're attached to an element.
+// An earlier version of this swapped R and B, based on a capture-script-
+// derived "confirmation" that turned out to be wrong — the capture script
+// had a matching R/B decode bug that made a truly-broken (swapped) device
+// render look correct when read back through it. Re-verified live via the
+// device's own web UI (http://10.0.4.20/) and a controlled 6-color test:
+// unswapped colors render correctly with no compensation. Kept as a named
+// pass-through — the one seam where real device color compensation would
+// go if one's ever found again — rather than removed outright. Don't
+// reintroduce a swap without re-confirming via the web UI or a physical
+// photo, not just this project's own capture tooling.
 export function toDeviceColor(rrggbbaa: string): string {
-  const r = rrggbbaa.slice(1, 3);
-  const g = rrggbbaa.slice(3, 5);
-  const b = rrggbbaa.slice(5, 7);
-  const a = rrggbbaa.slice(7, 9);
-  return `#${b}${g}${r}${a}`;
+  return rrggbbaa;
 }
 
 export function rect(
