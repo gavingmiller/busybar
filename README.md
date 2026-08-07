@@ -26,6 +26,17 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
 
    You should see "Hello, World!" centered on the BUSY Bar's front display.
 
+## Other apps
+
+- **nyan-cat** — pixel-art Nyan Cat on the front display.
+  - `bun run nyan-cat:stationary` — draws once, centered, stays put.
+  - `bun run nyan-cat:flying` — loops it flying across the screen; Ctrl+C to
+    stop (clears the display on exit).
+- **color-grid** — a 24-swatch reference palette (saturated hues, muddy/earth
+  tones, and a grayscale ramp) for checking how a given color will actually
+  render on the physical LED matrix before using it elsewhere.
+  - `bun run color-grid` — draws the grid and prints the swatch labels.
+
 ### Connecting over Wi-Fi or the internet instead
 
 By default the app talks to `http://10.0.4.20` (USB). To target a device over

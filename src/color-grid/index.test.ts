@@ -1,0 +1,27 @@
+import { describe, it, expect, mock } from "bun:test";
+import { drawColorGrid } from "./index.ts";
+
+describe("drawColorGrid", () => {
+  it("clears any previous color_grid draw before drawing the current frame", async () => {
+    // Same lesson as nyan-cat: /api/display/draw upserts by id rather than
+    // replacing the scene, so a stale prior draw can linger. Always clear
+    // this app's elements first.
+    const calls: Array<{ url: string; method: string }> = [];
+    const fetchMock = mock(async (url: string, init: RequestInit) => {
+      calls.push({ url, method: init.method! });
+      return new Response(JSON.stringify({ result: "OK" }), { status: 200 });
+    });
+
+    await drawColorGrid("http://10.0.4.20", fetchMock as unknown as typeof fetch);
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toEqual({
+      url: "http://10.0.4.20/api/display/draw?application_name=color_grid",
+      method: "DELETE",
+    });
+    expect(calls[1]).toEqual({
+      url: "http://10.0.4.20/api/display/draw",
+      method: "POST",
+    });
+  });
+});
