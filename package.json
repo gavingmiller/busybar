@@ -1,0 +1,17 @@
+{
+  "name": "busybar",
+  "version": "0.1.0",
+  "description": "Custom apps for the BUSY Bar HTTP display API",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "hello-world": "bun src/hello-world.ts",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
