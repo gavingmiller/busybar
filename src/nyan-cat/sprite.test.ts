@@ -4,10 +4,26 @@ import {
   nyanCatElements,
   stationaryOriginX,
   flyingOriginX,
+  waveShift,
+  WAVE_PERIOD,
+  NYAN_COLORS,
   FRONT_DISPLAY_WIDTH,
   CAT_WIDTH,
   DEFAULT_TRAIL_LENGTH,
 } from "./sprite.ts";
+
+describe("waveShift", () => {
+  it("is periodic with period WAVE_PERIOD", () => {
+    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
+      expect(waveShift(x)).toBe(waveShift(x + WAVE_PERIOD));
+    }
+  });
+
+  it("takes more than one value across a period, i.e. the trail actually waves", () => {
+    const values = new Set(Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x)));
+    expect(values.size).toBeGreaterThan(1);
+  });
+});
 
 describe("nyanCatElements", () => {
   const elements = nyanCatElements(40, 0);
@@ -57,6 +73,30 @@ describe("nyanCatElements", () => {
     for (const el of cat) {
       expect(el.x).toBeGreaterThanOrEqual(40);
       expect(el.x + el.width).toBeLessThanOrEqual(40 + CAT_WIDTH);
+    }
+  });
+
+  it("positions blue above purple in the trail (swapped from the previous order)", () => {
+    const trail = elements.filter((el) => el.id.startsWith("trail-"));
+    const avgY = (color: string) => {
+      const matches = trail.filter((el) => el.fill_colors[0] === color);
+      expect(matches.length).toBeGreaterThan(0);
+      return matches.reduce((sum, el) => sum + el.y, 0) / matches.length;
+    };
+    expect(avgY(NYAN_COLORS.C!)).toBeLessThan(avgY(NYAN_COLORS.P!));
+  });
+
+  it("draws no black outline within the cat's head/fur region", () => {
+    // The pop-tart's own outline was already removed; the head's internal
+    // eye/ear-separator lines are gone too now, by request.
+    const cat = elements.filter((el) => el.id.startsWith("cat-"));
+    const black = cat.filter((el) => el.fill_colors[0] === NYAN_COLORS.K);
+    // The ground-line under the whole sprite legitimately stays black —
+    // only assert none of it sits within the head's row band (local rows
+    // 5-11, i.e. device y in [originY+5, originY+12)).
+    for (const el of black) {
+      const localY = el.y; // originY is 0 in this test
+      expect(localY < 5 || localY >= 12).toBe(true);
     }
   });
 });
