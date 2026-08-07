@@ -29,19 +29,20 @@ export const NYAN_COLORS: Record<string, string> = {
 };
 
 export const DEFAULT_TRAIL_LENGTH = 32;
-const TRAIL_HEIGHT = 14;
 
-// Rainbow bands, top to bottom, each with a row thickness (sums to
-// TRAIL_HEIGHT). Blue (C) sits above purple (P) — swapped from an earlier
-// order per Gavin's request.
+// Rainbow bands, top to bottom, each with a row thickness — uniformly 2px
+// per Gavin's request (red and green were thicker, purple was 1px; now all
+// six bands match). Blue (C) sits above purple (P) — swapped from an
+// earlier order, also per request.
 const TRAIL_BANDS: Array<{ char: string; rows: number }> = [
-  { char: "R", rows: 4 },
+  { char: "R", rows: 2 },
   { char: "O", rows: 2 },
   { char: "Y", rows: 2 },
-  { char: "G", rows: 3 },
+  { char: "G", rows: 2 },
   { char: "C", rows: 2 },
-  { char: "P", rows: 1 },
+  { char: "P", rows: 2 },
 ];
+const TRAIL_HEIGHT = TRAIL_BANDS.reduce((sum, band) => sum + band.rows, 0);
 
 /** The band character at canonical (unshifted) row `row`, or null past the last band. */
 function trailBandCharAt(row: number): string | null {
@@ -99,7 +100,7 @@ const CAT_GRID = [
   "TTTTMDMMMMMMMMMHHHHHHHHHHHHHHHHH..",
   "TTTTTMMMMMMMMMMMHHHHHHHHHHHHHHH...",
   "HHHKKKKKKKKKKKKKKKKKKKKKKKKKK.....",
-  "HHHK.KHHK.........KHHK..KHHK......",
+  "HHHKHKHHKHHHHHHHHHKHHKHHKHHK......",
 ];
 
 /**
