@@ -15,45 +15,65 @@ export interface Swatch {
   color: string;
 }
 
-export const COLUMNS = 8;
-export const ROWS = 3;
+/** h in degrees [0,360), s and v in percent [0,100]. Standard HSV->RGB. */
+export function hsvToHex(h: number, s: number, v: number): string {
+  const c = (v / 100) * (s / 100);
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v / 100 - c;
+  let r = 0,
+    g = 0,
+    b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
 
-// A diagnostic spread, not just pretty colors: saturated primary/secondary
-// hues (expected to render faithfully per prior apps), a row of muddy/earth
-// tones (the category that turned out to render blue-tinted on the physical
-// LED matrix in nyan-cat — this row is for spotting which others do too),
-// and a grayscale ramp (checks R=G=B parity and brightness linearity).
-export const PALETTE: Swatch[] = [
-  { label: "red", color: "#FF0000FF" },
-  { label: "orange", color: "#FF8000FF" },
-  { label: "yellow", color: "#FFFF00FF" },
-  { label: "green", color: "#00FF00FF" },
-  { label: "cyan", color: "#00FFFFFF" },
-  { label: "blue", color: "#0000FFFF" },
-  { label: "purple", color: "#8000FFFF" },
-  { label: "magenta", color: "#FF00FFFF" },
+  const toHex = (n: number) =>
+    Math.round((n + m) * 255)
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}FF`;
+}
 
-  { label: "tan", color: "#C8A064FF" },
-  { label: "brown", color: "#8B4513FF" },
-  { label: "olive", color: "#808000FF" },
-  { label: "maroon", color: "#800000FF" },
-  { label: "teal", color: "#008080FF" },
-  { label: "navy", color: "#000080FF" },
-  { label: "salmon", color: "#FA8072FF" },
-  { label: "orchid", color: "#DA70D6FF" },
+// 12 hues, 30 degrees apart — covers the full color wheel rather than a
+// hand-picked sample of it.
+export const HUES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+export const COLUMNS = HUES.length;
 
-  { label: "black", color: "#000000FF" },
-  { label: "grey-1", color: "#242424FF" },
-  { label: "grey-2", color: "#484848FF" },
-  { label: "grey-3", color: "#6C6C6CFF" },
-  { label: "grey-4", color: "#909090FF" },
-  { label: "grey-5", color: "#B4B4B4FF" },
-  { label: "grey-6", color: "#D8D8D8FF" },
-  { label: "white", color: "#FFFFFFFF" },
+// Rows: a value ramp and a saturation ramp crossed at every hue (row 0 is
+// shared by both — full saturation, full value), plus a grayscale ramp.
+// This is a systematic hue x saturation x value sweep, not a curated list,
+// so it actually answers "what can this display render" rather than just
+// spot-checking a handful of named colors.
+const ROW_SPECS: Array<{ label: string; s: number; v: number } | "grayscale"> = [
+  { label: "full", s: 100, v: 100 },
+  { label: "dark1", s: 100, v: 66 },
+  { label: "dark2", s: 100, v: 33 },
+  { label: "pale1", s: 66, v: 100 },
+  { label: "pale2", s: 33, v: 100 },
+  "grayscale",
 ];
+export const ROWS = ROW_SPECS.length;
+export const ROW_LABELS = ROW_SPECS.map((spec) => (spec === "grayscale" ? "grayscale" : spec.label));
 
-const CELL_WIDTH = FRONT_DISPLAY_WIDTH / COLUMNS; // 9, exact
-const ROW_HEIGHTS = [5, 5, 4]; // sums to 14 usable rows (16 minus 2x margin)
+export const PALETTE: Swatch[] = ROW_SPECS.flatMap((spec, row) => {
+  if (spec === "grayscale") {
+    return HUES.map((_, col) => {
+      const v = Math.round((col * 100) / (COLUMNS - 1));
+      return { label: `gray-${col}`, color: hsvToHex(0, 0, v) };
+    });
+  }
+  return HUES.map((h) => ({
+    label: `h${h}-${spec.label}`,
+    color: hsvToHex(h, spec.s, spec.v),
+  }));
+});
+
+const CELL_WIDTH = FRONT_DISPLAY_WIDTH / COLUMNS; // 6, exact
+const ROW_HEIGHTS = [3, 2, 2, 2, 2, 3]; // sums to 14 usable rows (16 minus 2x margin)
 
 export function colorGridElements(): RectangleElement[] {
   const elements: RectangleElement[] = [];

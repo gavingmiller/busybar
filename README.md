@@ -32,10 +32,18 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   - `bun run nyan-cat:stationary` — draws once, centered, stays put.
   - `bun run nyan-cat:flying` — loops it flying across the screen; Ctrl+C to
     stop (clears the display on exit).
-- **color-grid** — a 24-swatch reference palette (saturated hues, muddy/earth
-  tones, and a grayscale ramp) for checking how a given color will actually
-  render on the physical LED matrix before using it elsewhere.
-  - `bun run color-grid` — draws the grid and prints the swatch labels.
+- **color-grid** — a systematic 72-swatch reference palette for checking how
+  a given color actually renders on the physical LED matrix before using it
+  elsewhere: 12 hues (30° apart) crossed with a 3-step brightness ramp and a
+  2-step saturation ramp, plus a 12-step grayscale ramp.
+  - `bun run color-grid` — draws the grid and prints the row/column key.
+
+### Shared code
+
+`src/lib/` holds code used by every app: `display.ts` (the `RectangleElement`
+type, device color/positioning quirks compensation, display dimensions) and
+`busybar-client.ts` (the draw/clear HTTP calls). Not an app itself — nothing
+to run directly.
 
 ### Connecting over Wi-Fi or the internet instead
 
