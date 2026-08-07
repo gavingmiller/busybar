@@ -9,6 +9,7 @@ import {
   NYAN_COLORS,
   FRONT_DISPLAY_WIDTH,
   CAT_WIDTH,
+  CAT_HEIGHT,
   DEFAULT_TRAIL_LENGTH,
 } from "./sprite.ts";
 
@@ -74,6 +75,21 @@ describe("nyanCatElements", () => {
       expect(el.x).toBeGreaterThanOrEqual(40);
       expect(el.x + el.width).toBeLessThanOrEqual(40 + CAT_WIDTH);
     }
+  });
+
+  it("vertically centers the trail within the cat's height", () => {
+    // The trail is now shorter than the cat (6 uniform 2px bands = 12 rows
+    // vs the cat's 14), and it was top-aligned with the cat by default,
+    // pinning the red band's top row right against the bezel-clipped edge —
+    // invisible at 2px thick where it used to be masked by a 4px band.
+    // Center it instead so there's equal breathing room top and bottom.
+    const trail = elements.filter((el) => el.id.startsWith("trail-"));
+    const trailTop = Math.min(...trail.map((el) => el.y));
+    const trailBottom = Math.max(...trail.map((el) => el.y + el.height));
+    const originY = 0; // matches nyanCatElements(40, 0) above
+    const topGap = trailTop - originY;
+    const bottomGap = originY + CAT_HEIGHT - trailBottom;
+    expect(topGap).toBe(bottomGap);
   });
 
   it("positions blue above purple in the trail (swapped from the previous order)", () => {

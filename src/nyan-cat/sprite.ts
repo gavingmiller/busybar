@@ -99,8 +99,8 @@ const CAT_GRID = [
   "TTTMMMMMMMMMMMMHHHHHHHHHHHHHHHHH..",
   "TTTTMDMMMMMMMMMHHHHHHHHHHHHHHHHH..",
   "TTTTTMMMMMMMMMMMHHHHHHHHHHHHHHH...",
-  "HHHKKKKKKKKKKKKKKKKKKKKKKKKKK.....",
-  "HHHKHKHHKHHHHHHHHHKHHKHHKHHK......",
+  "HHHKKKHHKKKKKKKKKKKHHKKKKHHKK.....",
+  "HHHKKKHHKKKKKKKKKKKHHKKKKHHK......",
 ];
 
 /**
@@ -120,8 +120,13 @@ export function nyanCatElements(
   const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
   catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
 
+  // The trail (6 uniform 2px bands) is shorter than the cat — center it
+  // vertically within the cat's height rather than top-aligning it, so it
+  // isn't pinned right against the bezel-clipped top edge.
+  const trailOriginY = originY + Math.floor((CAT_HEIGHT - TRAIL_HEIGHT) / 2);
+
   return [
-    ...trailCanvas.toElements("trail", originX - trailLength, originY),
+    ...trailCanvas.toElements("trail", originX - trailLength, trailOriginY),
     ...catCanvas.toElements("cat", originX, originY),
   ];
 }
