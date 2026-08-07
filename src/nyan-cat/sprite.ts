@@ -146,7 +146,13 @@ export function gridToRectangles(
 // M = pink body, D = magenta body dot, H = cat fur, R/O/Y/G/C/P = rainbow.
 const NYAN_COLORS: Record<string, string> = {
   K: "#000000FF",
-  T: "#C48240FF", // toasted golden-brown crust (was too pale/pastel)
+  // Zero blue channel deliberately: a muddy R>G>B tan (e.g. #C48240) reads
+  // as blue-tinted on the physical LED matrix even though the raw digital
+  // value renders correctly (confirmed via /api/screen — the stored value
+  // matched intent exactly). This is a hardware color-mixing/gamma issue,
+  // not a data bug, so the fix is picking a color the LEDs render faithfully
+  // rather than a "correct" one they distort.
+  T: "#C88C00FF",
   M: "#FFB3D9FF",
   D: "#E040C0FF",
   H: "#B0B0B0FF", // true grey cat fur (was a dusty pink, wrong color entirely)
@@ -176,26 +182,29 @@ const TRAIL_GRID = [
   "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
   "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
   "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
-  "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
-  "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
   "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+  "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP",
+  "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
 ];
 
 export const CAT_WIDTH = 34;
 export const CAT_HEIGHT = 14;
+// Rows 0-4 have no cat (H) content at all — every "K" there was purely the
+// pop-tart's own outline (top/left/right edge), so it's dropped in favor of
+// the crust simply forming the outer edge, no border line.
 const CAT_GRID = [
-  "RRRKKKKKKKKKKKKKKKKKKKKK..........",
-  "RRKTTTTTTTTTTTTTTTTTTTTTK.........",
-  "KKTTTMMMMMMMMMMMMMMMTTTTTK........",
-  "KKTMMDMMMMMMMMMMMMMDMMMMTK........",
-  "KKTMMMMMMDMMMMMMMKKMMMMMTK..KK....",
-  "KKTMMMMMMMMMMMMMKHHHKMMMTKKHHHK...",
-  "KKTMMMMDMMMDDMMMKHHHHKKKKKHHHHK...",
-  "KKTMMMMMMMMMMDMKHHHHHHHHHHHHHHHK..",
-  "KKTMDMMMMMMMMMMKHHH.KHHHHHH.KHHK..",
-  "KKTMMMMMMMMMMMMKHHHKKHHHHHHKKHHK..",
-  "KKTTMDMMMMMMMMMKHHHHHKHHKHKHHHHK..",
-  "KKTTTMMMMMMMMMMMKHHHHKKKKKKHHHK...",
+  "RRRTTTTTTTTTTTTTTTTTTTTT..........",
+  "RRTTTTTTTTTTTTTTTTTTTTTTT.........",
+  "TTTTTMMMMMMMMMMMMMMMTTTTTT........",
+  "TTTMMDMMMMMMMMMMMMMDMMMMTT........",
+  "TTTMMMMMMDMMMMMMMMMMMMMMTT........",
+  "TTTMMMMMMMMMMMMMKHHHKMMMTKKHHHK...",
+  "TTTMMMMDMMMDDMMMKHHHHKKKKKHHHHK...",
+  "TTTMMMMMMMMMMDMKHHHHHHHHHHHHHHHK..",
+  "TTTMDMMMMMMMMMMKHHH.KHHHHHH.KHHK..",
+  "TTTMMMMMMMMMMMMKHHHKKHHHHHHKKHHK..",
+  "TTTTMDMMMMMMMMMKHHHHHKHHKHKHHHHK..",
+  "TTTTTMMMMMMMMMMMKHHHHKKKKKKHHHK...",
   "HHHKKKKKKKKKKKKKKKKKKKKKKKKKK.....",
   "HHHK.KHHK.........KHHK..KHHK......",
 ];
