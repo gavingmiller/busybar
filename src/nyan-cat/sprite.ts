@@ -16,13 +16,8 @@ export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor
 // M = pink body, D = magenta body dot, H = cat fur, R/O/Y/G/C/P = rainbow.
 const NYAN_COLORS: Record<string, string> = {
   K: "#000000FF",
-  // Zero blue channel deliberately: a muddy R>G>B tan (e.g. #C48240) reads
-  // as blue-tinted on the physical LED matrix even though the raw digital
-  // value renders correctly (confirmed via /api/screen — the stored value
-  // matched intent exactly). This is a hardware color-mixing/gamma issue,
-  // not a data bug, so the fix is picking a color the LEDs render faithfully
-  // rather than a "correct" one they distort.
-  T: "#C88C00FF",
+  T: "#E8C48AFF", // light tan crust
+
   M: "#FFB3D9FF",
   D: "#E040C0FF",
   H: "#B0B0B0FF", // true grey cat fur (was a dusty pink, wrong color entirely)
