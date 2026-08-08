@@ -7,6 +7,7 @@ import {
   stationaryOriginX,
   flyingOriginX,
   waveShift,
+  bobShift,
   WAVE_PERIOD,
   NYAN_COLORS,
   FRONT_DISPLAY_WIDTH,
@@ -26,6 +27,25 @@ describe("waveShift", () => {
   it("takes more than one value across a period, i.e. the trail actually waves", () => {
     const values = new Set(Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x)));
     expect(values.size).toBeGreaterThan(1);
+  });
+});
+
+describe("bobShift", () => {
+  it("is periodic with period WAVE_PERIOD", () => {
+    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
+      expect(bobShift(x)).toBe(bobShift(x + WAVE_PERIOD));
+    }
+  });
+
+  it("takes more than one value across a period, i.e. the trail actually bobs", () => {
+    const values = new Set(Array.from({ length: WAVE_PERIOD }, (_, t) => bobShift(t)));
+    expect(values.size).toBeGreaterThan(1);
+  });
+
+  it("moves both up and down (both a positive and a negative value occur)", () => {
+    const values = Array.from({ length: WAVE_PERIOD }, (_, t) => bobShift(t));
+    expect(values.some((v) => v > 0)).toBe(true);
+    expect(values.some((v) => v < 0)).toBe(true);
   });
 });
 
@@ -140,6 +160,19 @@ describe("animated trail (tick)", () => {
     const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 0).filter((el) => el.id.startsWith("cat-"));
     const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 5).filter((el) => el.id.startsWith("cat-"));
     expect(b).toEqual(a);
+  });
+});
+
+describe("trail vertical bob", () => {
+  it("the trail's vertical bounding box moves across ticks, not just its horizontal content", () => {
+    const trailYRange = (tick: number) => {
+      const trail = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, tick).filter((el) =>
+        el.id.startsWith("trail-")
+      );
+      return Math.min(...trail.map((el) => el.y));
+    };
+    const tops = new Set(Array.from({ length: WAVE_PERIOD }, (_, t) => trailYRange(t)));
+    expect(tops.size).toBeGreaterThan(1);
   });
 });
 

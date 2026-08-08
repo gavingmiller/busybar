@@ -65,18 +65,40 @@ function trailBandCharAt(row: number): string | null {
 // columns are the mirror image: full bottom row, empty headroom at top.
 export const WAVE_PERIOD = 16;
 const WAVE_AMPLITUDE = 1;
-export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE;
+
+// A slow vertical bob layered on top of the horizontal wave, so the whole
+// trail (not just its scalloped edges) drifts up and down over time. Reuses
+// WAVE_PERIOD rather than an independent period so the two motions stay in
+// sync and the animation loop doesn't grow any longer than it already is.
+// Amplitude is a single row: the safe (non-bezel-clipped) vertical band is
+// exactly CAT_HEIGHT (14) rows, and the trail already spends one of the rows
+// it's allotted on WAVE_AMPLITUDE — a second full row each direction would
+// push the trail into the bezel-clipped edge rows. One row of bob, stepped
+// down for a quarter of the loop then up for a quarter, fits within that
+// budget while still reading as clear up/down motion.
+const BOB_AMPLITUDE = 1;
+export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE + BOB_AMPLITUDE;
 
 export function waveShift(x: number): number {
   const phase = Math.floor(x / (WAVE_PERIOD / 2)) % 2;
   return phase === 0 ? 0 : WAVE_AMPLITUDE;
 }
 
+export function bobShift(tick: number): number {
+  const t = ((tick % WAVE_PERIOD) + WAVE_PERIOD) % WAVE_PERIOD;
+  const quarter = WAVE_PERIOD / 4;
+  if (t < quarter) return 0;
+  if (t < quarter * 2) return BOB_AMPLITUDE;
+  if (t < quarter * 3) return 0;
+  return -BOB_AMPLITUDE;
+}
+
 function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
+  const bob = bobShift(tick);
   for (let x = 0; x < canvas.width; x++) {
     const shift = waveShift(x + tick);
     for (let row = 0; row < canvas.height; row++) {
-      const canonicalRow = row - (WAVE_AMPLITUDE - shift);
+      const canonicalRow = row - BOB_AMPLITUDE - bob - (WAVE_AMPLITUDE - shift);
       const char = trailBandCharAt(canonicalRow);
       if (char) canvas.setPixel(x, row, NYAN_COLORS[char]!);
     }
