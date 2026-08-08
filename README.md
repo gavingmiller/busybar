@@ -32,9 +32,11 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   - `bun run nyan-cat:stationary` — draws once, centered, stays put.
   - `bun run nyan-cat:flying` — loops it flying across the screen; Ctrl+C to
     stop (clears the display on exit).
-  - `bun run nyan-cat:rainbow` — cat stays centered, but the rainbow trail
-    scrolls in place (the wave pattern's phase advances each frame); Ctrl+C
-    to stop.
+  - `bun run nyan-cat:rainbow` — cat stays centered; the rainbow trail is
+    drawn once as a native looping animation asset (`src/lib/anim-file.ts`
+    encodes the device's `.anim` format, uploaded via `POST
+    /api/assets/upload`) and the device plays/loops it forever on its own —
+    no ongoing process, nothing to Ctrl+C.
 - **color-grid** — a systematic 72-swatch reference palette for checking how
   a given color actually renders on the physical LED matrix before using it
   elsewhere: 12 hues (30° apart) crossed with a 3-step brightness ramp and a
@@ -58,7 +60,21 @@ of — not an app itself, nothing to run directly:
 - `animate.ts` — the animation library, built on `canvas.ts` +
   `busybar-client.ts`: `runAnimation()` clears, then repeatedly calls a
   `frameFn(tick)` on an interval and draws the result; `installShutdownHandler()`
-  wires Ctrl+C to stop the loop and clear the display.
+  wires Ctrl+C to stop the loop and clear the display. Best for animations
+  where the shape drawn doesn't change id-to-id between frames (e.g. a
+  sprite that only translates, like flying nyan-cat) — an animation whose
+  element ids do shift frame to frame should use a native `.anim` asset
+  instead (see below), not this loop, to avoid a visible flash to the
+  device's own idle app during the gap between clear and redraw.
+- `anim-file.ts` — encodes the device's native `.anim` binary animation
+  format (reverse-engineered from the public firmware source,
+  `github.com/busy-app/busybar-firmware`, `lib/anim_file/anim_file_format.h`
+  — undocumented in the OpenAPI spec). Upload once via
+  `uploadAsset()` (`busybar-client.ts`), then reference it from an
+  `AnimationElement` (`{type: "animation", path, loop: true, ...}`) — the
+  device plays and loops it forever with no further requests. This is the
+  right way to animate anything whose drawn shape changes between frames;
+  see `nyan-cat`'s `rainbow` mode.
 
 **Every draw clears the *entire* display first, not just the drawing app's
 own prior elements.** `/api/display/draw` upserts elements by id rather than

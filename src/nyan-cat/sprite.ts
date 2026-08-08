@@ -65,7 +65,7 @@ function trailBandCharAt(row: number): string | null {
 // columns are the mirror image: full bottom row, empty headroom at top.
 export const WAVE_PERIOD = 16;
 const WAVE_AMPLITUDE = 1;
-const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE;
+export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE;
 
 export function waveShift(x: number): number {
   const phase = Math.floor(x / (WAVE_PERIOD / 2)) % 2;
@@ -108,6 +108,20 @@ const CAT_GRID = [
   ".HHKKKHHKKKKKKKHHKKKKHHK........",
 ];
 
+/** Builds just the pop-tart body + head (no trail), anchored at (originX, originY). */
+export function catElements(originX: number, originY: number): RectangleElement[] {
+  const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+  catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
+  return catCanvas.toElements("cat", originX, originY);
+}
+
+// The trail canvas (band stack + wave headroom) is shorter than the cat —
+// center it vertically within the cat's height rather than top-aligning it,
+// so it isn't pinned right against the bezel-clipped top edge.
+export function trailOriginY(originY: number): number {
+  return originY + Math.floor((CAT_HEIGHT - TRAIL_CANVAS_HEIGHT) / 2);
+}
+
 /**
  * Builds the Nyan Cat sprite (pop-tart body + head + rainbow trail) anchored
  * so the cat's bounding box top-left sits at (originX, originY). The trail
@@ -123,18 +137,25 @@ export function nyanCatElements(
   const trailCanvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
   paintWavyTrail(trailCanvas, tick);
 
-  const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
-  catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
-
-  // The trail is shorter than the cat — center it vertically within the
-  // cat's height rather than top-aligning it, so it isn't pinned right
-  // against the bezel-clipped top edge.
-  const trailOriginY = originY + Math.floor((CAT_HEIGHT - TRAIL_CANVAS_HEIGHT) / 2);
-
   return [
-    ...trailCanvas.toElements("trail", originX - trailLength, trailOriginY),
-    ...catCanvas.toElements("cat", originX, originY),
+    ...trailCanvas.toElements("trail", originX - trailLength, trailOriginY(originY)),
+    ...catElements(originX, originY),
   ];
+}
+
+/**
+ * One RGBA frame per tick across a full WAVE_PERIOD, for encoding the trail
+ * as a native looping .anim asset instead of client-side polling. Each frame
+ * is `trailLength x TRAIL_CANVAS_HEIGHT` pixels (see Canvas.toRGBA).
+ */
+export function trailAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
+  const frames: Uint8Array[] = [];
+  for (let tick = 0; tick < WAVE_PERIOD; tick++) {
+    const canvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
+    paintWavyTrail(canvas, tick);
+    frames.push(canvas.toRGBA());
+  }
+  return frames;
 }
 
 export function nyanCatPayload(

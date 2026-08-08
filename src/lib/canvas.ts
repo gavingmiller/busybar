@@ -134,4 +134,20 @@ export class Canvas {
 
     return elements;
   }
+
+  /** Rasterizes to row-major RGBA bytes (width*height*4), for building animation frames. */
+  toRGBA(background: string = "#000000FF"): Uint8Array {
+    const out = new Uint8Array(this.width * this.height * 4);
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const color = this.get(x, y) ?? background;
+        const i = (y * this.width + x) * 4;
+        out[i + 0] = parseInt(color.slice(1, 3), 16);
+        out[i + 1] = parseInt(color.slice(3, 5), 16);
+        out[i + 2] = parseInt(color.slice(5, 7), 16);
+        out[i + 3] = parseInt(color.slice(7, 9), 16);
+      }
+    }
+    return out;
+  }
 }

@@ -17,10 +17,16 @@ export interface RunAnimationOptions {
    * Clear this app's own elements before every frame, not just at the
    * start. `/api/display/draw` upserts elements by id rather than
    * replacing the scene, so an animation whose merged-element ids shift
-   * from frame to frame (e.g. a rainbow trail whose run-length-encoded
-   * shapes change as a wave's phase advances) otherwise accumulates stale
-   * elements from every prior frame until the device rejects the draw
-   * with "Elements number limit exceeded".
+   * from frame to frame (e.g. the nyan-cat rainbow trail's old client-side
+   * wave animation, whose run-length-encoded shapes changed as the wave's
+   * phase advanced) otherwise accumulates stale elements from every prior
+   * frame until the device rejects the draw with "Elements number limit
+   * exceeded". Note: even with this on, a DELETE always leaves a real gap
+   * where this app has zero elements — a lower-priority app can flash
+   * through during it. That's exactly why the rainbow trail moved to a
+   * native looping .anim asset (see nyan-cat/index.ts's runRainbow)
+   * instead of using this option; prefer that pattern over clearEachFrame
+   * for anything where the flash would be visible.
    *
    * Off by default: it doubles the request rate against the device, and
    * confirmed live against the device, doubling from ~6.7req/s to

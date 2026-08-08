@@ -69,3 +69,23 @@ export async function clearAllDisplays(
     throw new Error(`BUSY Bar rejected clear request: ${res.status} ${await res.text()}`);
   }
 }
+
+/** Uploads a file (e.g. a .anim animation asset) to an app's assets directory. */
+export async function uploadAsset(
+  baseUrl: string,
+  applicationName: string,
+  fileName: string,
+  bytes: Uint8Array,
+  fetchImpl: typeof fetch = fetch
+): Promise<void> {
+  const url = `${baseUrl}/api/assets/upload?application_name=${encodeURIComponent(applicationName)}&file=${encodeURIComponent(fileName)}`;
+  const res = await fetchImpl(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: bytes,
+  });
+
+  if (!res.ok) {
+    throw new Error(`BUSY Bar rejected asset upload: ${res.status} ${await res.text()}`);
+  }
+}

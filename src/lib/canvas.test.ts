@@ -127,3 +127,17 @@ describe("Canvas.toElements", () => {
     });
   });
 });
+
+describe("Canvas.toRGBA", () => {
+  it("rasterizes to row-major RGBA bytes, filling unset pixels with the given background", () => {
+    const canvas = new Canvas(2, 1);
+    canvas.setPixel(0, 0, "#FF0000FF");
+    const rgba = canvas.toRGBA("#000000FF");
+    expect([...rgba]).toEqual([255, 0, 0, 255, 0, 0, 0, 255]);
+  });
+
+  it("defaults the background to opaque black", () => {
+    const canvas = new Canvas(1, 1);
+    expect([...canvas.toRGBA()]).toEqual([0, 0, 0, 255]);
+  });
+});

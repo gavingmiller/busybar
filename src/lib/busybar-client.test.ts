@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from "bun:test";
-import { drawElements, clearDisplay, clearAllDisplays, drawFrame } from "./busybar-client.ts";
+import { drawElements, clearDisplay, clearAllDisplays, drawFrame, uploadAsset } from "./busybar-client.ts";
 
 describe("drawElements", () => {
   it("POSTs the payload to <baseUrl>/api/display/draw", async () => {
@@ -105,6 +105,46 @@ describe("clearDisplay", () => {
 
     await expect(
       clearDisplay("http://10.0.4.20", "nyan_cat", fetchMock as unknown as typeof fetch)
+    ).rejects.toThrow(/400/);
+  });
+});
+
+describe("uploadAsset", () => {
+  it("POSTs raw bytes to /api/assets/upload with application_name and file query params", async () => {
+    const fetchMock = mock(async (_url: string, _init: RequestInit) =>
+      new Response(JSON.stringify({ result: "OK" }), { status: 200 })
+    );
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+
+    await uploadAsset(
+      "http://10.0.4.20",
+      "nyan_cat",
+      "trail.anim",
+      bytes,
+      fetchMock as unknown as typeof fetch
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("http://10.0.4.20/api/assets/upload?application_name=nyan_cat&file=trail.anim");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toMatchObject({ "Content-Type": "application/octet-stream" });
+    expect(init.body).toBe(bytes);
+  });
+
+  it("throws with the response body when the device rejects the upload", async () => {
+    const fetchMock = mock(async () =>
+      new Response(JSON.stringify({ error: "bad request" }), { status: 400 })
+    );
+
+    await expect(
+      uploadAsset(
+        "http://10.0.4.20",
+        "nyan_cat",
+        "trail.anim",
+        new Uint8Array([1]),
+        fetchMock as unknown as typeof fetch
+      )
     ).rejects.toThrow(/400/);
   });
 });

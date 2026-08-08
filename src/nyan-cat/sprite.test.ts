@@ -2,6 +2,8 @@ import { describe, it, expect } from "bun:test";
 import {
   nyanCatPayload,
   nyanCatElements,
+  catElements,
+  trailAnimationFrames,
   stationaryOriginX,
   flyingOriginX,
   waveShift,
@@ -10,6 +12,7 @@ import {
   FRONT_DISPLAY_WIDTH,
   CAT_WIDTH,
   CAT_HEIGHT,
+  TRAIL_CANVAS_HEIGHT,
   DEFAULT_TRAIL_LENGTH,
 } from "./sprite.ts";
 
@@ -137,6 +140,39 @@ describe("animated trail (tick)", () => {
     const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 0).filter((el) => el.id.startsWith("cat-"));
     const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 5).filter((el) => el.id.startsWith("cat-"));
     expect(b).toEqual(a);
+  });
+});
+
+describe("catElements", () => {
+  it("matches exactly the cat- prefixed elements nyanCatElements produces, independent of trail params", () => {
+    const combined = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 5).filter((el) =>
+      el.id.startsWith("cat-")
+    );
+    expect(catElements(40, 0)).toEqual(combined);
+  });
+});
+
+describe("trailAnimationFrames", () => {
+  const trailLength = DEFAULT_TRAIL_LENGTH;
+  const frames = trailAnimationFrames(trailLength);
+
+  it("returns one RGBA frame per tick in a full wave period", () => {
+    expect(frames).toHaveLength(WAVE_PERIOD);
+  });
+
+  it("each frame is trailLength x TRAIL_CANVAS_HEIGHT RGBA bytes", () => {
+    for (const frame of frames) {
+      expect(frame.length).toBe(trailLength * TRAIL_CANVAS_HEIGHT * 4);
+    }
+  });
+
+  it("actually animates — consecutive frames differ", () => {
+    expect(frames[0]).not.toEqual(frames[1]);
+  });
+
+  it("loops seamlessly — frame WAVE_PERIOD would repeat frame 0 (matches waveShift's periodicity)", () => {
+    const frames2 = trailAnimationFrames(trailLength);
+    expect(frames2[0]).toEqual(frames[0]);
   });
 });
 
