@@ -103,18 +103,20 @@ describe("nyanCatElements", () => {
     expect(avgY(NYAN_COLORS.C!)).toBeLessThan(avgY(NYAN_COLORS.P!));
   });
 
-  it("draws no black outline within the cat's head/fur region", () => {
+  it("draws no black outline within the cat's head/fur region, just the mouth", () => {
     // The pop-tart's own outline was already removed; the head's internal
-    // eye/ear-separator lines are gone too now, by request.
+    // eye/ear-separator lines are gone too, by request — except a single
+    // small mouth mark, added back deliberately. Assert there's exactly
+    // one black element in the head band (the mouth), not a full outline's
+    // worth, which would mean the old lines crept back in.
     const cat = elements.filter((el) => el.id.startsWith("cat-"));
     const black = cat.filter((el) => el.fill_colors[0] === NYAN_COLORS.K);
     // The ground-line under the whole sprite legitimately stays black —
-    // only assert none of it sits within the head's row band (local rows
+    // only count black elements within the head's row band (local rows
     // 5-11, i.e. device y in [originY+5, originY+12)).
-    for (const el of black) {
-      const localY = el.y; // originY is 0 in this test
-      expect(localY < 5 || localY >= 12).toBe(true);
-    }
+    const inHeadBand = black.filter((el) => el.y >= 5 && el.y < 12); // originY is 0 here
+    expect(inHeadBand).toHaveLength(1);
+    expect(inHeadBand[0]).toMatchObject({ width: 1, height: 1 });
   });
 });
 
