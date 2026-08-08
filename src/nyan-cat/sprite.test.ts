@@ -4,15 +4,18 @@ import {
   nyanCatElements,
   catElements,
   trailAnimationFrames,
+  sceneAnimationFrames,
   stationaryOriginX,
   flyingOriginX,
   waveShift,
+  bobShift,
   WAVE_PERIOD,
   NYAN_COLORS,
   FRONT_DISPLAY_WIDTH,
   CAT_WIDTH,
   CAT_HEIGHT,
   TRAIL_CANVAS_HEIGHT,
+  SCENE_HEIGHT,
   DEFAULT_TRAIL_LENGTH,
 } from "./sprite.ts";
 
@@ -172,6 +175,52 @@ describe("trailAnimationFrames", () => {
 
   it("loops seamlessly — frame WAVE_PERIOD would repeat frame 0 (matches waveShift's periodicity)", () => {
     const frames2 = trailAnimationFrames(trailLength);
+    expect(frames2[0]).toEqual(frames[0]);
+  });
+});
+
+describe("bobShift", () => {
+  it("alternates every tick (period 2) — the classic Nyan Cat A/B bob", () => {
+    expect(bobShift(0)).not.toBe(bobShift(1));
+    expect(bobShift(0)).toBe(bobShift(2));
+    expect(bobShift(1)).toBe(bobShift(3));
+  });
+
+  it("takes exactly two values", () => {
+    const values = new Set(Array.from({ length: 8 }, (_, t) => bobShift(t)));
+    expect(values.size).toBe(2);
+  });
+});
+
+describe("sceneAnimationFrames", () => {
+  const trailLength = DEFAULT_TRAIL_LENGTH;
+  const frames = sceneAnimationFrames(trailLength);
+  const sceneWidth = trailLength + CAT_WIDTH;
+
+  it("returns one RGBA frame per tick in a full wave period", () => {
+    expect(frames).toHaveLength(WAVE_PERIOD);
+  });
+
+  it("each frame is (trailLength+CAT_WIDTH) x SCENE_HEIGHT RGBA bytes", () => {
+    for (const frame of frames) {
+      expect(frame.length).toBe(sceneWidth * SCENE_HEIGHT * 4);
+    }
+  });
+
+  it("the cat itself moves between frames, not just the trail", () => {
+    // CAT_GRID row 0, col 3 is crust (T) when the cat sits at its resting
+    // (bob=0) position; if the whole scene truly bobs as one rigid unit,
+    // that exact pixel goes empty on the frame where the cat shifts down.
+    const pixelAt = (frame: Uint8Array, x: number, y: number) => {
+      const i = (y * sceneWidth + x) * 4;
+      return [frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
+    };
+    const x = trailLength + 3;
+    expect(pixelAt(frames[1], x, 0)).not.toEqual(pixelAt(frames[0], x, 0));
+  });
+
+  it("loops seamlessly — frame WAVE_PERIOD would repeat frame 0", () => {
+    const frames2 = sceneAnimationFrames(trailLength);
     expect(frames2[0]).toEqual(frames[0]);
   });
 });

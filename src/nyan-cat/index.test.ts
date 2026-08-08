@@ -33,11 +33,11 @@ describe("runStationary", () => {
 describe("runRainbow", () => {
   // The old client-side polling loop (repeated clear+draw) flashed the
   // device's built-in idle app through the gap between our own DELETE and
-  // POST calls. The rainbow trail is now a native looping .anim asset:
-  // upload once, draw once (cat as static rectangles + the trail as a
-  // single AnimationElement referencing the uploaded asset), and the
-  // device handles looping forever with no further requests from us.
-  it("uploads the trail as a .anim asset, then draws the cat + a looping AnimationElement referencing it", async () => {
+  // POST calls. The rainbow trail (now cat included, so the whole scene can
+  // rigidly bob together) is a native looping .anim asset: upload once,
+  // draw once (a single AnimationElement referencing the uploaded asset),
+  // and the device handles looping forever with no further requests from us.
+  it("uploads the whole scene as a .anim asset, then draws a single looping AnimationElement referencing it", async () => {
     const calls: Array<{ url: string; method: string; body?: unknown }> = [];
     const fetchMock = mock(async (url: string, init: RequestInit) => {
       calls.push({
@@ -66,9 +66,7 @@ describe("runRainbow", () => {
     const payload = drawCalls[1]!.body as { application_name: string; elements: Array<Record<string, unknown>> };
     expect(payload.application_name).toBe("nyan_cat");
 
-    const catRects = payload.elements.filter((el) => el.type === "rectangle");
-    expect(catRects.length).toBeGreaterThan(0);
-
+    expect(payload.elements).toHaveLength(1);
     const animationEls = payload.elements.filter((el) => el.type === "animation");
     expect(animationEls).toHaveLength(1);
     expect(animationEls[0]).toMatchObject({ loop: true, display: "front" });

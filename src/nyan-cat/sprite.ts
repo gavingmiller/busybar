@@ -72,13 +72,19 @@ export function waveShift(x: number): number {
   return phase === 0 ? 0 : WAVE_AMPLITUDE;
 }
 
-function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
-  for (let x = 0; x < canvas.width; x++) {
+function paintWavyTrail(
+  canvas: Canvas,
+  tick: number,
+  width: number,
+  originX: number = 0,
+  originY: number = 0
+): void {
+  for (let x = 0; x < width; x++) {
     const shift = waveShift(x + tick);
-    for (let row = 0; row < canvas.height; row++) {
+    for (let row = 0; row < TRAIL_CANVAS_HEIGHT; row++) {
       const canonicalRow = row - (WAVE_AMPLITUDE - shift);
       const char = trailBandCharAt(canonicalRow);
-      if (char) canvas.setPixel(x, row, NYAN_COLORS[char]!);
+      if (char) canvas.setPixel(originX + x, originY + row, NYAN_COLORS[char]!);
     }
   }
 }
@@ -135,7 +141,7 @@ export function nyanCatElements(
   tick: number = 0
 ): RectangleElement[] {
   const trailCanvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
-  paintWavyTrail(trailCanvas, tick);
+  paintWavyTrail(trailCanvas, tick, trailLength);
 
   return [
     ...trailCanvas.toElements("trail", originX - trailLength, trailOriginY(originY)),
@@ -152,7 +158,46 @@ export function trailAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH)
   const frames: Uint8Array[] = [];
   for (let tick = 0; tick < WAVE_PERIOD; tick++) {
     const canvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
-    paintWavyTrail(canvas, tick);
+    paintWavyTrail(canvas, tick, trailLength);
+    frames.push(canvas.toRGBA());
+  }
+  return frames;
+}
+
+// A rigid whole-sprite bob, independent from the trail's own horizontal
+// wave above: the entire scene (cat AND trail together) alternates between
+// two vertical positions every tick, matching the reference Nyan Cat GIF's
+// classic 2-frame A/B bob — not a reshaping of the trail's internal band
+// pattern, which was the wrong first attempt (see git history, reverted).
+// One row of amplitude, one direction only (not signed up/down): the safe
+// (non-bezel-clipped) vertical band is exactly CAT_HEIGHT rows and the cat
+// already fills all of it, so the bob has to borrow a row outside that
+// band on one side.
+const BOB_AMPLITUDE = 1;
+
+export function bobShift(tick: number): number {
+  return ((tick % 2) + 2) % 2 === 0 ? 0 : BOB_AMPLITUDE;
+}
+
+export const SCENE_HEIGHT = CAT_HEIGHT + BOB_AMPLITUDE;
+
+/**
+ * One RGBA frame per tick across a full WAVE_PERIOD for the whole scene —
+ * cat and trail combined into a single composite, since the reference
+ * animation's bob rigidly moves both together as one unit, not just the
+ * trail. Each frame is `(trailLength + CAT_WIDTH) x SCENE_HEIGHT` pixels,
+ * with the trail occupying columns [0, trailLength) and the cat columns
+ * [trailLength, trailLength + CAT_WIDTH). Used by the rainbow mode instead
+ * of the separate catElements() + trailAnimationFrames() split.
+ */
+export function sceneAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
+  const frames: Uint8Array[] = [];
+  const trailLocalOffset = Math.floor((CAT_HEIGHT - TRAIL_CANVAS_HEIGHT) / 2);
+  for (let tick = 0; tick < WAVE_PERIOD; tick++) {
+    const bob = bobShift(tick);
+    const canvas = new Canvas(trailLength + CAT_WIDTH, SCENE_HEIGHT);
+    paintWavyTrail(canvas, tick, trailLength, 0, trailLocalOffset + bob);
+    canvas.paintGrid(CAT_GRID, NYAN_COLORS, trailLength, bob);
     frames.push(canvas.toRGBA());
   }
   return frames;

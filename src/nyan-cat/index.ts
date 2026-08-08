@@ -3,13 +3,12 @@ import { runAnimation, installShutdownHandler, type AnimationHandle } from "../l
 import { encodeAnimFile } from "../lib/anim-file.ts";
 import {
   nyanCatPayload,
-  catElements,
-  trailAnimationFrames,
-  trailOriginY,
+  sceneAnimationFrames,
   stationaryOriginX,
   flyingOriginX,
   DEFAULT_TRAIL_LENGTH,
-  TRAIL_CANVAS_HEIGHT,
+  CAT_WIDTH,
+  SCENE_HEIGHT,
   WAVE_PERIOD,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
@@ -50,13 +49,16 @@ export async function runFlying(
 }
 
 /**
- * Draws the cat once (static rectangles, unchanged) plus the rainbow trail
- * as a single native looping AnimationElement — the device plays and loops
- * it forever on its own. Replaces the old client-side clear+draw polling
- * loop, which flashed the device's built-in idle app through the gap
- * between our DELETE and POST every frame (upsert-by-id semantics mean a
- * DELETE always leaves us with zero elements for a moment). One-shot, like
- * runStationary — there's nothing left to poll, so no AnimationHandle.
+ * Draws the cat and rainbow trail as one combined native looping
+ * AnimationElement — the device plays and loops it forever on its own. The
+ * cat isn't static: the whole scene rigidly bobs up and down together
+ * (classic Nyan Cat A/B bob), separate from the trail's own left-right
+ * wave — see sceneAnimationFrames in sprite.ts. Replaces the old
+ * client-side clear+draw polling loop, which flashed the device's built-in
+ * idle app through the gap between our DELETE and POST every frame
+ * (upsert-by-id semantics mean a DELETE always leaves us with zero
+ * elements for a moment). One-shot, like runStationary — there's nothing
+ * left to poll, so no AnimationHandle.
  */
 export async function runRainbow(
   baseUrl: string,
@@ -68,10 +70,10 @@ export async function runRainbow(
   const originY = VERTICAL_SAFE_MARGIN;
 
   const bytes = encodeAnimFile({
-    width: trailLength,
-    height: TRAIL_CANVAS_HEIGHT,
+    width: trailLength + CAT_WIDTH,
+    height: SCENE_HEIGHT,
     fps: RAINBOW_FPS,
-    frames: trailAnimationFrames(trailLength),
+    frames: sceneAnimationFrames(trailLength),
   });
   await uploadAsset(baseUrl, APPLICATION_NAME, RAINBOW_ASSET_FILENAME, bytes, fetchImpl);
 
@@ -83,14 +85,13 @@ export async function runRainbow(
       application_name: APPLICATION_NAME,
       priority: DRAW_PRIORITY,
       elements: [
-        ...catElements(originX, originY),
         {
-          id: "trail-anim",
+          id: "scene-anim",
           type: "animation",
           path: RAINBOW_ASSET_FILENAME,
           loop: true,
           x: originX - trailLength,
-          y: trailOriginY(originY),
+          y: originY,
           display: "front",
         },
       ],
