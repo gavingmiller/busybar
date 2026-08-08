@@ -72,9 +72,9 @@ export function waveShift(x: number): number {
   return phase === 0 ? 0 : WAVE_AMPLITUDE;
 }
 
-function paintWavyTrail(canvas: Canvas): void {
+function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
   for (let x = 0; x < canvas.width; x++) {
-    const shift = waveShift(x);
+    const shift = waveShift(x + tick);
     for (let row = 0; row < canvas.height; row++) {
       const canonicalRow = row - (WAVE_AMPLITUDE - shift);
       const char = trailBandCharAt(canonicalRow);
@@ -117,10 +117,11 @@ const CAT_GRID = [
 export function nyanCatElements(
   originX: number,
   originY: number,
-  trailLength: number = DEFAULT_TRAIL_LENGTH
+  trailLength: number = DEFAULT_TRAIL_LENGTH,
+  tick: number = 0
 ): RectangleElement[] {
   const trailCanvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
-  paintWavyTrail(trailCanvas);
+  paintWavyTrail(trailCanvas, tick);
 
   const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
   catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
@@ -139,11 +140,12 @@ export function nyanCatElements(
 export function nyanCatPayload(
   originX: number,
   originY: number,
-  trailLength: number = DEFAULT_TRAIL_LENGTH
+  trailLength: number = DEFAULT_TRAIL_LENGTH,
+  tick: number = 0
 ): DisplayPayload {
   return {
     application_name: "nyan_cat",
-    elements: nyanCatElements(originX, originY, trailLength),
+    elements: nyanCatElements(originX, originY, trailLength, tick),
     priority: DRAW_PRIORITY,
   };
 }

@@ -120,6 +120,26 @@ describe("nyanCatElements", () => {
   });
 });
 
+describe("animated trail (tick)", () => {
+  it("shifts the wave pattern as tick advances", () => {
+    const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 0);
+    const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 4);
+    expect(b).not.toEqual(a);
+  });
+
+  it("is periodic in tick with period WAVE_PERIOD, so the animation loops seamlessly", () => {
+    const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 3);
+    const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 3 + WAVE_PERIOD);
+    expect(b).toEqual(a);
+  });
+
+  it("leaves the cat untouched by tick — only the trail moves", () => {
+    const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 0).filter((el) => el.id.startsWith("cat-"));
+    const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 5).filter((el) => el.id.startsWith("cat-"));
+    expect(b).toEqual(a);
+  });
+});
+
 describe("nyanCatPayload", () => {
   it("wraps the elements under a stable application_name", () => {
     const payload = nyanCatPayload(40, 0);

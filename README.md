@@ -32,6 +32,9 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   - `bun run nyan-cat:stationary` — draws once, centered, stays put.
   - `bun run nyan-cat:flying` — loops it flying across the screen; Ctrl+C to
     stop (clears the display on exit).
+  - `bun run nyan-cat:rainbow` — cat stays centered, but the rainbow trail
+    scrolls in place (the wave pattern's phase advances each frame); Ctrl+C
+    to stop.
 - **color-grid** — a systematic 72-swatch reference palette for checking how
   a given color actually renders on the physical LED matrix before using it
   elsewhere: 12 hues (30° apart) crossed with a 3-step brightness ramp and a

@@ -13,6 +13,23 @@ export interface AnimationHandle {
 export interface RunAnimationOptions {
   intervalMs: number;
   fetchImpl?: typeof fetch;
+  /**
+   * Clear this app's own elements before every frame, not just at the
+   * start. `/api/display/draw` upserts elements by id rather than
+   * replacing the scene, so an animation whose merged-element ids shift
+   * from frame to frame (e.g. a rainbow trail whose run-length-encoded
+   * shapes change as a wave's phase advances) otherwise accumulates stale
+   * elements from every prior frame until the device rejects the draw
+   * with "Elements number limit exceeded".
+   *
+   * Off by default: it doubles the request rate against the device, and
+   * confirmed live against the device, doubling from ~6.7req/s to
+   * ~13.3req/s (150ms interval, 2 requests/frame) got the whole device
+   * rejecting requests with 508 "Resource Limit Reached". Only turn this
+   * on for animations that actually need it, and pair it with a slower
+   * interval so the extra request doesn't push the total rate too high.
+   */
+  clearEachFrame?: boolean;
 }
 
 /**
@@ -28,20 +45,47 @@ export async function runAnimation(
   options: RunAnimationOptions
 ): Promise<AnimationHandle> {
   const fetchImpl = options.fetchImpl ?? fetch;
+  const clearEachFrame = options.clearEachFrame ?? false;
 
   await clearAllDisplays(baseUrl, fetchImpl);
 
   let tick = 0;
-  const interval = setInterval(() => {
-    drawElements(baseUrl, frameFn(tick), fetchImpl).catch((err) =>
-      console.error(`[animate:${applicationName}] frame draw failed: ${err instanceof Error ? err.message : err}`)
-    );
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let currentRun: Promise<void> = Promise.resolve();
+
+  // A self-scheduling loop rather than setInterval: the next frame is only
+  // scheduled once this one's requests have finished, so a slow frame can
+  // never overlap with the next. Confirmed live against the device that
+  // overlapping requests can arrive out of order — a late clear/draw pair
+  // landing after the next frame's already fired reintroduces stale
+  // elements even with clearEachFrame on, eventually hitting "Elements
+  // number limit exceeded" again.
+  const runFrame = async (): Promise<void> => {
+    try {
+      if (clearEachFrame) {
+        await clearDisplay(baseUrl, applicationName, fetchImpl);
+      }
+      await drawElements(baseUrl, frameFn(tick), fetchImpl);
+    } catch (err) {
+      console.error(`[animate:${applicationName}] frame draw failed: ${err instanceof Error ? err.message : err}`);
+    }
     tick++;
+    if (!stopped) {
+      timer = setTimeout(() => {
+        currentRun = runFrame();
+      }, options.intervalMs);
+    }
+  };
+  timer = setTimeout(() => {
+    currentRun = runFrame();
   }, options.intervalMs);
 
   return {
     stop: async () => {
-      clearInterval(interval);
+      stopped = true;
+      clearTimeout(timer);
+      await currentRun; // let any in-flight frame finish before the final clear
       await clearDisplay(baseUrl, applicationName, fetchImpl);
     },
   };
