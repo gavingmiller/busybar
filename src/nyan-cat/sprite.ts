@@ -66,12 +66,11 @@ function trailBandCharAt(row: number): string | null {
 export const WAVE_PERIOD = 16;
 const WAVE_AMPLITUDE = 1;
 
-// A rigid vertical bob for the trail ONLY — the cat stays fixed. Alternates
-// every tick (period 2), the classic Nyan Cat A/B bob, layered independently
-// on top of the left-right wave above: `bob` shifts every column's read
-// position by the same amount (unlike `shift`, which varies per column), so
-// the whole per-column wave shape translates up/down as one rigid block
-// rather than being reshaped.
+// A rigid vertical bob for the trail ONLY — the cat stays fixed. Layered
+// independently on top of the left-right wave above: `bob` shifts every
+// column's read position by the same amount (unlike `shift`, which varies
+// per column), so the whole per-column wave shape translates up/down as one
+// rigid block rather than being reshaped.
 const BOB_AMPLITUDE = 1;
 export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE + BOB_AMPLITUDE;
 
@@ -80,8 +79,15 @@ export function waveShift(x: number): number {
   return phase === 0 ? 0 : WAVE_AMPLITUDE;
 }
 
+// Holding each position for a few ticks rather than flipping every single
+// tick — at RAINBOW_FPS (16/sec) a flip-every-tick bob read as a jerky
+// flicker rather than a smooth bob. BOB_HOLD_TICKS must divide WAVE_PERIOD
+// evenly so the bob still loops seamlessly with the trail's own wave.
+const BOB_HOLD_TICKS = 4;
+
 export function bobShift(tick: number): number {
-  return ((tick % 2) + 2) % 2 === 0 ? 0 : BOB_AMPLITUDE;
+  const t = ((tick % WAVE_PERIOD) + WAVE_PERIOD) % WAVE_PERIOD;
+  return Math.floor(t / BOB_HOLD_TICKS) % 2 === 0 ? 0 : BOB_AMPLITUDE;
 }
 
 function paintWavyTrail(canvas: Canvas, tick: number = 0): void {

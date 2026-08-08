@@ -31,15 +31,25 @@ describe("waveShift", () => {
 });
 
 describe("bobShift", () => {
-  it("alternates every tick (period 2) — the classic Nyan Cat A/B bob", () => {
-    expect(bobShift(0)).not.toBe(bobShift(1));
+  it("holds each position for several ticks before flipping, rather than every single tick", () => {
+    // Flipping every tick (16/sec at RAINBOW_FPS) read as a jerky flicker
+    // rather than a bob. Holding each position for a few ticks slows the
+    // flip rate to something that reads as smooth motion instead.
+    expect(bobShift(0)).toBe(bobShift(1));
     expect(bobShift(0)).toBe(bobShift(2));
-    expect(bobShift(1)).toBe(bobShift(3));
+    expect(bobShift(0)).toBe(bobShift(3));
+    expect(bobShift(4)).not.toBe(bobShift(0));
   });
 
   it("takes exactly two values", () => {
-    const values = new Set(Array.from({ length: 8 }, (_, t) => bobShift(t)));
+    const values = new Set(Array.from({ length: WAVE_PERIOD }, (_, t) => bobShift(t)));
     expect(values.size).toBe(2);
+  });
+
+  it("is periodic with period WAVE_PERIOD, so the animation loops seamlessly", () => {
+    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
+      expect(bobShift(x)).toBe(bobShift(x + WAVE_PERIOD));
+    }
   });
 });
 
@@ -165,7 +175,7 @@ describe("trail vertical bob", () => {
       );
       return Math.min(...trail.map((el) => el.y));
     };
-    expect(trailTop(1)).not.toBe(trailTop(0));
+    expect(trailTop(4)).not.toBe(trailTop(0));
   });
 });
 
