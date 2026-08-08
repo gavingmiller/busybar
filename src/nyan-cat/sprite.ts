@@ -65,18 +65,31 @@ function trailBandCharAt(row: number): string | null {
 // columns are the mirror image: full bottom row, empty headroom at top.
 export const WAVE_PERIOD = 16;
 const WAVE_AMPLITUDE = 1;
-export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE;
+
+// A rigid vertical bob for the trail ONLY — the cat stays fixed. Alternates
+// every tick (period 2), the classic Nyan Cat A/B bob, layered independently
+// on top of the left-right wave above: `bob` shifts every column's read
+// position by the same amount (unlike `shift`, which varies per column), so
+// the whole per-column wave shape translates up/down as one rigid block
+// rather than being reshaped.
+const BOB_AMPLITUDE = 1;
+export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE + BOB_AMPLITUDE;
 
 export function waveShift(x: number): number {
   const phase = Math.floor(x / (WAVE_PERIOD / 2)) % 2;
   return phase === 0 ? 0 : WAVE_AMPLITUDE;
 }
 
+export function bobShift(tick: number): number {
+  return ((tick % 2) + 2) % 2 === 0 ? 0 : BOB_AMPLITUDE;
+}
+
 function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
+  const bob = bobShift(tick);
   for (let x = 0; x < canvas.width; x++) {
     const shift = waveShift(x + tick);
     for (let row = 0; row < canvas.height; row++) {
-      const canonicalRow = row - (WAVE_AMPLITUDE - shift);
+      const canonicalRow = row - bob - (WAVE_AMPLITUDE - shift);
       const char = trailBandCharAt(canonicalRow);
       if (char) canvas.setPixel(x, row, NYAN_COLORS[char]!);
     }
