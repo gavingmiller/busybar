@@ -37,13 +37,6 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     encodes the device's `.anim` format, uploaded via `POST
     /api/assets/upload`) and the device plays/loops it forever on its own —
     no ongoing process, nothing to Ctrl+C.
-  - `bun run nyan-cat:rainbow-toggle` — same as `rainbow`, but also watches
-    BUSY Bar's own focus-timer state (`src/lib/busy-session.ts`, polling
-    `GET /api/busy/snapshot`) and reacts to the device's physical
-    Start/Pause button: pressing it starts a focus session, which clears
-    our own elements out of the way; pressing it again pauses that session,
-    which redraws the (already-uploaded, not re-uploaded) rainbow trail.
-    Ctrl+C to stop watching and clear the display.
 - **color-grid** — a systematic 72-swatch reference palette for checking how
   a given color actually renders on the physical LED matrix before using it
   elsewhere: 12 hues (30° apart) crossed with a 3-step brightness ramp and a
@@ -82,12 +75,6 @@ of — not an app itself, nothing to run directly:
   device plays and loops it forever with no further requests. This is the
   right way to animate anything whose drawn shape changes between frames;
   see `nyan-cat`'s `rainbow` mode.
-- `busy-session.ts` — reads and polls BUSY Bar's own focus-timer state
-  (`GET /api/busy/snapshot`). `isSessionActive()` treats "running and not
-  paused" as the active signal, since the device's own Start/Pause button
-  starts a session from idle but only *pauses* (not ends) it on a second
-  press. `watchBusySessionActive()` polls on an interval and calls back
-  only when that boolean changes — see `nyan-cat`'s `rainbow-toggle` mode.
 
 **Every draw clears the *entire* display first, not just the drawing app's
 own prior elements.** `/api/display/draw` upserts elements by id rather than
