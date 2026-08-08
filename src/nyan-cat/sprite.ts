@@ -65,19 +65,40 @@ function trailBandCharAt(row: number): string | null {
 // columns are the mirror image: full bottom row, empty headroom at top.
 export const WAVE_PERIOD = 16;
 const WAVE_AMPLITUDE = 1;
-
-// A rigid vertical bob for the trail ONLY — the cat stays fixed. Layered
-// independently on top of the left-right wave above: `bob` shifts every
-// column's read position by the same amount (unlike `shift`, which varies
-// per column), so the whole per-column wave shape translates up/down as one
-// rigid block rather than being reshaped.
-const BOB_AMPLITUDE = 1;
-export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE + BOB_AMPLITUDE;
+export const TRAIL_CANVAS_HEIGHT = TRAIL_HEIGHT + WAVE_AMPLITUDE;
 
 export function waveShift(x: number): number {
   const phase = Math.floor(x / (WAVE_PERIOD / 2)) % 2;
   return phase === 0 ? 0 : WAVE_AMPLITUDE;
 }
+
+function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
+  for (let x = 0; x < canvas.width; x++) {
+    const shift = waveShift(x + tick);
+    for (let row = 0; row < canvas.height; row++) {
+      const canonicalRow = row - (WAVE_AMPLITUDE - shift);
+      const char = trailBandCharAt(canonicalRow);
+      if (char) canvas.setPixel(x, row, NYAN_COLORS[char]!);
+    }
+  }
+}
+
+// A vertical bob layered on top of the wave above, for the native-animation
+// trail ONLY (see trailAnimationFrames) — the cat, and the plain rectangle
+// path in nyanCatElements (used by the stationary/flying modes, which are
+// element-count-limited — see the cap below), stay bob-free. Driven by
+// (x + tick), same as waveShift, so each column's bob state scrolls along
+// with the wave rather than the whole trail bobbing as one rigid block —
+// different segments (grouped by BOB_HOLD_TICKS-wide column blocks, a
+// different width than the wave's own WAVE_PERIOD/2-wide segments) are in
+// different up/down states at the same instant, moving independently. This
+// finer segmentation roughly doubles how many distinct runs the trail's
+// rows produce — fine for a rasterized native asset, but it blew well past
+// the rectangle draw API's 100-element cap when it was applied to the
+// shared paintWavyTrail used by nyanCatElements too (up to 121 elements at
+// a single tick) — hence the separate function.
+const BOB_AMPLITUDE = 1;
+export const TRAIL_ANIM_HEIGHT = TRAIL_CANVAS_HEIGHT + BOB_AMPLITUDE;
 
 // Holding each position for a few ticks rather than flipping every single
 // tick — at RAINBOW_FPS (16/sec) a flip-every-tick bob read as a jerky
@@ -90,10 +111,10 @@ export function bobShift(tick: number): number {
   return Math.floor(t / BOB_HOLD_TICKS) % 2 === 0 ? 0 : BOB_AMPLITUDE;
 }
 
-function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
-  const bob = bobShift(tick);
+function paintBobbingTrail(canvas: Canvas, tick: number = 0): void {
   for (let x = 0; x < canvas.width; x++) {
     const shift = waveShift(x + tick);
+    const bob = bobShift(x + tick);
     for (let row = 0; row < canvas.height; row++) {
       const canonicalRow = row - bob - (WAVE_AMPLITUDE - shift);
       const char = trailBandCharAt(canonicalRow);
@@ -165,13 +186,15 @@ export function nyanCatElements(
 /**
  * One RGBA frame per tick across a full WAVE_PERIOD, for encoding the trail
  * as a native looping .anim asset instead of client-side polling. Each frame
- * is `trailLength x TRAIL_CANVAS_HEIGHT` pixels (see Canvas.toRGBA).
+ * is `trailLength x TRAIL_ANIM_HEIGHT` pixels (see Canvas.toRGBA) — taller
+ * than the plain rectangle path's TRAIL_CANVAS_HEIGHT to make room for the
+ * vertical bob.
  */
 export function trailAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
   const frames: Uint8Array[] = [];
   for (let tick = 0; tick < WAVE_PERIOD; tick++) {
-    const canvas = new Canvas(trailLength, TRAIL_CANVAS_HEIGHT);
-    paintWavyTrail(canvas, tick);
+    const canvas = new Canvas(trailLength, TRAIL_ANIM_HEIGHT);
+    paintBobbingTrail(canvas, tick);
     frames.push(canvas.toRGBA());
   }
   return frames;

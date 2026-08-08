@@ -9,7 +9,7 @@ import {
   stationaryOriginX,
   flyingOriginX,
   DEFAULT_TRAIL_LENGTH,
-  TRAIL_CANVAS_HEIGHT,
+  TRAIL_ANIM_HEIGHT,
   WAVE_PERIOD,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
@@ -69,7 +69,7 @@ export async function runRainbow(
 
   const bytes = encodeAnimFile({
     width: trailLength,
-    height: TRAIL_CANVAS_HEIGHT,
+    height: TRAIL_ANIM_HEIGHT,
     fps: RAINBOW_FPS,
     frames: trailAnimationFrames(trailLength),
   });
@@ -90,6 +90,10 @@ export async function runRainbow(
           path: RAINBOW_ASSET_FILENAME,
           loop: true,
           x: originX - trailLength,
+          // trailOriginY() centers TRAIL_CANVAS_HEIGHT (13) within
+          // CAT_HEIGHT (14) — coincidentally still originY+0, the correct
+          // placement for the taller TRAIL_ANIM_HEIGHT (14) asset too,
+          // since 14 now exactly fills CAT_HEIGHT with no centering offset.
           y: trailOriginY(originY),
           display: "front",
         },

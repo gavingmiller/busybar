@@ -13,7 +13,7 @@ import {
   FRONT_DISPLAY_WIDTH,
   CAT_WIDTH,
   CAT_HEIGHT,
-  TRAIL_CANVAS_HEIGHT,
+  TRAIL_ANIM_HEIGHT,
   DEFAULT_TRAIL_LENGTH,
 } from "./sprite.ts";
 
@@ -167,15 +167,24 @@ describe("animated trail (tick)", () => {
   });
 });
 
-describe("trail vertical bob", () => {
-  it("the trail rigidly shifts vertically between ticks, while the cat stays fixed", () => {
-    const trailTop = (tick: number) => {
-      const trail = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, tick).filter((el) =>
-        el.id.startsWith("trail-")
-      );
-      return Math.min(...trail.map((el) => el.y));
+describe("trail bob segments move independently", () => {
+  it("different column-segments are in different bob states at the same tick, not one rigid block", () => {
+    const trailLength = DEFAULT_TRAIL_LENGTH;
+    const frame = trailAnimationFrames(trailLength)[0]!; // tick 0
+    const topRowAt = (x: number) => {
+      for (let row = 0; row < TRAIL_ANIM_HEIGHT; row++) {
+        const i = (row * trailLength + x) * 4;
+        if (!(frame[i] === 0 && frame[i + 1] === 0 && frame[i + 2] === 0)) return row;
+      }
+      return -1;
     };
-    expect(trailTop(4)).not.toBe(trailTop(0));
+    // A single rigid whole-trail bob (the previous design) only ever
+    // produces 2 distinct top-row values across a period (purely from the
+    // horizontal wave's own segmentation). Independent per-column bob
+    // segments produce more, since the bob's 4-column segments interact
+    // with the wave's 8-column segments at different phases.
+    const topRows = new Set(Array.from({ length: WAVE_PERIOD }, (_, x) => topRowAt(x)));
+    expect(topRows.size).toBeGreaterThan(2);
   });
 });
 
@@ -196,9 +205,9 @@ describe("trailAnimationFrames", () => {
     expect(frames).toHaveLength(WAVE_PERIOD);
   });
 
-  it("each frame is trailLength x TRAIL_CANVAS_HEIGHT RGBA bytes", () => {
+  it("each frame is trailLength x TRAIL_ANIM_HEIGHT RGBA bytes", () => {
     for (const frame of frames) {
-      expect(frame.length).toBe(trailLength * TRAIL_CANVAS_HEIGHT * 4);
+      expect(frame.length).toBe(trailLength * TRAIL_ANIM_HEIGHT * 4);
     }
   });
 
