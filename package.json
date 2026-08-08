@@ -9,6 +9,7 @@
     "nyan-cat:stationary": "bun src/nyan-cat/index.ts stationary",
     "nyan-cat:flying": "bun src/nyan-cat/index.ts flying",
     "nyan-cat:rainbow": "bun src/nyan-cat/index.ts rainbow",
+    "nyan-cat:rainbow-toggle": "bun src/nyan-cat/index.ts rainbow-toggle",
     "color-grid": "bun src/color-grid/index.ts",
     "test": "bun test"
   },
