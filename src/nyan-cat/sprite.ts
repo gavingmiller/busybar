@@ -83,38 +83,55 @@ function paintWavyTrail(canvas: Canvas, tick: number = 0): void {
   }
 }
 
-// A vertical bob layered on top of the wave above, for the native-animation
-// trail ONLY (see trailAnimationFrames) — the cat, and the plain rectangle
-// path in nyanCatElements (used by the stationary/flying modes, which are
-// element-count-limited — see the cap below), stay bob-free. Driven by
-// (x + tick), same as waveShift, so each column's bob state scrolls along
-// with the wave rather than the whole trail bobbing as one rigid block —
-// different segments (grouped by BOB_HOLD_TICKS-wide column blocks, a
-// different width than the wave's own WAVE_PERIOD/2-wide segments) are in
-// different up/down states at the same instant, moving independently. This
-// finer segmentation roughly doubles how many distinct runs the trail's
-// rows produce — fine for a rasterized native asset, but it blew well past
-// the rectangle draw API's 100-element cap when it was applied to the
-// shared paintWavyTrail used by nyanCatElements too (up to 121 elements at
-// a single tick) — hence the separate function.
+// Independent vertical (bob) and horizontal (drift) motion per 8px chunk,
+// layered on top of the wave above, for the native-animation trail ONLY
+// (see trailAnimationFrames) — the cat, and the plain rectangle path in
+// nyanCatElements (used by the stationary/flying modes, which are
+// element-count-limited — see the cap below), stay unaffected. Both are
+// driven by (x + tick), same as waveShift, so each chunk's state scrolls
+// along with the wave rather than the whole trail moving as one rigid
+// block. bobShift and driftShift are phase-offset from each other AND from
+// the wave's own segmentation — genuinely independent axes, not one motion
+// read twice. The phase offset matters a lot here: an earlier attempt
+// offset drift by exactly half a chunk width (4), which stays a clean
+// divisor of CHUNK_WIDTH and left every third-or-so column-block (notably
+// the rightmost chunk, right where the trail meets the cat) rendering
+// completely flat for half the loop — bob, drift, and the wave all
+// resolved to the same "neutral" combination there for several consecutive
+// ticks. Offsetting drift by a non-divisor (3) breaks that resonance;
+// confirmed by rendering frames directly to images and comparing (the
+// device's own live preview turned out to be unreliable for spot-checking
+// frame-to-frame animation — see commit notes) — every sampled frame now
+// shows visible variation across the whole trail, including at the edge
+// nearest the cat. This finer segmentation increases how many distinct
+// runs the trail's rows produce — fine for a rasterized native asset, but
+// it blew well past the rectangle draw API's 100-element cap when it was
+// applied to the shared paintWavyTrail used by nyanCatElements too (up to
+// 121 elements at a single tick) — hence the separate function.
+const CHUNK_WIDTH = 8;
 const BOB_AMPLITUDE = 1;
+const DRIFT_AMPLITUDE = 3;
+const DRIFT_PHASE = 3;
 export const TRAIL_ANIM_HEIGHT = TRAIL_CANVAS_HEIGHT + BOB_AMPLITUDE;
 
-// Holding each position for a few ticks rather than flipping every single
-// tick — at RAINBOW_FPS (16/sec) a flip-every-tick bob read as a jerky
-// flicker rather than a smooth bob. BOB_HOLD_TICKS must divide WAVE_PERIOD
-// evenly so the bob still loops seamlessly with the trail's own wave.
-const BOB_HOLD_TICKS = 4;
+function chunkShift(pos: number, phaseOffset: number, amplitude: number): number {
+  const t = (((pos + phaseOffset) % WAVE_PERIOD) + WAVE_PERIOD) % WAVE_PERIOD;
+  return Math.floor(t / CHUNK_WIDTH) % 2 === 0 ? 0 : amplitude;
+}
 
-export function bobShift(tick: number): number {
-  const t = ((tick % WAVE_PERIOD) + WAVE_PERIOD) % WAVE_PERIOD;
-  return Math.floor(t / BOB_HOLD_TICKS) % 2 === 0 ? 0 : BOB_AMPLITUDE;
+export function bobShift(pos: number): number {
+  return chunkShift(pos, 0, BOB_AMPLITUDE);
+}
+
+export function driftShift(pos: number): number {
+  return chunkShift(pos, DRIFT_PHASE, DRIFT_AMPLITUDE);
 }
 
 function paintBobbingTrail(canvas: Canvas, tick: number = 0): void {
   for (let x = 0; x < canvas.width; x++) {
-    const shift = waveShift(x + tick);
     const bob = bobShift(x + tick);
+    const drift = driftShift(x + tick);
+    const shift = waveShift(x + tick + drift);
     for (let row = 0; row < canvas.height; row++) {
       const canonicalRow = row - bob - (WAVE_AMPLITUDE - shift);
       const char = trailBandCharAt(canonicalRow);

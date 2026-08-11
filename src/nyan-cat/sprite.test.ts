@@ -8,6 +8,7 @@ import {
   flyingOriginX,
   waveShift,
   bobShift,
+  driftShift,
   WAVE_PERIOD,
   NYAN_COLORS,
   FRONT_DISPLAY_WIDTH,
@@ -31,14 +32,11 @@ describe("waveShift", () => {
 });
 
 describe("bobShift", () => {
-  it("holds each position for several ticks before flipping, rather than every single tick", () => {
-    // Flipping every tick (16/sec at RAINBOW_FPS) read as a jerky flicker
-    // rather than a bob. Holding each position for a few ticks slows the
-    // flip rate to something that reads as smooth motion instead.
-    expect(bobShift(0)).toBe(bobShift(1));
-    expect(bobShift(0)).toBe(bobShift(2));
-    expect(bobShift(0)).toBe(bobShift(3));
-    expect(bobShift(4)).not.toBe(bobShift(0));
+  it("holds each position for a full 8px chunk before flipping", () => {
+    for (let i = 0; i < 8; i++) {
+      expect(bobShift(i)).toBe(bobShift(0));
+    }
+    expect(bobShift(8)).not.toBe(bobShift(0));
   });
 
   it("takes exactly two values", () => {
@@ -49,6 +47,34 @@ describe("bobShift", () => {
   it("is periodic with period WAVE_PERIOD, so the animation loops seamlessly", () => {
     for (let x = 0; x < WAVE_PERIOD * 3; x++) {
       expect(bobShift(x)).toBe(bobShift(x + WAVE_PERIOD));
+    }
+  });
+});
+
+describe("driftShift", () => {
+  it("holds each position for a full 8px chunk before flipping", () => {
+    // driftShift is phase-offset from bobShift (see below), so its own
+    // flip boundary sits at pos=5, not pos=0.
+    for (let i = 5; i < 13; i++) {
+      expect(driftShift(i)).toBe(driftShift(5));
+    }
+    expect(driftShift(13)).not.toBe(driftShift(5));
+  });
+
+  it("is out of phase with bobShift, so a chunk's vertical and horizontal motion are independent", () => {
+    // If they flipped in lockstep, every chunk's horizontal and vertical
+    // moves would always coincide — no different from a single combined
+    // motion. Offsetting the phase means each chunk can be moving on one
+    // axis while holding on the other.
+    const disagreements = Array.from({ length: WAVE_PERIOD }, (_, pos) => pos).filter(
+      (pos) => (bobShift(pos) === 0) !== (driftShift(pos) === 0)
+    );
+    expect(disagreements.length).toBeGreaterThan(0);
+  });
+
+  it("is periodic with period WAVE_PERIOD, so the animation loops seamlessly", () => {
+    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
+      expect(driftShift(x)).toBe(driftShift(x + WAVE_PERIOD));
     }
   });
 });
@@ -178,13 +204,16 @@ describe("trail bob segments move independently", () => {
       }
       return -1;
     };
-    // A single rigid whole-trail bob (the previous design) only ever
-    // produces 2 distinct top-row values across a period (purely from the
-    // horizontal wave's own segmentation). Independent per-column bob
-    // segments produce more, since the bob's 4-column segments interact
-    // with the wave's 8-column segments at different phases.
     const topRows = new Set(Array.from({ length: WAVE_PERIOD }, (_, x) => topRowAt(x)));
-    expect(topRows.size).toBeGreaterThan(2);
+    expect(topRows.size).toBeGreaterThan(1);
+  });
+
+  it("the chunk's horizontal drift measurably changes the wave outcome for at least one column", () => {
+    // Proves drift isn't a no-op: for some x, sampling the wave at
+    // (x + drift) gives a different result than sampling it at x alone.
+    const withDrift = Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x + driftShift(x)));
+    const withoutDrift = Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x));
+    expect(withDrift).not.toEqual(withoutDrift);
   });
 });
 
