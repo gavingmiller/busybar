@@ -10,7 +10,7 @@ import {
   flyingOriginX,
   DEFAULT_TRAIL_LENGTH,
   TRAIL_ANIM_HEIGHT,
-  WAVE_PERIOD,
+  TRAIL_FPS,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
 } from "./sprite.ts";
@@ -19,10 +19,10 @@ const APPLICATION_NAME = "nyan_cat";
 const FRAME_INTERVAL_MS = 150;
 const FLYING_STEP_PX = 2;
 const RAINBOW_ASSET_FILENAME = "rainbow-trail.anim";
-// Loops one full WAVE_PERIOD of trail frames per second — a similar visual
+// Loops one full TRAIL_FPS-frame cycle per second — a similar visual
 // pace to the old ~150ms/frame polling loop, just now handled natively by
 // the device instead of us re-POSTing every frame.
-const RAINBOW_FPS = WAVE_PERIOD;
+const RAINBOW_FPS = TRAIL_FPS;
 // A settle delay between uploading an asset and referencing it in a draw —
 // mirrors the firmware's own image-upload integration test, which sleeps 5s
 // before drawing an uploaded image. Not confirmed strictly necessary for
@@ -90,10 +90,9 @@ export async function runRainbow(
           path: RAINBOW_ASSET_FILENAME,
           loop: true,
           x: originX - trailLength,
-          // trailOriginY() centers TRAIL_CANVAS_HEIGHT (13) within
-          // CAT_HEIGHT (14) — coincidentally still originY+0, the correct
-          // placement for the taller TRAIL_ANIM_HEIGHT (14) asset too,
-          // since 14 now exactly fills CAT_HEIGHT with no centering offset.
+          // TRAIL_ANIM_HEIGHT now exactly equals CAT_HEIGHT (both derived
+          // from sprite-data.ts), so trailOriginY() is a no-op offset here —
+          // kept in case the two diverge again after a hand-edit.
           y: trailOriginY(originY),
           display: "front",
         },

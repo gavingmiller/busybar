@@ -6,78 +6,16 @@ import {
   trailAnimationFrames,
   stationaryOriginX,
   flyingOriginX,
-  waveShift,
-  bobShift,
-  driftShift,
-  WAVE_PERIOD,
   NYAN_COLORS,
   FRONT_DISPLAY_WIDTH,
   CAT_WIDTH,
   CAT_HEIGHT,
   TRAIL_ANIM_HEIGHT,
+  TRAIL_FPS,
   DEFAULT_TRAIL_LENGTH,
 } from "./sprite.ts";
-
-describe("waveShift", () => {
-  it("is periodic with period WAVE_PERIOD", () => {
-    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
-      expect(waveShift(x)).toBe(waveShift(x + WAVE_PERIOD));
-    }
-  });
-
-  it("takes more than one value across a period, i.e. the trail actually waves", () => {
-    const values = new Set(Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x)));
-    expect(values.size).toBeGreaterThan(1);
-  });
-});
-
-describe("bobShift", () => {
-  it("holds each position for a full 8px chunk before flipping", () => {
-    for (let i = 0; i < 8; i++) {
-      expect(bobShift(i)).toBe(bobShift(0));
-    }
-    expect(bobShift(8)).not.toBe(bobShift(0));
-  });
-
-  it("takes exactly two values", () => {
-    const values = new Set(Array.from({ length: WAVE_PERIOD }, (_, t) => bobShift(t)));
-    expect(values.size).toBe(2);
-  });
-
-  it("is periodic with period WAVE_PERIOD, so the animation loops seamlessly", () => {
-    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
-      expect(bobShift(x)).toBe(bobShift(x + WAVE_PERIOD));
-    }
-  });
-});
-
-describe("driftShift", () => {
-  it("holds each position for a full 8px chunk before flipping", () => {
-    // driftShift is phase-offset from bobShift (see below), so its own
-    // flip boundary sits at pos=5, not pos=0.
-    for (let i = 5; i < 13; i++) {
-      expect(driftShift(i)).toBe(driftShift(5));
-    }
-    expect(driftShift(13)).not.toBe(driftShift(5));
-  });
-
-  it("is out of phase with bobShift, so a chunk's vertical and horizontal motion are independent", () => {
-    // If they flipped in lockstep, every chunk's horizontal and vertical
-    // moves would always coincide — no different from a single combined
-    // motion. Offsetting the phase means each chunk can be moving on one
-    // axis while holding on the other.
-    const disagreements = Array.from({ length: WAVE_PERIOD }, (_, pos) => pos).filter(
-      (pos) => (bobShift(pos) === 0) !== (driftShift(pos) === 0)
-    );
-    expect(disagreements.length).toBeGreaterThan(0);
-  });
-
-  it("is periodic with period WAVE_PERIOD, so the animation loops seamlessly", () => {
-    for (let x = 0; x < WAVE_PERIOD * 3; x++) {
-      expect(driftShift(x)).toBe(driftShift(x + WAVE_PERIOD));
-    }
-  });
-});
+import { CAT_GRID, TRAIL_FRAMES } from "./sprite-data.ts";
+import { Canvas } from "../lib/canvas.ts";
 
 describe("nyanCatElements", () => {
   const elements = nyanCatElements(40, 0);
@@ -131,12 +69,6 @@ describe("nyanCatElements", () => {
   });
 
   it("vertically centers the trail within the cat's height", () => {
-    // The trail canvas (band stack + 1 row of wave headroom) is shorter
-    // than the cat, and was top-aligned with it by default, pinning the red
-    // band's top row right against the bezel-clipped edge — invisible at
-    // 2px thick where it used to be masked by a 4px band. Center it instead
-    // so there's roughly equal breathing room top and bottom (allow
-    // off-by-one: an odd height difference can only split evenly one way).
     const trail = elements.filter((el) => el.id.startsWith("trail-"));
     const trailTop = Math.min(...trail.map((el) => el.y));
     const trailBottom = Math.max(...trail.map((el) => el.y + el.height));
@@ -144,16 +76,6 @@ describe("nyanCatElements", () => {
     const topGap = trailTop - originY;
     const bottomGap = originY + CAT_HEIGHT - trailBottom;
     expect(Math.abs(topGap - bottomGap)).toBeLessThanOrEqual(1);
-  });
-
-  it("positions blue above purple in the trail (swapped from the previous order)", () => {
-    const trail = elements.filter((el) => el.id.startsWith("trail-"));
-    const avgY = (color: string) => {
-      const matches = trail.filter((el) => el.fill_colors[0] === color);
-      expect(matches.length).toBeGreaterThan(0);
-      return matches.reduce((sum, el) => sum + el.y, 0) / matches.length;
-    };
-    expect(avgY(NYAN_COLORS.C!)).toBeLessThan(avgY(NYAN_COLORS.P!));
   });
 
   it("draws no black outline within the cat's head/fur region, just the mouth", () => {
@@ -164,65 +86,30 @@ describe("nyanCatElements", () => {
     // worth, which would mean the old lines crept back in.
     const cat = elements.filter((el) => el.id.startsWith("cat-"));
     const black = cat.filter((el) => el.fill_colors[0] === NYAN_COLORS.K);
-    // The ground-line under the whole sprite legitimately stays black —
-    // only count black elements within the head's row band (local rows
-    // 5-11, i.e. device y in [originY+5, originY+12)).
     const inHeadBand = black.filter((el) => el.y >= 5 && el.y < 12); // originY is 0 here
     expect(inHeadBand).toHaveLength(1);
     expect(inHeadBand[0]).toMatchObject({ width: 1, height: 1 });
   });
-});
 
-describe("animated trail (tick)", () => {
-  it("shifts the wave pattern as tick advances", () => {
-    const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 0);
-    const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 4);
-    expect(b).not.toEqual(a);
-  });
-
-  it("is periodic in tick with period WAVE_PERIOD, so the animation loops seamlessly", () => {
-    const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 3);
-    const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 3 + WAVE_PERIOD);
-    expect(b).toEqual(a);
-  });
-
-  it("leaves the cat untouched by tick — only the trail moves", () => {
-    const a = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 0).filter((el) => el.id.startsWith("cat-"));
-    const b = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 5).filter((el) => el.id.startsWith("cat-"));
-    expect(b).toEqual(a);
-  });
-});
-
-describe("trail bob segments move independently", () => {
-  it("different column-segments are in different bob states at the same tick, not one rigid block", () => {
-    const trailLength = DEFAULT_TRAIL_LENGTH;
-    const frame = trailAnimationFrames(trailLength)[0]!; // tick 0
-    const topRowAt = (x: number) => {
-      for (let row = 0; row < TRAIL_ANIM_HEIGHT; row++) {
-        const i = (row * trailLength + x) * 4;
-        if (!(frame[i] === 0 && frame[i + 1] === 0 && frame[i + 2] === 0)) return row;
-      }
-      return -1;
-    };
-    const topRows = new Set(Array.from({ length: WAVE_PERIOD }, (_, x) => topRowAt(x)));
-    expect(topRows.size).toBeGreaterThan(1);
-  });
-
-  it("the chunk's horizontal drift measurably changes the wave outcome for at least one column", () => {
-    // Proves drift isn't a no-op: for some x, sampling the wave at
-    // (x + drift) gives a different result than sampling it at x alone.
-    const withDrift = Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x + driftShift(x)));
-    const withoutDrift = Array.from({ length: WAVE_PERIOD }, (_, x) => waveShift(x));
-    expect(withDrift).not.toEqual(withoutDrift);
+  it("renders TRAIL_FRAMES[0] as its static trail snapshot", () => {
+    const trailCanvas = new Canvas(DEFAULT_TRAIL_LENGTH, TRAIL_ANIM_HEIGHT);
+    trailCanvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS);
+    const expected = trailCanvas.toElements("trail", 40 - DEFAULT_TRAIL_LENGTH, 0);
+    const actual = elements.filter((el) => el.id.startsWith("trail-"));
+    expect(actual).toEqual(expected);
   });
 });
 
 describe("catElements", () => {
-  it("matches exactly the cat- prefixed elements nyanCatElements produces, independent of trail params", () => {
-    const combined = nyanCatElements(40, 0, DEFAULT_TRAIL_LENGTH, 5).filter((el) =>
-      el.id.startsWith("cat-")
-    );
+  it("matches exactly the cat- prefixed elements nyanCatElements produces", () => {
+    const combined = nyanCatElements(40, 0).filter((el) => el.id.startsWith("cat-"));
     expect(catElements(40, 0)).toEqual(combined);
+  });
+
+  it("renders CAT_GRID from sprite-data.ts", () => {
+    const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+    canvas.paintGrid(CAT_GRID, NYAN_COLORS);
+    expect(catElements(40, 0)).toEqual(canvas.toElements("cat", 40, 0));
   });
 });
 
@@ -230,8 +117,9 @@ describe("trailAnimationFrames", () => {
   const trailLength = DEFAULT_TRAIL_LENGTH;
   const frames = trailAnimationFrames(trailLength);
 
-  it("returns one RGBA frame per tick in a full wave period", () => {
-    expect(frames).toHaveLength(WAVE_PERIOD);
+  it("returns one RGBA frame per entry in TRAIL_FRAMES", () => {
+    expect(frames).toHaveLength(TRAIL_FRAMES.length);
+    expect(TRAIL_FPS).toBe(TRAIL_FRAMES.length);
   });
 
   it("each frame is trailLength x TRAIL_ANIM_HEIGHT RGBA bytes", () => {
@@ -240,13 +128,16 @@ describe("trailAnimationFrames", () => {
     }
   });
 
-  it("actually animates — consecutive frames differ", () => {
-    expect(frames[0]).not.toEqual(frames[1]);
+  it("frame content matches TRAIL_FRAMES via Canvas.paintGrid", () => {
+    frames.forEach((frame, i) => {
+      const canvas = new Canvas(trailLength, TRAIL_ANIM_HEIGHT);
+      canvas.paintGrid(TRAIL_FRAMES[i]!, NYAN_COLORS);
+      expect(frame).toEqual(canvas.toRGBA());
+    });
   });
 
-  it("loops seamlessly — frame WAVE_PERIOD would repeat frame 0 (matches waveShift's periodicity)", () => {
-    const frames2 = trailAnimationFrames(trailLength);
-    expect(frames2[0]).toEqual(frames[0]);
+  it("consecutive frames differ (the trail actually animates)", () => {
+    expect(frames[0]).not.toEqual(frames[1]);
   });
 });
 
@@ -269,7 +160,6 @@ describe("stationaryOriginX", () => {
     const trailLength = DEFAULT_TRAIL_LENGTH;
     const originX = stationaryOriginX(trailLength);
 
-    // scene spans [originX - trailLength, originX + CAT_WIDTH)
     const sceneLeft = originX - trailLength;
     const sceneRight = originX + CAT_WIDTH;
     const sceneWidth = sceneRight - sceneLeft;
@@ -296,7 +186,7 @@ describe("flyingOriginX", () => {
 
   it("wraps back to the starting position once fully off-screen right, forming a loop", () => {
     const start = flyingOriginX(0, trailLength, step);
-    const range = FRONT_DISPLAY_WIDTH - start; // distance from start to fully-off-right
+    const range = FRONT_DISPLAY_WIDTH - start;
     const ticksPerLoop = range / step;
 
     expect(flyingOriginX(ticksPerLoop, trailLength, step)).toBe(start);
