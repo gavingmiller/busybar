@@ -28,15 +28,24 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
 
 ## Other apps
 
-- **nyan-cat** — pixel-art Nyan Cat on the front display.
-  - `bun run nyan-cat:stationary` — draws once, centered, stays put.
+- **nyan-cat** — pixel-art Nyan Cat on the front display. Hand-editable via
+  the `~/projects/number-munchers` pixel-art viewer tool (`npm run dev`,
+  open `viewer.html`, "BUSY BAR" section in the sidebar) rather than
+  hand-editing `src/nyan-cat/sprite-data.ts` directly.
+  - `bun run nyan-cat:stationary` — draws once, centered, stays put (legs in
+    their neutral pose, trail as a single static frame).
   - `bun run nyan-cat:flying` — loops it flying across the screen; Ctrl+C to
     stop (clears the display on exit).
-  - `bun run nyan-cat:rainbow` — cat stays centered; the rainbow trail is
-    drawn once as a native looping animation asset (`src/lib/anim-file.ts`
-    encodes the device's `.anim` format, uploaded via `POST
-    /api/assets/upload`) and the device plays/loops it forever on its own —
-    no ongoing process, nothing to Ctrl+C.
+  - `bun run nyan-cat:rainbow` — the cat runs in place (a 4-frame leg cycle)
+    while the rainbow trail scrolls behind it, composited into a single
+    native looping `.anim` asset (`src/lib/anim-file.ts` encodes the
+    device's `.anim` format, uploaded via `POST /api/assets/upload`) — the
+    device plays/loops it forever on its own, no ongoing process, nothing to
+    Ctrl+C. Composited in software (trail painted onto a `Canvas`, cat
+    painted on top of the *same* canvas) rather than sent as two separate
+    elements, because the device doesn't composite transparency between
+    layered elements — see `sceneAnimationFrames`/`nyanCatElements` in
+    `src/nyan-cat/sprite.ts`.
 - **color-grid** — a systematic 72-swatch reference palette for checking how
   a given color actually renders on the physical LED matrix before using it
   elsewhere: 12 hues (30° apart) crossed with a 3-step brightness ramp and a
