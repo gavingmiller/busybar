@@ -20,10 +20,14 @@ export const CAT_HEIGHT = CAT_FRAMES[0]!.length;
 export const TRAIL_ANIM_HEIGHT = TRAIL_FRAMES[0]!.length;
 export const DEFAULT_TRAIL_LENGTH = TRAIL_FRAMES[0]![0]!.length;
 /**
- * Frames per second the cat's 4-frame run cycle plays at on the device —
- * a light trot, not tied to TRAIL_FPS (the two loops are independent and
- * don't need to stay in sync, same as the real Nyan Cat gif's legs and
- * trail moving at their own paces).
+ * Frames per second the cat's 4-frame run cycle plays at, conceptually — a
+ * light trot, independent of TRAIL_FPS (the two loops don't need to look
+ * synced, same as the real Nyan Cat gif's legs and trail moving at their
+ * own paces). Not the device's actual playback fps for the cat, though:
+ * the composited scene asset (sceneAnimationFrames) resamples the cat into
+ * the trail's own frame timeline, so this only needs to stay a whole
+ * divisor of the trail's loop duration for that resampling to close
+ * seamlessly — see sceneAnimationFrames.
  */
 export const CAT_FPS = 6;
 /**
@@ -45,7 +49,7 @@ export const TRAIL_FPS = 16;
  * repeat-units of the 4-bump pattern (each bump+gap is 8px), so it's still a
  * complete, self-contained chunk of the zigzag rather than a mid-bump crop —
  * keeps trail elements to 30-36 across all 32 frames, comfortably under the
- * ~39 budget. The native `.anim` path (`rainbow` mode, trailAnimationFrames)
+ * ~39 budget. The native `.anim` path (`rainbow` mode, sceneAnimationFrames)
  * has no such cap and still uses the full DEFAULT_TRAIL_LENGTH.
  */
 export const STATIC_TRAIL_LENGTH = 16;
@@ -72,35 +76,6 @@ export const CAT_TRAIL_OVERLAP = Math.max(
   )
 );
 
-/**
- * Builds just the pop-tart body + head + legs (no trail), anchored at
- * (originX, originY). `frameIndex` picks a pose from CAT_FRAMES (default 0,
- * the neutral/legs-planted pose) — used by the static rectangle path
- * (`stationary`/`flying`); the animated run cycle is a separate native
- * `.anim` asset, see catAnimationFrames below.
- */
-export function catElements(
-  originX: number,
-  originY: number,
-  frameIndex: number = 0
-): RectangleElement[] {
-  const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
-  catCanvas.paintGrid(CAT_FRAMES[frameIndex]!, NYAN_COLORS);
-  return catCanvas.toElements("cat", originX, originY);
-}
-
-/**
- * One RGBA frame per entry in CAT_FRAMES, for encoding the cat's run cycle
- * as a native looping .anim asset — same pattern as trailAnimationFrames.
- */
-export function catAnimationFrames(): Uint8Array[] {
-  return CAT_FRAMES.map((grid) => {
-    const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
-    canvas.paintGrid(grid, NYAN_COLORS);
-    return canvas.toRGBA();
-  });
-}
-
 // The trail (TRAIL_ANIM_HEIGHT) is now exactly CAT_HEIGHT tall, so this is a
 // no-op offset in practice — kept as a function (rather than inlining
 // originY) in case the two heights diverge again after a hand-edit.
@@ -108,44 +83,99 @@ export function trailOriginY(originY: number): number {
   return originY + Math.floor((CAT_HEIGHT - TRAIL_ANIM_HEIGHT) / 2);
 }
 
+function paintTrail(canvas: Canvas, x: number, y: number, frameIndex: number): void {
+  canvas.paintGrid(TRAIL_FRAMES[frameIndex]!, NYAN_COLORS, x, y);
+}
+
+function paintCat(canvas: Canvas, x: number, y: number, frameIndex: number): void {
+  canvas.paintGrid(CAT_FRAMES[frameIndex]!, NYAN_COLORS, x, y);
+}
+
 /**
- * Builds the Nyan Cat sprite (pop-tart body + head + a single static trail
- * frame) anchored so the cat's bounding box top-left sits at
- * (originX, originY). The trail extends `trailLength` px to the left, i.e.
- * it trails behind the cat when the cat moves rightward. Used by the
- * `stationary`/`flying` modes, which draw a single frame (or move the cat
- * as a whole via flyingOriginX) rather than animating the trail itself —
- * the animated trail is a separate native `.anim` asset, see
- * trailAnimationFrames below.
+ * Builds just the pop-tart body + head + legs (no trail), anchored at
+ * (originX, originY). `frameIndex` picks a pose from CAT_FRAMES (default 0,
+ * the neutral/legs-planted pose).
+ */
+export function catElements(
+  originX: number,
+  originY: number,
+  frameIndex: number = 0
+): RectangleElement[] {
+  const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+  paintCat(canvas, 0, 0, frameIndex);
+  return canvas.toElements("cat", originX, originY);
+}
+
+/**
+ * Width of the composited cat+trail scene: the trail's length plus the
+ * cat's width, minus CAT_TRAIL_OVERLAP where the two are painted onto the
+ * same canvas (see CAT_TRAIL_OVERLAP and nyanCatElements below).
+ */
+export function sceneWidth(trailLength: number): number {
+  return trailLength + CAT_WIDTH - CAT_TRAIL_OVERLAP;
+}
+
+/**
+ * Builds the composited Nyan Cat scene (rainbow trail + pop-tart body +
+ * head + legs) anchored so the cat's bounding box top-left sits at
+ * (originX, originY). The trail extends `trailLength` px to the left,
+ * overlapped CAT_TRAIL_OVERLAP px under the cat's top-left corner.
+ *
+ * The device can't layer two separate elements with transparency — an
+ * element's background doesn't composite against whatever's underneath it,
+ * confirmed live (a second AnimationElement drawn "on top" of the trail
+ * just showed a hard black gap at the cat's transparent notch instead of
+ * the trail peeking through). So trail and cat are painted onto ONE shared
+ * Canvas here — composited in software, trail first then cat on top, with
+ * Canvas.paintGrid's own background-skip doing the transparency handling —
+ * before ever being converted to device elements. Used by the
+ * `stationary`/`flying` modes; the animated run cycle is a separate native
+ * `.anim` asset built the same way, see sceneAnimationFrames below.
  */
 export function nyanCatElements(
   originX: number,
   originY: number,
   trailLength: number = STATIC_TRAIL_LENGTH
 ): RectangleElement[] {
-  const trailCanvas = new Canvas(trailLength, TRAIL_ANIM_HEIGHT);
-  trailCanvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS);
-
-  return [
-    // Overlapped CAT_TRAIL_OVERLAP px under the cat (drawn after, so it
-    // paints on top) so the trail shows through the cat's top-left notch —
-    // see CAT_TRAIL_OVERLAP's own comment.
-    ...trailCanvas.toElements("trail", originX - trailLength + CAT_TRAIL_OVERLAP, trailOriginY(originY)),
-    ...catElements(originX, originY),
-  ];
+  const canvas = new Canvas(sceneWidth(trailLength), CAT_HEIGHT);
+  paintTrail(canvas, 0, trailOriginY(0), 0);
+  paintCat(canvas, trailLength - CAT_TRAIL_OVERLAP, 0, 0);
+  return canvas.toElements("scene", originX - trailLength + CAT_TRAIL_OVERLAP, originY);
 }
 
 /**
- * One RGBA frame per entry in TRAIL_FRAMES, for encoding the trail as a
- * native looping .anim asset. Each frame is `trailLength x
- * TRAIL_ANIM_HEIGHT` pixels (see Canvas.toRGBA). TRAIL_FRAMES is a static,
- * hand-editable data table (see sprite-data.ts) — there's no formula here
- * anymore, just rasterizing each stored frame.
+ * One RGBA frame per entry in TRAIL_FRAMES, for encoding the composited
+ * cat+trail scene as a single native looping .anim asset (see
+ * nyanCatElements's comment on why this must be pre-composited in software
+ * rather than sent as two separate device elements).
+ *
+ * Sampled at the trail's own native cadence (TRAIL_FPS / TRAIL_FRAMES.length)
+ * so the trail reproduces exactly 1:1; the cat's pose is resampled to fit —
+ * at combined frame `i`, elapsed time is i/TRAIL_FPS, so the showing cat
+ * frame is floor(i * CAT_FPS / TRAIL_FPS) % CAT_FRAMES.length. This only
+ * loops seamlessly if the trail's full loop duration is a whole multiple of
+ * the cat's — true today (2s trail loop = exactly 3 cat loops of ~0.667s
+ * each) — asserted below so a future frame-count/fps change that breaks
+ * this fails loudly instead of producing a subtle seam glitch.
  */
-export function trailAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
-  return TRAIL_FRAMES.map((grid) => {
-    const canvas = new Canvas(trailLength, TRAIL_ANIM_HEIGHT);
-    canvas.paintGrid(grid, NYAN_COLORS);
+export function sceneAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
+  const trailLoopUnits = TRAIL_FRAMES.length * CAT_FPS;
+  const catLoopUnits = CAT_FRAMES.length * TRAIL_FPS;
+  if (trailLoopUnits % catLoopUnits !== 0) {
+    throw new Error(
+      "sceneAnimationFrames: the trail's loop duration isn't a whole multiple of the cat's — " +
+        "the combined scene wouldn't loop seamlessly. Adjust CAT_FPS/CAT_FRAMES or TRAIL_FPS/TRAIL_FRAMES."
+    );
+  }
+
+  const width = sceneWidth(trailLength);
+  const catX = trailLength - CAT_TRAIL_OVERLAP;
+  const trailY = trailOriginY(0);
+  return TRAIL_FRAMES.map((_, i) => {
+    const catIndex = Math.floor((i * CAT_FPS) / TRAIL_FPS) % CAT_FRAMES.length;
+    const canvas = new Canvas(width, CAT_HEIGHT);
+    paintTrail(canvas, 0, trailY, i);
+    paintCat(canvas, catX, 0, catIndex);
     return canvas.toRGBA();
   });
 }

@@ -3,17 +3,13 @@ import { runAnimation, installShutdownHandler, type AnimationHandle } from "../l
 import { encodeAnimFile } from "../lib/anim-file.ts";
 import {
   nyanCatPayload,
-  trailAnimationFrames,
-  catAnimationFrames,
-  trailOriginY,
+  sceneAnimationFrames,
+  sceneWidth,
   stationaryOriginX,
   flyingOriginX,
   DEFAULT_TRAIL_LENGTH,
-  TRAIL_ANIM_HEIGHT,
-  TRAIL_FPS,
-  CAT_WIDTH,
   CAT_HEIGHT,
-  CAT_FPS,
+  TRAIL_FPS,
   CAT_TRAIL_OVERLAP,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
@@ -22,12 +18,11 @@ import {
 const APPLICATION_NAME = "nyan_cat";
 const FRAME_INTERVAL_MS = 150;
 const FLYING_STEP_PX = 2;
-const RAINBOW_ASSET_FILENAME = "rainbow-trail.anim";
-const CAT_RUN_ASSET_FILENAME = "cat-run.anim";
-// TRAIL_FPS is fixed at the trail's 1px/frame scroll rate, not derived from
-// frame count — a similar visual pace to the old ~150ms/frame polling loop,
-// just now handled natively by the device instead of us re-POSTing every
-// frame.
+const SCENE_ASSET_FILENAME = "nyan-cat-scene.anim";
+// The composited scene samples at the trail's own native cadence (see
+// sceneAnimationFrames) — a similar visual pace to the old ~150ms/frame
+// polling loop, just now handled natively by the device instead of us
+// re-POSTing every frame.
 const RAINBOW_FPS = TRAIL_FPS;
 // A settle delay between uploading an asset and referencing it in a draw —
 // mirrors the firmware's own image-upload integration test, which sleeps 5s
@@ -56,14 +51,16 @@ export async function runFlying(
 }
 
 /**
- * Draws the cat's run cycle and the rainbow trail as two independent native
- * looping AnimationElements — the device plays and loops both forever on
- * its own, at their own paces (CAT_FPS vs TRAIL_FPS), same as the old
- * client-side clear+draw polling loop this replaced, which flashed the
- * device's built-in idle app through the gap between our DELETE and POST
- * every frame (upsert-by-id semantics mean a DELETE always leaves us with
- * zero elements for a moment). One-shot, like runStationary — there's
- * nothing left to poll, so no AnimationHandle.
+ * Draws the composited cat+trail scene as a single native looping
+ * AnimationElement — the device plays and loops it forever on its own.
+ * Composited into one asset rather than two separate AnimationElements
+ * because the device can't layer elements with transparency (confirmed
+ * live — see sceneAnimationFrames/nyanCatElements in sprite.ts for the
+ * software-compositing fix). Replaces the old client-side clear+draw
+ * polling loop, which flashed the device's built-in idle app through the
+ * gap between our DELETE and POST every frame (upsert-by-id semantics mean
+ * a DELETE always leaves us with zero elements for a moment). One-shot,
+ * like runStationary — there's nothing left to poll, so no AnimationHandle.
  */
 export async function runRainbow(
   baseUrl: string,
@@ -82,22 +79,13 @@ export async function runRainbow(
   // CAT_FRAMES) safe without a separate manual clear step.
   await clearAllDisplays(baseUrl, fetchImpl);
 
-  const trailBytes = encodeAnimFile({
-    width: trailLength,
-    height: TRAIL_ANIM_HEIGHT,
-    fps: RAINBOW_FPS,
-    frames: trailAnimationFrames(trailLength),
-  });
-  const catBytes = encodeAnimFile({
-    width: CAT_WIDTH,
+  const bytes = encodeAnimFile({
+    width: sceneWidth(trailLength),
     height: CAT_HEIGHT,
-    fps: CAT_FPS,
-    frames: catAnimationFrames(),
+    fps: RAINBOW_FPS,
+    frames: sceneAnimationFrames(trailLength),
   });
-  await Promise.all([
-    uploadAsset(baseUrl, APPLICATION_NAME, RAINBOW_ASSET_FILENAME, trailBytes, fetchImpl),
-    uploadAsset(baseUrl, APPLICATION_NAME, CAT_RUN_ASSET_FILENAME, catBytes, fetchImpl),
-  ]);
+  await uploadAsset(baseUrl, APPLICATION_NAME, SCENE_ASSET_FILENAME, bytes, fetchImpl);
 
   if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
 
@@ -107,30 +95,12 @@ export async function runRainbow(
       application_name: APPLICATION_NAME,
       priority: DRAW_PRIORITY,
       elements: [
-        // Trail drawn first (underneath), overlapped CAT_TRAIL_OVERLAP px
-        // under the cat's left edge so it shows through the cat's
-        // top-left notch instead of stopping at a hard seam — cat is
-        // listed after (on top) so its opaque pixels still cover the
-        // overlap everywhere except that notch. See CAT_TRAIL_OVERLAP's
-        // own comment in sprite.ts.
         {
-          id: "trail-anim",
+          id: "scene-anim",
           type: "animation",
-          path: RAINBOW_ASSET_FILENAME,
+          path: SCENE_ASSET_FILENAME,
           loop: true,
           x: originX - trailLength + CAT_TRAIL_OVERLAP,
-          // TRAIL_ANIM_HEIGHT now exactly equals CAT_HEIGHT (both derived
-          // from sprite-data.ts), so trailOriginY() is a no-op offset here —
-          // kept in case the two diverge again after a hand-edit.
-          y: trailOriginY(originY),
-          display: "front",
-        },
-        {
-          id: "cat-anim",
-          type: "animation",
-          path: CAT_RUN_ASSET_FILENAME,
-          loop: true,
-          x: originX,
           y: originY,
           display: "front",
         },
