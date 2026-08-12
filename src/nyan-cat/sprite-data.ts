@@ -1,9 +1,8 @@
 // Data-only file: Nyan Cat and its rainbow trail, hand-authored pixel art.
 // Every export here is a plain literal meant to be safely overwritten by an
-// external pixel editor (see ~/projects/number-munchers viewer.html — the
-// "Nyan Cat" and "Nyan Cat Trail" sprites) — no logic, no computed values.
-// One character per pixel; "." is transparent/background; every other
-// character keys into NYAN_COLORS below.
+// external pixel editor — no logic, no computed values. One character per
+// pixel; "." is transparent/background; every other character keys into
+// NYAN_COLORS below.
 
 export const NYAN_COLORS: Record<string, string> = {
   K: "#000000FF",

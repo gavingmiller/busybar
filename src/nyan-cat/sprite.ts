@@ -13,8 +13,8 @@ export type { RectangleElement, DisplayPayload };
 export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor, NYAN_COLORS };
 
 // Dimensions are derived from the hand-authored data (sprite-data.ts) rather
-// than hardcoded, so editing the art (e.g. via the number-munchers viewer
-// tool) can't silently desync from these constants.
+// than hardcoded, so editing the art (e.g. via an external pixel editor)
+// can't silently desync from these constants.
 export const CAT_WIDTH = CAT_FRAMES[0]![0]!.length;
 export const CAT_HEIGHT = CAT_FRAMES[0]!.length;
 export const TRAIL_ANIM_HEIGHT = TRAIL_FRAMES[0]!.length;
@@ -61,8 +61,8 @@ export const STATIC_TRAIL_LENGTH = 16;
  * have a few leading "." pixels there) instead of stopping at a hard seam.
  * Derived from the art itself (the longest run of leading transparent
  * pixels across any row of any frame) rather than hardcoded, so a future
- * hand-edit to the notch's shape via the number-munchers viewer tool can't
- * silently desync from this. Elsewhere (rows with no notch) the cat is
+ * hand-edit to the notch's shape can't silently desync from this.
+ * Elsewhere (rows with no notch) the cat is
  * fully opaque and simply paints over this same overlap, so it's a no-op
  * there — only rows with a transparent gap actually reveal the trail.
  */

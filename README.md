@@ -28,10 +28,9 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
 
 ## Other apps
 
-- **nyan-cat** — pixel-art Nyan Cat on the front display. Hand-editable via
-  the `~/projects/number-munchers` pixel-art viewer tool (`npm run dev`,
-  open `viewer.html`, "BUSY BAR" section in the sidebar) rather than
-  hand-editing `src/nyan-cat/sprite-data.ts` directly.
+- **nyan-cat** — pixel-art Nyan Cat on the front display. `src/nyan-cat/
+  sprite-data.ts` holds the pixel art as plain ASCII-grid literals, meant to
+  be hand-edited with an external pixel editor rather than by hand.
   - `bun run nyan-cat:stationary` — draws once, centered, stays put (legs in
     their neutral pose, trail as a single static frame).
   - `bun run nyan-cat:flying` — loops it flying across the screen; Ctrl+C to
