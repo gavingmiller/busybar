@@ -19,9 +19,10 @@ const APPLICATION_NAME = "nyan_cat";
 const FRAME_INTERVAL_MS = 150;
 const FLYING_STEP_PX = 2;
 const RAINBOW_ASSET_FILENAME = "rainbow-trail.anim";
-// Loops one full TRAIL_FPS-frame cycle per second — a similar visual
-// pace to the old ~150ms/frame polling loop, just now handled natively by
-// the device instead of us re-POSTing every frame.
+// TRAIL_FPS is fixed at the trail's 1px/frame scroll rate, not derived from
+// frame count — a similar visual pace to the old ~150ms/frame polling loop,
+// just now handled natively by the device instead of us re-POSTing every
+// frame.
 const RAINBOW_FPS = TRAIL_FPS;
 // A settle delay between uploading an asset and referencing it in a draw —
 // mirrors the firmware's own image-upload integration test, which sleeps 5s

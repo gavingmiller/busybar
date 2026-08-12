@@ -119,7 +119,10 @@ describe("trailAnimationFrames", () => {
 
   it("returns one RGBA frame per entry in TRAIL_FRAMES", () => {
     expect(frames).toHaveLength(TRAIL_FRAMES.length);
-    expect(TRAIL_FPS).toBe(TRAIL_FRAMES.length);
+  });
+
+  it("plays at a fixed 16fps regardless of frame count, preserving scroll speed", () => {
+    expect(TRAIL_FPS).toBe(16);
   });
 
   it("each frame is trailLength x TRAIL_ANIM_HEIGHT RGBA bytes", () => {

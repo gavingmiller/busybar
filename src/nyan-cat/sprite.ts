@@ -19,8 +19,14 @@ export const CAT_WIDTH = CAT_GRID[0]!.length;
 export const CAT_HEIGHT = CAT_GRID.length;
 export const TRAIL_ANIM_HEIGHT = TRAIL_FRAMES[0]!.length;
 export const DEFAULT_TRAIL_LENGTH = TRAIL_FRAMES[0]![0]!.length;
-/** Frames per second the trail's 16-frame loop plays at on the device. */
-export const TRAIL_FPS = TRAIL_FRAMES.length;
+/**
+ * Frames per second the trail loop plays at on the device — fixed at the
+ * trail's 1px-per-frame scroll rate (16px/sec) rather than derived from
+ * TRAIL_FRAMES.length, so the loop's scroll speed stays constant regardless
+ * of how many frames the physical period needs (32, to cover a full lap of
+ * the 2 desynced bumps — see the comment above TRAIL_FRAMES).
+ */
+export const TRAIL_FPS = 16;
 
 /** Builds just the pop-tart body + head (no trail), anchored at (originX, originY). */
 export function catElements(originX: number, originY: number): RectangleElement[] {
