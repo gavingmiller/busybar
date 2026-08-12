@@ -4,6 +4,7 @@ import {
   nyanCatElements,
   catElements,
   trailAnimationFrames,
+  catAnimationFrames,
   stationaryOriginX,
   flyingOriginX,
   NYAN_COLORS,
@@ -12,10 +13,11 @@ import {
   CAT_HEIGHT,
   TRAIL_ANIM_HEIGHT,
   TRAIL_FPS,
+  CAT_FPS,
   DEFAULT_TRAIL_LENGTH,
   STATIC_TRAIL_LENGTH,
 } from "./sprite.ts";
-import { CAT_GRID, TRAIL_FRAMES } from "./sprite-data.ts";
+import { CAT_FRAMES, TRAIL_FRAMES } from "./sprite-data.ts";
 import { Canvas } from "../lib/canvas.ts";
 
 describe("nyanCatElements", () => {
@@ -107,10 +109,46 @@ describe("catElements", () => {
     expect(catElements(40, 0)).toEqual(combined);
   });
 
-  it("renders CAT_GRID from sprite-data.ts", () => {
+  it("renders CAT_FRAMES[0] (the neutral pose) from sprite-data.ts by default", () => {
     const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
-    canvas.paintGrid(CAT_GRID, NYAN_COLORS);
+    canvas.paintGrid(CAT_FRAMES[0]!, NYAN_COLORS);
     expect(catElements(40, 0)).toEqual(canvas.toElements("cat", 40, 0));
+  });
+
+  it("renders the requested frameIndex", () => {
+    const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+    canvas.paintGrid(CAT_FRAMES[1]!, NYAN_COLORS);
+    expect(catElements(40, 0, 1)).toEqual(canvas.toElements("cat", 40, 0));
+  });
+});
+
+describe("catAnimationFrames", () => {
+  const frames = catAnimationFrames();
+
+  it("returns one RGBA frame per entry in CAT_FRAMES", () => {
+    expect(frames).toHaveLength(CAT_FRAMES.length);
+  });
+
+  it("plays at a fixed light-trot fps", () => {
+    expect(CAT_FPS).toBeGreaterThan(0);
+  });
+
+  it("each frame is CAT_WIDTH x CAT_HEIGHT RGBA bytes", () => {
+    for (const frame of frames) {
+      expect(frame.length).toBe(CAT_WIDTH * CAT_HEIGHT * 4);
+    }
+  });
+
+  it("frame content matches CAT_FRAMES via Canvas.paintGrid", () => {
+    frames.forEach((frame, i) => {
+      const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+      canvas.paintGrid(CAT_FRAMES[i]!, NYAN_COLORS);
+      expect(frame).toEqual(canvas.toRGBA());
+    });
+  });
+
+  it("the legs actually move (some frame differs from the neutral pose)", () => {
+    expect(frames.some((f) => f !== frames[0] && !frames[0]!.every((b, i) => b === f[i]))).toBe(true);
   });
 });
 

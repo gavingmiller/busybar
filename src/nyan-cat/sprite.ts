@@ -7,7 +7,7 @@ import {
   toDeviceColor,
 } from "../lib/display.ts";
 import { Canvas } from "../lib/canvas.ts";
-import { NYAN_COLORS, CAT_GRID, TRAIL_FRAMES } from "./sprite-data.ts";
+import { NYAN_COLORS, CAT_FRAMES, TRAIL_FRAMES } from "./sprite-data.ts";
 
 export type { RectangleElement, DisplayPayload };
 export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor, NYAN_COLORS };
@@ -15,10 +15,17 @@ export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor
 // Dimensions are derived from the hand-authored data (sprite-data.ts) rather
 // than hardcoded, so editing the art (e.g. via the number-munchers viewer
 // tool) can't silently desync from these constants.
-export const CAT_WIDTH = CAT_GRID[0]!.length;
-export const CAT_HEIGHT = CAT_GRID.length;
+export const CAT_WIDTH = CAT_FRAMES[0]![0]!.length;
+export const CAT_HEIGHT = CAT_FRAMES[0]!.length;
 export const TRAIL_ANIM_HEIGHT = TRAIL_FRAMES[0]!.length;
 export const DEFAULT_TRAIL_LENGTH = TRAIL_FRAMES[0]![0]!.length;
+/**
+ * Frames per second the cat's 4-frame run cycle plays at on the device —
+ * a light trot, not tied to TRAIL_FPS (the two loops are independent and
+ * don't need to stay in sync, same as the real Nyan Cat gif's legs and
+ * trail moving at their own paces).
+ */
+export const CAT_FPS = 6;
 /**
  * Frames per second the trail loop plays at on the device — fixed at the
  * trail's 1px-per-frame scroll rate (16px/sec) rather than derived from
@@ -43,11 +50,33 @@ export const TRAIL_FPS = 16;
  */
 export const STATIC_TRAIL_LENGTH = 16;
 
-/** Builds just the pop-tart body + head (no trail), anchored at (originX, originY). */
-export function catElements(originX: number, originY: number): RectangleElement[] {
+/**
+ * Builds just the pop-tart body + head + legs (no trail), anchored at
+ * (originX, originY). `frameIndex` picks a pose from CAT_FRAMES (default 0,
+ * the neutral/legs-planted pose) — used by the static rectangle path
+ * (`stationary`/`flying`); the animated run cycle is a separate native
+ * `.anim` asset, see catAnimationFrames below.
+ */
+export function catElements(
+  originX: number,
+  originY: number,
+  frameIndex: number = 0
+): RectangleElement[] {
   const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
-  catCanvas.paintGrid(CAT_GRID, NYAN_COLORS);
+  catCanvas.paintGrid(CAT_FRAMES[frameIndex]!, NYAN_COLORS);
   return catCanvas.toElements("cat", originX, originY);
+}
+
+/**
+ * One RGBA frame per entry in CAT_FRAMES, for encoding the cat's run cycle
+ * as a native looping .anim asset — same pattern as trailAnimationFrames.
+ */
+export function catAnimationFrames(): Uint8Array[] {
+  return CAT_FRAMES.map((grid) => {
+    const canvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
+    canvas.paintGrid(grid, NYAN_COLORS);
+    return canvas.toRGBA();
+  });
 }
 
 // The trail (TRAIL_ANIM_HEIGHT) is now exactly CAT_HEIGHT tall, so this is a

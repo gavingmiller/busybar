@@ -1,10 +1,3 @@
-// Data-only file: Nyan Cat and its rainbow trail, hand-authored pixel art.
-// Every export here is a plain literal meant to be safely overwritten by an
-// external pixel editor (see ~/projects/number-munchers viewer.html — the
-// "Nyan Cat" and "Nyan Cat Trail" sprites) — no logic, no computed values.
-// One character per pixel; "." is transparent/background; every other
-// character keys into NYAN_COLORS below.
-
 export const NYAN_COLORS: Record<string, string> = {
   K: "#000000FF", // black outline / mouth
   T: "#F5E1B8FF", // light tan crust
@@ -19,49 +12,83 @@ export const NYAN_COLORS: Record<string, string> = {
   P: "#8000FFFF", // rainbow purple
 };
 
-// 34 wide x 14 tall. Rows 0-4 have no cat (H) content — the pop-tart crust
-// forms the outer edge with no border line. The two "." gaps in row 8 read
-// as eyes; the single K in row 9 is the mouth.
-export const CAT_GRID: string[] = [
-  "...TTTTTTTTTTTTTTTTT............",
-  "RRTTTTTTTTTTTTTTTTTTT...........",
-  "TTTMMMMMMMMMMMMMTTTTTT..........",
-  "TTMMMDMMMMMMMMMDMMMMTT..........",
-  "TTMMMMMDMMMMMMMHMMMMTT.H........",
-  "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
-  "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
-  "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
-  "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
-  "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
-  "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
-  "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
-  ".HTTTTTTTTTTTTTHHTTTKHHKK.......",
-  ".HHKKKHHKKKKKKKHHKKKKHHK........",
+// 32 wide x 14 tall, one entry per running-cycle frame (4 frames, looped by
+// the device natively at CAT_FPS). Only the leg region (rows 11-13) differs
+// between frames — body/head/colors are identical to the original static
+// pose. Cycle: neutral (both pairs planted) -> front pair lifts (retracts up
+// off row 13 onto row 12) -> neutral -> back pair lifts (retracts off row 13;
+// row 12 already had the back toes at rest, so this reads as the back legs
+// tucking further up). Seeded from Gavin's reference GIF frames (2026-08-11)
+// as a starting point — hand-edit via the number-munchers viewer tool (the
+// "Nyan Cat" sidebar entry is now a 4-frame strip, same as "Nyan Cat Trail")
+// to refine the exact leg shapes.
+export const CAT_FRAMES: string[][] = [
+  [
+    "...TTTTTTTTTTTTTTTTT............",
+    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "TTTMMMMMMMMMMMMMTTTTTT..........",
+    "TTMMMDMMMMMMMMMDMMMMTT..........",
+    "TTMMMMMDMMMMMMMHMMMMTT.H........",
+    "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
+    "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
+    "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
+    "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
+    "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
+    "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
+    "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
+    ".HTTTTTTTTTTTTTHHTTTKHHKK.......",
+    ".HHKKKHHKKKKKKKHHKKKKHHK........",
+  ],
+  [
+    "...TTTTTTTTTTTTTTTTT............",
+    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "TTTMMMMMMMMMMMMMTTTTTT..........",
+    "TTMMMDMMMMMMMMMDMMMMTT..........",
+    "TTMMMMMDMMMMMMMHMMMMTT.H........",
+    "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
+    "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
+    "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
+    "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
+    "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
+    "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
+    "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
+    ".HHTTTHHTTTTTTTHHTTTKHHKK.......",
+    "...KKK..KKKKKKKHHKKKKHHK........",
+  ],
+  [
+    "...TTTTTTTTTTTTTTTTT............",
+    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "TTTMMMMMMMMMMMMMTTTTTT..........",
+    "TTMMMDMMMMMMMMMDMMMMTT..........",
+    "TTMMMMMDMMMMMMMHMMMMTT.H........",
+    "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
+    "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
+    "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
+    "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
+    "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
+    "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
+    "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
+    ".HTTTTTTTTTTTTTHHTTTKHHKK.......",
+    ".HHKKKHHKKKKKKKHHKKKKHHK........",
+  ],
+  [
+    "...TTTTTTTTTTTTTTTTT............",
+    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "TTTMMMMMMMMMMMMMTTTTTT..........",
+    "TTMMMDMMMMMMMMMDMMMMTT..........",
+    "TTMMMMMDMMMMMMMHMMMMTT.H........",
+    "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
+    "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
+    "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
+    "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
+    "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
+    "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
+    "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
+    ".HTTTTTTTTTTTTTHHTTTKHHKK.......",
+    ".HHKKKHHKKKKKKK..KKKK..K........",
+  ],
 ];
 
-// 32 wide x 14 tall, one entry per animation frame (32 frames, looped by the
-// device natively at TRAIL_FPS=16, so the loop takes 2 real seconds). The
-// trail has 4 simultaneous 6px-wide "bumps" scrolling left 1px/frame,
-// spaced 8px apart (so only 2px of flat/resting trail separates each pair
-// of bumps — a tight zigzag closer to the original Nyan Cat's look, vs the
-// earlier 2-bump/8px-wide design which had 8 flat resting columns between
-// bumps). Adjacent bumps are always in opposite up/down phase (bump 0 & 2
-// share phase, bump 1 & 3 share the opposite phase), and each bump
-// independently alternates peaks-up/peaks-down every 2 frames (period 4),
-// same timing as before.
-//
-// 32 frames, not 16 or 8: with bumps spaced 8px apart on a 32px-wide trail,
-// naive symmetry might suggest an 8-frame loop (since after 8 frames each
-// bump sits where the next one started) — but because adjacent bumps are in
-// OPPOSITE phase, folding to any period shorter than the true 32-frame
-// physical lap forces a bump's own up/down parity to get silently
-// reassigned mid-cycle (this exact bug, in the old 2-bump/16-frame version,
-// caused a visible stutter — see git history commit 11bc484). Storing the
-// full 32-frame period keeps each bump's position and direction a single
-// continuous function of tick, with no reassignment anywhere: verified by
-// tracking each of the 4 bumps as a continuous identity across all 32
-// frames (never held at one direction for anything but 2 frames) and
-// confirming frame 32 exactly matches frame 0.
 export const TRAIL_FRAMES: string[][] = [
   [
     ".....RRRRRR..........RRRRRR.....",

@@ -1,16 +1,19 @@
-import { drawFrame, uploadAsset } from "../lib/busybar-client.ts";
+import { drawFrame, uploadAsset, clearAllDisplays } from "../lib/busybar-client.ts";
 import { runAnimation, installShutdownHandler, type AnimationHandle } from "../lib/animate.ts";
 import { encodeAnimFile } from "../lib/anim-file.ts";
 import {
   nyanCatPayload,
-  catElements,
   trailAnimationFrames,
+  catAnimationFrames,
   trailOriginY,
   stationaryOriginX,
   flyingOriginX,
   DEFAULT_TRAIL_LENGTH,
   TRAIL_ANIM_HEIGHT,
   TRAIL_FPS,
+  CAT_WIDTH,
+  CAT_HEIGHT,
+  CAT_FPS,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
 } from "./sprite.ts";
@@ -19,6 +22,7 @@ const APPLICATION_NAME = "nyan_cat";
 const FRAME_INTERVAL_MS = 150;
 const FLYING_STEP_PX = 2;
 const RAINBOW_ASSET_FILENAME = "rainbow-trail.anim";
+const CAT_RUN_ASSET_FILENAME = "cat-run.anim";
 // TRAIL_FPS is fixed at the trail's 1px/frame scroll rate, not derived from
 // frame count — a similar visual pace to the old ~150ms/frame polling loop,
 // just now handled natively by the device instead of us re-POSTing every
@@ -51,13 +55,14 @@ export async function runFlying(
 }
 
 /**
- * Draws the cat once (static rectangles, unchanged) plus the rainbow trail
- * as a single native looping AnimationElement — the device plays and loops
- * it forever on its own. Replaces the old client-side clear+draw polling
- * loop, which flashed the device's built-in idle app through the gap
- * between our DELETE and POST every frame (upsert-by-id semantics mean a
- * DELETE always leaves us with zero elements for a moment). One-shot, like
- * runStationary — there's nothing left to poll, so no AnimationHandle.
+ * Draws the cat's run cycle and the rainbow trail as two independent native
+ * looping AnimationElements — the device plays and loops both forever on
+ * its own, at their own paces (CAT_FPS vs TRAIL_FPS), same as the old
+ * client-side clear+draw polling loop this replaced, which flashed the
+ * device's built-in idle app through the gap between our DELETE and POST
+ * every frame (upsert-by-id semantics mean a DELETE always leaves us with
+ * zero elements for a moment). One-shot, like runStationary — there's
+ * nothing left to poll, so no AnimationHandle.
  */
 export async function runRainbow(
   baseUrl: string,
@@ -68,13 +73,30 @@ export async function runRainbow(
   const originX = stationaryOriginX(trailLength);
   const originY = VERTICAL_SAFE_MARGIN;
 
-  const bytes = encodeAnimFile({
+  // The device holds an .anim asset file open while it's actively looping
+  // that asset, so re-uploading over the same filename 508s "Failed to open
+  // file for writing" unless the display is cleared first — bit us live the
+  // first time this ran twice in a row (busybar commit 11bc484's memory
+  // note). Clearing here makes re-running this function (e.g. iterating on
+  // CAT_FRAMES) safe without a separate manual clear step.
+  await clearAllDisplays(baseUrl, fetchImpl);
+
+  const trailBytes = encodeAnimFile({
     width: trailLength,
     height: TRAIL_ANIM_HEIGHT,
     fps: RAINBOW_FPS,
     frames: trailAnimationFrames(trailLength),
   });
-  await uploadAsset(baseUrl, APPLICATION_NAME, RAINBOW_ASSET_FILENAME, bytes, fetchImpl);
+  const catBytes = encodeAnimFile({
+    width: CAT_WIDTH,
+    height: CAT_HEIGHT,
+    fps: CAT_FPS,
+    frames: catAnimationFrames(),
+  });
+  await Promise.all([
+    uploadAsset(baseUrl, APPLICATION_NAME, RAINBOW_ASSET_FILENAME, trailBytes, fetchImpl),
+    uploadAsset(baseUrl, APPLICATION_NAME, CAT_RUN_ASSET_FILENAME, catBytes, fetchImpl),
+  ]);
 
   if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
 
@@ -84,7 +106,15 @@ export async function runRainbow(
       application_name: APPLICATION_NAME,
       priority: DRAW_PRIORITY,
       elements: [
-        ...catElements(originX, originY),
+        {
+          id: "cat-anim",
+          type: "animation",
+          path: CAT_RUN_ASSET_FILENAME,
+          loop: true,
+          x: originX,
+          y: originY,
+          display: "front",
+        },
         {
           id: "trail-anim",
           type: "animation",
