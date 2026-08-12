@@ -14,6 +14,7 @@ import {
   TRAIL_ANIM_HEIGHT,
   TRAIL_FPS,
   CAT_FPS,
+  CAT_TRAIL_OVERLAP,
   DEFAULT_TRAIL_LENGTH,
   STATIC_TRAIL_LENGTH,
 } from "./sprite.ts";
@@ -54,11 +55,14 @@ describe("nyanCatElements", () => {
     }
   });
 
-  it("positions the entire rainbow trail to the left of the cat's origin", () => {
+  it("positions the trail to the left of the cat's origin, overlapping under its top-left notch", () => {
+    // CAT_TRAIL_OVERLAP lets the trail's rightmost pixels peek through the
+    // cat's transparent top-left corner rather than stopping at a hard
+    // seam — see CAT_TRAIL_OVERLAP's own comment in sprite.ts.
     const trail = elements.filter((el) => el.id.startsWith("trail-"));
     expect(trail.length).toBeGreaterThan(0);
     for (const band of trail) {
-      expect(band.x + band.width).toBeLessThanOrEqual(40);
+      expect(band.x + band.width).toBeLessThanOrEqual(40 + CAT_TRAIL_OVERLAP);
     }
   });
 
@@ -97,7 +101,7 @@ describe("nyanCatElements", () => {
   it("renders TRAIL_FRAMES[0] as its static trail snapshot", () => {
     const trailCanvas = new Canvas(STATIC_TRAIL_LENGTH, TRAIL_ANIM_HEIGHT);
     trailCanvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS);
-    const expected = trailCanvas.toElements("trail", 40 - STATIC_TRAIL_LENGTH, 0);
+    const expected = trailCanvas.toElements("trail", 40 - STATIC_TRAIL_LENGTH + CAT_TRAIL_OVERLAP, 0);
     const actual = elements.filter((el) => el.id.startsWith("trail-"));
     expect(actual).toEqual(expected);
   });

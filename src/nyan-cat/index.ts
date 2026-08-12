@@ -14,6 +14,7 @@ import {
   CAT_WIDTH,
   CAT_HEIGHT,
   CAT_FPS,
+  CAT_TRAIL_OVERLAP,
   VERTICAL_SAFE_MARGIN,
   DRAW_PRIORITY,
 } from "./sprite.ts";
@@ -106,6 +107,24 @@ export async function runRainbow(
       application_name: APPLICATION_NAME,
       priority: DRAW_PRIORITY,
       elements: [
+        // Trail drawn first (underneath), overlapped CAT_TRAIL_OVERLAP px
+        // under the cat's left edge so it shows through the cat's
+        // top-left notch instead of stopping at a hard seam — cat is
+        // listed after (on top) so its opaque pixels still cover the
+        // overlap everywhere except that notch. See CAT_TRAIL_OVERLAP's
+        // own comment in sprite.ts.
+        {
+          id: "trail-anim",
+          type: "animation",
+          path: RAINBOW_ASSET_FILENAME,
+          loop: true,
+          x: originX - trailLength + CAT_TRAIL_OVERLAP,
+          // TRAIL_ANIM_HEIGHT now exactly equals CAT_HEIGHT (both derived
+          // from sprite-data.ts), so trailOriginY() is a no-op offset here —
+          // kept in case the two diverge again after a hand-edit.
+          y: trailOriginY(originY),
+          display: "front",
+        },
         {
           id: "cat-anim",
           type: "animation",
@@ -113,18 +132,6 @@ export async function runRainbow(
           loop: true,
           x: originX,
           y: originY,
-          display: "front",
-        },
-        {
-          id: "trail-anim",
-          type: "animation",
-          path: RAINBOW_ASSET_FILENAME,
-          loop: true,
-          x: originX - trailLength,
-          // TRAIL_ANIM_HEIGHT now exactly equals CAT_HEIGHT (both derived
-          // from sprite-data.ts), so trailOriginY() is a no-op offset here —
-          // kept in case the two diverge again after a hand-edit.
-          y: trailOriginY(originY),
           display: "front",
         },
       ],

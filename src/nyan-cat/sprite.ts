@@ -51,6 +51,28 @@ export const TRAIL_FPS = 16;
 export const STATIC_TRAIL_LENGTH = 16;
 
 /**
+ * How many pixels the trail should be drawn overlapping *under* the cat's
+ * left edge, so the trail shows through the transparent notch in the cat's
+ * top-left corner (the pop-tart's rounded corner — rows 0-1 of CAT_FRAMES
+ * have a few leading "." pixels there) instead of stopping at a hard seam.
+ * Derived from the art itself (the longest run of leading transparent
+ * pixels across any row of any frame) rather than hardcoded, so a future
+ * hand-edit to the notch's shape via the number-munchers viewer tool can't
+ * silently desync from this. Elsewhere (rows with no notch) the cat is
+ * fully opaque and simply paints over this same overlap, so it's a no-op
+ * there — only rows with a transparent gap actually reveal the trail.
+ */
+export const CAT_TRAIL_OVERLAP = Math.max(
+  ...CAT_FRAMES.flatMap((frame) =>
+    frame.map((row) => {
+      let n = 0;
+      while (row[n] === ".") n++;
+      return n;
+    })
+  )
+);
+
+/**
  * Builds just the pop-tart body + head + legs (no trail), anchored at
  * (originX, originY). `frameIndex` picks a pose from CAT_FRAMES (default 0,
  * the neutral/legs-planted pose) — used by the static rectangle path
@@ -105,7 +127,10 @@ export function nyanCatElements(
   trailCanvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS);
 
   return [
-    ...trailCanvas.toElements("trail", originX - trailLength, trailOriginY(originY)),
+    // Overlapped CAT_TRAIL_OVERLAP px under the cat (drawn after, so it
+    // paints on top) so the trail shows through the cat's top-left notch —
+    // see CAT_TRAIL_OVERLAP's own comment.
+    ...trailCanvas.toElements("trail", originX - trailLength + CAT_TRAIL_OVERLAP, trailOriginY(originY)),
     ...catElements(originX, originY),
   ];
 }
