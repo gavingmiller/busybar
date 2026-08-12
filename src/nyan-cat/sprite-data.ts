@@ -1,31 +1,28 @@
+// Data-only file: Nyan Cat and its rainbow trail, hand-authored pixel art.
+// Every export here is a plain literal meant to be safely overwritten by an
+// external pixel editor (see ~/projects/number-munchers viewer.html — the
+// "Nyan Cat" and "Nyan Cat Trail" sprites) — no logic, no computed values.
+// One character per pixel; "." is transparent/background; every other
+// character keys into NYAN_COLORS below.
+
 export const NYAN_COLORS: Record<string, string> = {
-  K: "#000000FF", // black outline / mouth
-  T: "#F5E1B8FF", // light tan crust
-  M: "#FFB3D9FF", // pink body
-  D: "#E040C0FF", // magenta body dot
-  H: "#B0B0B0FF", // grey cat fur
-  R: "#FF0000FF", // rainbow red
-  O: "#FF8000FF", // rainbow orange
-  Y: "#FFFF00FF", // rainbow yellow
-  G: "#00FF00FF", // rainbow green
-  C: "#0080FFFF", // rainbow blue
-  P: "#8000FFFF", // rainbow purple
+  K: "#000000FF",
+  T: "#F5E1B8FF",
+  M: "#FFB3D9FF",
+  D: "#E040C0FF",
+  H: "#B0B0B0FF",
+  R: "#FF0000FF",
+  O: "#FF8000FF",
+  Y: "#FFFF00FF",
+  G: "#00FF00FF",
+  C: "#0080FFFF",
+  P: "#8000FFFF",
 };
 
-// 32 wide x 14 tall, one entry per running-cycle frame (4 frames, looped by
-// the device natively at CAT_FPS). Only the leg region (rows 11-13) differs
-// between frames — body/head/colors are identical to the original static
-// pose. Cycle: neutral (both pairs planted) -> front pair lifts (retracts up
-// off row 13 onto row 12) -> neutral -> back pair lifts (retracts off row 13;
-// row 12 already had the back toes at rest, so this reads as the back legs
-// tucking further up). Seeded from Gavin's reference GIF frames (2026-08-11)
-// as a starting point — hand-edit via the number-munchers viewer tool (the
-// "Nyan Cat" sidebar entry is now a 4-frame strip, same as "Nyan Cat Trail")
-// to refine the exact leg shapes.
 export const CAT_FRAMES: string[][] = [
   [
     "...TTTTTTTTTTTTTTTTT............",
-    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "..TTTTTTTTTTTTTTTTTTT...........",
     "TTTMMMMMMMMMMMMMTTTTTT..........",
     "TTMMMDMMMMMMMMMDMMMMTT..........",
     "TTMMMMMDMMMMMMMHMMMMTT.H........",
@@ -41,39 +38,39 @@ export const CAT_FRAMES: string[][] = [
   ],
   [
     "...TTTTTTTTTTTTTTTTT............",
-    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "..TTTTTTTTTTTTTTTTTTT...........",
     "TTTMMMMMMMMMMMMMTTTTTT..........",
-    "TTMMMDMMMMMMMMMDMMMMTT..........",
-    "TTMMMMMDMMMMMMMHMMMMTT.H........",
-    "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
-    "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
-    "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
-    "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
-    "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
-    "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
-    "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
-    ".HHTTTHHTTTTTTTHHTTTKHHKK.......",
-    "...KKK..KKKKKKKHHKKKKHHK........",
+    "TTMMMDMMMMMMMMMHMMMMTT.H........",
+    "TTMMMMMDMMMMMMHHHMMMTTHHH.......",
+    "TTMMMMMMMMMMMMHHHHHHHHHHH.......",
+    "TTMMMMMMMDDMMHHHHHHHHHHHHH......",
+    "TTMMMMMMMMMDMHHHKHHHHHKHHH......",
+    "TTMMDMMMMMMMMHHHHHHKHHHHHH......",
+    "TTMMMMMMMMMMMHHHHHHHHHHHHH......",
+    "TTMMMDMMDMMMMMHHHHHHHHHHHK......",
+    "TTTTTTTTTTTTTTTTHHTTTHHKK.......",
+    "HHTTTHHTTTTTTTTTTHTTKKHKK.......",
+    "HH.KKH..KKKKKKKKKKKKKKKK........",
   ],
   [
     "...TTTTTTTTTTTTTTTTT............",
-    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "..TTTTTTTTTTTTTTTTTTT...........",
     "TTTMMMMMMMMMMMMMTTTTTT..........",
-    "TTMMMDMMMMMMMMMDMMMMTT..........",
-    "TTMMMMMDMMMMMMMHMMMMTT.H........",
-    "TTMMMMMMMMMMMMHHHMMMTTHHH.......",
-    "TTMMMMMMMDDMMMHHHHHHHHHHH.......",
-    "TTMMMMMMMMMDMHHHHHHHHHHHHH......",
-    "TTMMDMMMMMMMMHHH.HHHHH.HHH......",
-    "TTMMMMMMMMMMMHHHHHHKHHHHHH......",
-    "TTMMMDMMDMMMMHHHHHHHHHHHHH......",
-    "TTTTTTTTTTTTTTHHHHHHHHHHH.......",
-    ".HTTTTTTTTTTTTTHHTTTKHHKK.......",
-    ".HHKKKHHKKKKKKKHHKKKKHHK........",
+    "TTMMMDMMMMMMMMMHMMMMTT.H........",
+    "TTMMMMMDMMMMMMHHHMMMTTHHH.......",
+    "TTMMMMMMMMMMMMHHHHHHHHHHH.......",
+    "TTMMMMMMMDDMMHHHHHHHHHHHHH......",
+    "TTMMMMMMMMMDMHHHKHHHHHKHHH......",
+    "TTMMDMMMMMMMMHHHHHHKHHHHHH......",
+    "TTMMMMMMMMMMMHHHHHHHHHHHHH......",
+    "TTMMMDMMDMMMMMHHHHHHHHHHHK......",
+    "TTTTTTTTTTTTTTTTTHHTTTHHK.......",
+    ".HTTTTTTTTTTTTTTTTHTKKKHK.......",
+    ".HHKKKHHKKKKKKKKKKKKKKKK........",
   ],
   [
     "...TTTTTTTTTTTTTTTTT............",
-    "RRTTTTTTTTTTTTTTTTTTT...........",
+    "..TTTTTTTTTTTTTTTTTTT...........",
     "TTTMMMMMMMMMMMMMTTTTTT..........",
     "TTMMMDMMMMMMMMMDMMMMTT..........",
     "TTMMMMMDMMMMMMMHMMMMTT.H........",
