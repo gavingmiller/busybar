@@ -13,6 +13,7 @@ import {
   TRAIL_ANIM_HEIGHT,
   TRAIL_FPS,
   DEFAULT_TRAIL_LENGTH,
+  STATIC_TRAIL_LENGTH,
 } from "./sprite.ts";
 import { CAT_GRID, TRAIL_FRAMES } from "./sprite-data.ts";
 import { Canvas } from "../lib/canvas.ts";
@@ -92,9 +93,9 @@ describe("nyanCatElements", () => {
   });
 
   it("renders TRAIL_FRAMES[0] as its static trail snapshot", () => {
-    const trailCanvas = new Canvas(DEFAULT_TRAIL_LENGTH, TRAIL_ANIM_HEIGHT);
+    const trailCanvas = new Canvas(STATIC_TRAIL_LENGTH, TRAIL_ANIM_HEIGHT);
     trailCanvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS);
-    const expected = trailCanvas.toElements("trail", 40 - DEFAULT_TRAIL_LENGTH, 0);
+    const expected = trailCanvas.toElements("trail", 40 - STATIC_TRAIL_LENGTH, 0);
     const actual = elements.filter((el) => el.id.startsWith("trail-"));
     expect(actual).toEqual(expected);
   });

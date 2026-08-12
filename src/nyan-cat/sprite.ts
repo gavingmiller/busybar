@@ -28,6 +28,21 @@ export const DEFAULT_TRAIL_LENGTH = TRAIL_FRAMES[0]![0]!.length;
  */
 export const TRAIL_FPS = 16;
 
+/**
+ * Trail width used by the rectangle-based static render path (nyanCatElements
+ * / nyanCatPayload, i.e. the `stationary` and `flying` modes) — deliberately
+ * narrower than DEFAULT_TRAIL_LENGTH. The 4-bump trail (see TRAIL_FRAMES)
+ * has more vertical seams than the old 2-bump design, so rendering the full
+ * 32px width as RectangleElements no longer fits under the device's ~100-
+ * element cap once combined with the cat (61 elements alone). 16px = 2 full
+ * repeat-units of the 4-bump pattern (each bump+gap is 8px), so it's still a
+ * complete, self-contained chunk of the zigzag rather than a mid-bump crop —
+ * keeps trail elements to 30-36 across all 32 frames, comfortably under the
+ * ~39 budget. The native `.anim` path (`rainbow` mode, trailAnimationFrames)
+ * has no such cap and still uses the full DEFAULT_TRAIL_LENGTH.
+ */
+export const STATIC_TRAIL_LENGTH = 16;
+
 /** Builds just the pop-tart body + head (no trail), anchored at (originX, originY). */
 export function catElements(originX: number, originY: number): RectangleElement[] {
   const catCanvas = new Canvas(CAT_WIDTH, CAT_HEIGHT);
@@ -55,7 +70,7 @@ export function trailOriginY(originY: number): number {
 export function nyanCatElements(
   originX: number,
   originY: number,
-  trailLength: number = DEFAULT_TRAIL_LENGTH
+  trailLength: number = STATIC_TRAIL_LENGTH
 ): RectangleElement[] {
   const trailCanvas = new Canvas(trailLength, TRAIL_ANIM_HEIGHT);
   trailCanvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS);
@@ -84,7 +99,7 @@ export function trailAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH)
 export function nyanCatPayload(
   originX: number,
   originY: number,
-  trailLength: number = DEFAULT_TRAIL_LENGTH
+  trailLength: number = STATIC_TRAIL_LENGTH
 ): DisplayPayload {
   return {
     application_name: "nyan_cat",
@@ -94,7 +109,7 @@ export function nyanCatPayload(
 }
 
 /** Centers the cat + trail scene horizontally on the front display. */
-export function stationaryOriginX(trailLength: number = DEFAULT_TRAIL_LENGTH): number {
+export function stationaryOriginX(trailLength: number = STATIC_TRAIL_LENGTH): number {
   const sceneWidth = trailLength + CAT_WIDTH;
   const leftMargin = Math.round((FRONT_DISPLAY_WIDTH - sceneWidth) / 2);
   return leftMargin + trailLength;
@@ -107,7 +122,7 @@ export function stationaryOriginX(trailLength: number = DEFAULT_TRAIL_LENGTH): n
  */
 export function flyingOriginX(
   tick: number,
-  trailLength: number = DEFAULT_TRAIL_LENGTH,
+  trailLength: number = STATIC_TRAIL_LENGTH,
   stepPx: number = 2
 ): number {
   const startX = -(trailLength + CAT_WIDTH);
