@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHandler, NYAN_ID, type ServerDeps } from "./index.ts";
+import { SHUFFLE_ID, SHUFFLE_INTERVAL_MS } from "./shuffle.ts";
 
 const BASE_URL = "http://10.0.4.20";
 const DEVICE_APPS = [
@@ -14,6 +15,8 @@ let tmp: string;
 let stateFile: string;
 
 beforeEach(() => {
+  timers = [];
+  cancelled = [];
   tmp = mkdtempSync(join(tmpdir(), "busybar-server-"));
   stateFile = join(tmp, "nested", "state.json");
 });
@@ -38,12 +41,18 @@ function deps(overrides: Partial<ServerDeps> = {}): ServerDeps {
       { id: "aquarium", name: "Aquarium", run: mock(async () => {}) },
     ],
     now: () => new Date("2026-11-08T15:00:00.000Z"),
+    random: () => 0.5,
+    schedule: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
+    cancel: (id) => { cancelled.push(id); },
     ...overrides,
   };
 }
 
+const flush = () => new Promise((r) => setTimeout(r, 0));
 const calls = (fn: unknown) => (fn as ReturnType<typeof mock>).mock.calls;
 let panStop = mock(() => {});
+let timers: Array<{ fn: () => void; ms: number }> = [];
+let cancelled: unknown[] = [];
 const req = (path: string, init?: RequestInit) => new Request(`http://127.0.0.1:7495${path}`, init);
 const post = (id: string, body: unknown) =>
   req(`/api/apps/${id}`, {
@@ -66,6 +75,8 @@ describe("GET /", () => {
     expect(html).toContain("prefers-color-scheme");
     expect(html).toContain("America/Regina");
     expect(html).toMatch(/Light.*Dark.*System/s);
+    expect(html).toContain("data.showing");
+    expect(html).toContain("nextChangeAt");
   });
 });
 
@@ -79,6 +90,7 @@ describe("GET /api/apps", () => {
         { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: "unknown" },
         { id: "lava_lamp", name: "Lava Lamp", kind: "draw", state: "unknown" },
         { id: "aquarium", name: "Aquarium", kind: "draw", state: "unknown" },
+        { id: SHUFFLE_ID, name: "Shuffle", kind: "draw", state: "unknown" },
         { id: "app.busy.clock", name: "Clock", kind: "js", state: "unknown" },
         { id: "community.dino_run", name: "Dino Run", kind: "js", state: "unknown" },
       ],
@@ -109,6 +121,7 @@ describe("POST /api/apps/:id", () => {
       [NYAN_ID, "on"],
       ["lava_lamp", "off"],
       ["aquarium", "off"],
+      [SHUFFLE_ID, "off"],
       ["app.busy.clock", "off"],
       ["community.dino_run", "off"],
     ]);
@@ -241,6 +254,7 @@ describe("scenes (pre-rendered draw apps)", () => {
       [NYAN_ID, "off"],
       ["lava_lamp", "on"],
       ["aquarium", "off"],
+      [SHUFFLE_ID, "off"],
       ["app.busy.clock", "off"],
       ["community.dino_run", "off"],
     ]);
@@ -264,6 +278,110 @@ describe("scenes (pre-rendered draw apps)", () => {
     const res = await createHandler(d)(post("lava_lamp", { on: true }));
     expect(res.status).toBe(502);
     expect(JSON.parse(readFileSync(stateFile, "utf8")).active).toBe(NYAN_ID);
+  });
+});
+
+describe("shuffle", () => {
+  const ANIMATIONS = [NYAN_ID, "lava_lamp", "aquarium"];
+  const ran = (d: ServerDeps): string[] => {
+    const out: string[] = [];
+    const n = calls(d.runRainbow).length;
+    for (let i = 0; i < n; i++) out.push(NYAN_ID);
+    for (const s of d.scenes) for (let i = 0; i < calls(s.run).length; i++) out.push(s.id);
+    return out;
+  };
+
+  it("turning Shuffle on shows one animation now, books the next change two hours out, and persists the round", async () => {
+    panStop = mock(() => {});
+    const d = deps();
+    const handler = createHandler(d);
+    const res = await handler(post(SHUFFLE_ID, { on: true }));
+    expect(res.status).toBe(200);
+    expect(d.quitApp).toHaveBeenCalledTimes(1);
+    const shown = ran(d);
+    expect(shown).toHaveLength(1);
+    expect(ANIMATIONS).toContain(shown[0]);
+    const body = await res.json();
+    expect(body.apps.find((a: { id: string }) => a.id === SHUFFLE_ID).state).toBe("on");
+    expect(body.apps.find((a: { id: string }) => a.id === shown[0]).state).toBe("off");
+    expect(body.showing).toBe(shown[0]);
+    expect(body.nextChangeAt).toBe("2026-11-08T17:00:00.000Z");
+    expect(timers).toHaveLength(1);
+    expect(timers[0]!.ms).toBe(SHUFFLE_INTERVAL_MS);
+    const stored = JSON.parse(readFileSync(stateFile, "utf8"));
+    expect(stored.active).toBe(SHUFFLE_ID);
+    expect(stored.shuffle.showing).toBe(shown[0]);
+    expect(stored.shuffle.nextAt).toBe("2026-11-08T17:00:00.000Z");
+    expect([stored.shuffle.showing, ...stored.shuffle.deck].sort()).toEqual([...ANIMATIONS].sort());
+  });
+
+  it("each tick plays a different animation until every one has been shown, then starts a fresh round", async () => {
+    let r = 0.1;
+    const d = deps({ random: () => (r = (r * 7.3) % 1) });
+    const handler = createHandler(d);
+    await handler(post(SHUFFLE_ID, { on: true }));
+    for (let i = 0; i < ANIMATIONS.length * 2 - 1; i++) {
+      timers[timers.length - 1]!.fn();
+      await flush();
+    }
+    const shown = ran(d);
+    // ran() groups by app, so check counts: every animation exactly twice over two rounds
+    expect(shown).toHaveLength(ANIMATIONS.length * 2);
+    for (const id of ANIMATIONS) expect(shown.filter((x) => x === id)).toHaveLength(2);
+    expect(timers).toHaveLength(ANIMATIONS.length * 2);
+    expect(d.quitApp).toHaveBeenCalledTimes(ANIMATIONS.length * 2);
+  });
+
+  it("turning anything else on, or Shuffle off, cancels the pending change", async () => {
+    const d = deps();
+    const handler = createHandler(d);
+    await handler(post(SHUFFLE_ID, { on: true }));
+    await handler(post("community.dino_run", { on: true }));
+    expect(cancelled).toHaveLength(1);
+    await handler(post(SHUFFLE_ID, { on: true }));
+    const res = await handler(post(SHUFFLE_ID, { on: false }));
+    expect(cancelled).toHaveLength(2);
+    expect(d.clearAllDisplays).toHaveBeenCalledTimes(2); // once for the JS app launch, once for Shuffle off
+    expect(JSON.parse(readFileSync(stateFile, "utf8")).active).toBeNull();
+    expect((await res.json()).showing).toBeUndefined();
+  });
+
+  it("a fresh server resumes a stored round: the timer is re-armed for the remaining time, and a missed change fires straight away", async () => {
+    await createHandler(deps())(post(SHUFFLE_ID, { on: true })); // nextAt 17:00
+    timers = [];
+    createHandler(deps({ now: () => new Date("2026-11-08T16:30:00.000Z") }));
+    expect(timers).toHaveLength(1);
+    expect(timers[0]!.ms).toBe(30 * 60 * 1000);
+    timers = [];
+    const late = deps({ now: () => new Date("2026-11-08T19:00:00.000Z") });
+    createHandler(late);
+    expect(timers).toHaveLength(1);
+    expect(timers[0]!.ms).toBe(0);
+    timers[0]!.fn();
+    await flush();
+    expect(ran(late)).toHaveLength(1);
+    expect(JSON.parse(readFileSync(stateFile, "utf8")).shuffle.nextAt).toBe("2026-11-08T21:00:00.000Z");
+  });
+
+  it("a failed change is logged and retried in a minute instead of killing the rotation", async () => {
+    const errors: unknown[] = [];
+    const d = deps({ runRainbow: mock(async () => { throw new Error("508"); }), onError: (e) => errors.push(e) });
+    for (const sc of d.scenes) sc.run = mock(async () => { throw new Error("508"); });
+    const handler = createHandler(d);
+    const res = await handler(post(SHUFFLE_ID, { on: true }));
+    expect(res.status).toBe(502);
+    expect(timers).toHaveLength(0);
+    // ...but once running, a tick that fails retries
+    const ok = deps();
+    const h2 = createHandler(ok);
+    await h2(post(SHUFFLE_ID, { on: true }));
+    ok.runRainbow = mock(async () => { throw new Error("508"); });
+    for (const sc of ok.scenes) sc.run = mock(async () => { throw new Error("508"); });
+    ok.onError = (e) => errors.push(e);
+    timers[timers.length - 1]!.fn();
+    await flush();
+    expect(errors).toHaveLength(1);
+    expect(timers[timers.length - 1]!.ms).toBe(60 * 1000);
   });
 });
 

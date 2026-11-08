@@ -93,10 +93,18 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     come from the last command the server successfully sent, persisted in
     `~/Library/Application Support/busybar/state.json` (`unknown` until the
     first command, or after a firmware update reboots the bar).
+  - **Shuffle** (`shuffle`, listed after the scenes) plays a different
+    animation every 2 hours — Nyan Cat and every scene — dealing each one
+    once per round before any repeats (`src/server/shuffle.ts`). The round
+    (remaining deck, what is showing, next change) lives in the state file,
+    so a server restart re-arms the timer for the remaining time and a
+    missed change fires at once; a failed change is retried a minute later.
+    `GET /api/apps` adds `showing` and `nextChangeAt` while it is on, and
+    the control page shows them under the Shuffle row.
   - `POST /api/apps/<id>` with `{ "on": true }` runs `nyan-cat:rainbow` for
     `nyan_cat` (and starts its camera pan, which the server keeps running
-    until anything else is turned on), `runScene` for a scene id, or
-    `POST /api/apps/launch` for a JS app; `{ "on": false }` quits / clears. A device failure answers 502 and
+    until anything else is turned on), `runScene` for a scene id, the next
+    card of the round for `shuffle`, or `POST /api/apps/launch` for a JS app; `{ "on": false }` quits / clears. A device failure answers 502 and
     leaves the stored state alone.
 
 ## JS apps (run on the bar itself)

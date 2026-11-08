@@ -161,6 +161,18 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
         kind.textContent = 'JS app';
         label.appendChild(kind);
       }
+      if (app.id === 'shuffle') {
+        var note = document.createElement('span');
+        note.className = 'kind';
+        if (app.state === 'on' && data.showing) {
+          var showingApp = null;
+          data.apps.forEach(function (a) { if (a.id === data.showing) showingApp = a; });
+          note.textContent = 'showing ' + (showingApp ? showingApp.name : data.showing) + (data.nextChangeAt ? ', next ' + fmt(data.nextChangeAt) : '');
+        } else {
+          note.textContent = 'a different animation every 2 hours';
+        }
+        label.appendChild(note);
+      }
       var seg = document.createElement('div');
       seg.className = 'seg';
       seg.setAttribute('role', 'group');
