@@ -8,10 +8,12 @@ import {
 } from "../lib/display.ts";
 import { Canvas } from "../lib/canvas.ts";
 import { NYAN_COLORS, CAT_FRAMES } from "./sprite-data.ts";
-import { trailGrid, TRAIL_PERIOD } from "./trail.ts";
+import { trailGrid, TRAIL_PERIOD, TRAIL_FPS } from "./trail.ts";
 
 export type { RectangleElement, DisplayPayload };
 export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor, NYAN_COLORS };
+/** Frame rate the scene is encoded at (owned by trail.ts; the trail's px/s speed sets it). */
+export { TRAIL_FPS };
 
 // Dimensions are derived from the hand-authored data (sprite-data.ts) rather
 // than hardcoded, so editing the art (e.g. via an external pixel editor)
@@ -22,24 +24,14 @@ export const CAT_HEIGHT = CAT_FRAMES[0]!.length;
 export const TRAIL_ANIM_HEIGHT = CAT_HEIGHT;
 export const DEFAULT_TRAIL_LENGTH = 32;
 /**
- * Frames per second the cat's 4-frame run cycle plays at, conceptually — a
- * light trot, independent of TRAIL_FPS (the two loops don't need to look
- * synced, same as the real Nyan Cat gif's legs and trail moving at their
- * own paces). Not the device's actual playback fps for the cat, though:
- * the composited scene asset (sceneAnimationFrames) resamples the cat into
- * the trail's own frame timeline, so this only needs to stay a whole
- * divisor of the trail's loop duration for that resampling to close
- * seamlessly — see sceneAnimationFrames.
+ * Poses per second of the cat's 4-frame run cycle — a brisk trot,
+ * independent of the trail's wave speed (same as the real Nyan Cat gif's
+ * legs and trail moving at their own paces). The scene asset is encoded at
+ * TRAIL_FPS and the cat is resampled into that timeline, so this must divide
+ * TRAIL_FPS for the resampling to close seamlessly — see sceneAnimationFrames.
  */
-export const CAT_FPS = 6;
-/**
- * Frames per second the trail loop plays at on the device — fixed at the
- * trail's 1px-per-frame scroll rate (16px/sec) rather than derived from
- * TRAIL_FRAMES.length, so the loop's scroll speed stays constant regardless
- * of how many frames the physical period needs (32, to cover a full lap of
- * the 2 desynced bumps — see the comment above TRAIL_FRAMES).
- */
-export const TRAIL_FPS = 16;
+export const CAT_FPS = 8;
+if (TRAIL_FPS % CAT_FPS !== 0) throw new Error("sprite: CAT_FPS must divide TRAIL_FPS");
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
@@ -48,7 +40,7 @@ const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
  * that is a whole number of trail periods AND brings the resampled cat pose
  * back to frame 0 (pose = floor(i * CAT_FPS / TRAIL_FPS) % CAT_FRAMES.length,
  * which repeats every CAT_FRAMES.length * TRAIL_FPS / gcd(CAT_FPS, TRAIL_FPS)
- * frames — 32 today). 96 with today's numbers.
+ * frames — 24 today). 72 with today's numbers (1.5 s).
  */
 export const SCENE_FRAME_COUNT = lcm(TRAIL_PERIOD, (CAT_FRAMES.length * TRAIL_FPS) / gcd(CAT_FPS, TRAIL_FPS));
 

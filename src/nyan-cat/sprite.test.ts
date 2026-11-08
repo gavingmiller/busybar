@@ -120,8 +120,10 @@ describe("sceneAnimationFrames", () => {
     expect(SCENE_FRAME_COUNT % TRAIL_PERIOD).toBe(0);
   });
 
-  it("plays at a fixed 16fps regardless of frame count, preserving trail scroll speed", () => {
-    expect(TRAIL_FPS).toBe(16);
+  it("plays at the device's native 48fps with an 8fps trot, regardless of frame count", () => {
+    expect(TRAIL_FPS).toBe(48);
+    expect(CAT_FPS).toBe(8);
+    expect(TRAIL_FPS % CAT_FPS).toBe(0);
   });
 
   it("each frame is sceneWidth(trailLength) x CAT_HEIGHT RGBA bytes", () => {
