@@ -131,7 +131,7 @@ function lineElement(p: Palette, text: string): Element {
     scroll_rate: SCROLL_RATE,
     scroll_start_delay: 400,
     scroll_repeat_delay: 60_000,
-    // Above the ravens: Huginn keeps flying across the full height while the line shows.
+    // Above the ravens: Huginn keeps flying while the line shows.
     z_index: 4,
   };
 }
@@ -150,9 +150,9 @@ function main(): void {
   let inFlight = false;
   let lastLine = -1;
 
-  // Both fly at y 0: the traced sprite is the full 16 px of the bar.
+  // Different heights so they cross and overtake rather than stack.
   const huginn: Raven = { id: "huginn", x: -RAVEN_W, y: 0, speed: 1.0, phase: 0 };
-  const muninn: Raven = { id: "muninn", x: -RAVEN_W - 36, y: 0, speed: 1.6, phase: 2 };
+  const muninn: Raven = { id: "muninn", x: -RAVEN_W - 36, y: 5, speed: 1.6, phase: 2 };
 
   const report = (err: unknown) =>
     console.error(`${APP}: ${err instanceof Error ? err.message : String(err)}`);

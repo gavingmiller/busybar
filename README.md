@@ -98,8 +98,9 @@ the bar keeps it in its APPS menu and runs it on its own.
     sprites are XPM2 bitmaps built in `src/sprites.ts`; the lines are in
     `src/havamal.ts`. `src/appmeta/icon_front_8x8.png` is the menu icon.
     The raven is traced from the sixth sprite of an itch.io raven sheet
-    Gavin picked (the first flying pose), five flap frames at 20x16, with
-    the sheet's standing pose for the perch.
+    Gavin picked (the first flying pose), five flap frames shrunk to 14x11,
+    with the sheet's standing pose (10x8) for the perch; beak and feet are
+    yellow.
 - **js-apps/gavin.dino_run** — *Dino Run*, as a stand-alone animation. The
   community [Dino Run](https://github.com/alexseminoisok/busybar-dino-run)
   endless runner with the game taken out: the dino is already running when
