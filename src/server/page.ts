@@ -144,7 +144,11 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   function fmt(iso) {
     if (!iso) return '';
     var d = new Date(iso);
-    return d.toLocaleString('en-CA', { timeZone: 'America/Edmonton', month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    // America/Regina, not Edmonton: Alberta is permanent UTC-6 since
+    // 2026-11-01 (tzdata 2026f) but Electron's bundled ICU still has
+    // Edmonton falling back to UTC-7, which showed an hour early inside
+    // Pantheon. Regina is fixed UTC-6, the same zone the bar itself runs on.
+    return d.toLocaleString('en-CA', { timeZone: 'America/Regina', month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
   function render(s) {
     btnOn.setAttribute('aria-pressed', String(s.state === 'on'));

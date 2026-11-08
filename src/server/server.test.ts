@@ -51,6 +51,7 @@ describe("GET /", () => {
     expect(html).toContain("navigator.userAgent");
     expect(html).toContain("Pantheon");
     expect(html).toContain("prefers-color-scheme");
+    expect(html).toContain("America/Regina");
     expect(html).toMatch(/Light.*Dark.*System/s);
   });
 });
