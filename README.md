@@ -89,7 +89,8 @@ the bar keeps it in its APPS menu and runs it on its own.
   starry night sky at different speeds and heights, so they cross and overtake
   each other. The sky scrolls in parallax: Dino Run's three clouds (its 9x3
   cloud sprite on the same 144 px loop) drift left at half a pixel a tick,
-  and the stars drift left one pixel every six ticks.
+  while the stars stay put: each one fades in, shines for 6–22 s, fades out,
+  and is reborn somewhere else after a dark pause.
   - **OK** (short press) — Muninn lands bottom-left and a line from the
     Hávamál scrolls past, then he takes off again.
   - **Start** — switches between the night and dawn palettes.

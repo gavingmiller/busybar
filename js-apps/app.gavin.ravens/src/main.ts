@@ -14,10 +14,12 @@ const SCREEN_H = 16;
 const TICK_MS = 160;
 /** Wing frame flips every N ticks. */
 const FLAP_TICKS = 1;
-/** Stars twinkle every N ticks. */
-const TWINKLE_TICKS = 5;
-/** Stars drift one pixel left every N ticks (the far layer of the parallax). */
-const STAR_DRIFT_TICKS = 6;
+/** Star life cycle, in ticks: fade in, shine, fade out, then dark before it is reborn elsewhere. */
+const STAR_FADE_TICKS = 4;
+const STAR_SHINE_MIN_TICKS = 40;
+const STAR_SHINE_MAX_TICKS = 140;
+const STAR_DARK_MIN_TICKS = 6;
+const STAR_DARK_MAX_TICKS = 30;
 /** Clouds drift one pixel left every N ticks (nearer than the stars, farther than the ravens). */
 const CLOUD_DRIFT_TICKS = 2;
 /** The cloud layer repeats every N pixels, same layout as Dino Run's sky. */
@@ -40,6 +42,7 @@ interface Palette {
   skyBottom: string;
   star: string;
   starDim: string;
+  starFaint: string;
   cloud: string;
   text: string;
 }
@@ -50,6 +53,7 @@ const NIGHT: Palette = {
   skyBottom: "#0A1030FF",
   star: "#FFFFFFFF",
   starDim: "#8090C0FF",
+  starFaint: "#303C60FF",
   cloud: "#30344A",
   text: "#E8E8FFFF",
 };
@@ -60,14 +64,71 @@ const DAWN: Palette = {
   skyBottom: "#C04820FF",
   star: "#FFE0A0FF",
   starDim: "#A06040FF",
+  starFaint: "#5A3030FF",
   cloud: "#6A3A48",
   text: "#FFF4D0FF",
 };
 
-/** Starting star positions; they drift left from here and wrap around. */
+/** Starting star positions; each star stays put, fades out after a while and is reborn somewhere else. */
 const STAR_SEED: ReadonlyArray<readonly [number, number]> = [
   [3, 1], [11, 4], [19, 0], [27, 6], [35, 2], [44, 5], [52, 1], [60, 3], [68, 0], [66, 7], [8, 9], [40, 10],
 ];
+
+/** A star's place in its life cycle. `at` is the tick its current phase started. */
+interface Star {
+  x: number;
+  y: number;
+  phase: "in" | "shine" | "out" | "dark";
+  at: number;
+  /** Ticks this shine / dark phase lasts (fades are fixed). */
+  span: number;
+  /** Brightness last drawn, 0..STAR_FADE_TICKS, so unchanged stars are not resent. */
+  drawn: number;
+}
+
+const randomBetween = (min: number, max: number): number => min + Math.floor(Math.random() * (max - min + 1));
+
+function newStar(x: number, y: number, tick: number): Star {
+  // Stagger the first generation so they don't all fade at once.
+  return { x, y, phase: "shine", at: tick - randomBetween(0, STAR_SHINE_MAX_TICKS), span: randomBetween(STAR_SHINE_MIN_TICKS, STAR_SHINE_MAX_TICKS), drawn: -1 };
+}
+
+/** Brightness 0..STAR_FADE_TICKS for this tick, advancing the star's phase as needed. */
+function starLevel(star: Star, tick: number, taken: ReadonlyArray<Star>): number {
+  const age = tick - star.at;
+  switch (star.phase) {
+    case "in":
+      if (age >= STAR_FADE_TICKS) { star.phase = "shine"; star.at = tick; star.span = randomBetween(STAR_SHINE_MIN_TICKS, STAR_SHINE_MAX_TICKS); return STAR_FADE_TICKS; }
+      return age;
+    case "shine":
+      if (age >= star.span) { star.phase = "out"; star.at = tick; return STAR_FADE_TICKS - 1; }
+      return STAR_FADE_TICKS;
+    case "out":
+      if (age >= STAR_FADE_TICKS) { star.phase = "dark"; star.at = tick; star.span = randomBetween(STAR_DARK_MIN_TICKS, STAR_DARK_MAX_TICKS); return 0; }
+      return STAR_FADE_TICKS - 1 - age;
+    case "dark":
+      if (age >= star.span) {
+        // Reborn somewhere new, not on top of another star.
+        let x = star.x, y = star.y;
+        for (let tries = 0; tries < 8; tries++) {
+          x = randomBetween(0, SCREEN_W - 1);
+          y = randomBetween(0, 11);
+          if (!taken.some((o) => o !== star && o.x === x && o.y === y)) break;
+        }
+        star.x = x; star.y = y; star.phase = "in"; star.at = tick;
+        return 0;
+      }
+      return 0;
+  }
+}
+
+/** Star colour for a brightness level: the sky colour at 0, then faint, dim, bright. */
+function starColor(p: Palette, level: number, y: number): string {
+  if (level <= 0) return y < 9 ? p.skyTop : p.skyBottom;
+  if (level === 1) return p.starFaint;
+  if (level < STAR_FADE_TICKS) return p.starDim;
+  return p.star;
+}
 
 /** A raven in flight. Both start off-screen so they enter rather than pop in. */
 interface Raven {
@@ -89,20 +150,27 @@ function skyElements(p: Palette): Elements {
   ];
 }
 
-function starElements(p: Palette, tick: number, stars: ReadonlyArray<readonly [number, number]>): Elements {
-  const phase = Math.floor(tick / TWINKLE_TICKS);
-  return stars.map(([x, y], i) => ({
-    id: `star-${i}`,
-    type: "rectangle" as const,
-    x,
-    y,
-    width: 1,
-    height: 1,
-    fill: "solid" as const,
-    fill_colors: [(phase + i) % 3 === 0 ? p.starDim : p.star],
-    border_width: 0,
-    z_index: 1,
-  }));
+/** Every star at its current brightness (`all`), or only the ones whose brightness changed this tick. */
+function starElements(p: Palette, tick: number, stars: Star[], all: boolean): Elements {
+  const out: Elements = [];
+  stars.forEach((star, i) => {
+    const level = starLevel(star, tick, stars);
+    if (!all && level === star.drawn) return;
+    star.drawn = level;
+    out.push({
+      id: `star-${i}`,
+      type: "rectangle",
+      x: star.x,
+      y: star.y,
+      width: 1,
+      height: 1,
+      fill: "solid",
+      fill_colors: [starColor(p, level, star.y)],
+      border_width: 0,
+      z_index: 1,
+    });
+  });
+  return out;
 }
 
 /** Three clouds on a 144 px loop, like Dino Run's sky; a cloud off the right side parks off-screen left. */
@@ -173,7 +241,7 @@ function main(): void {
   let lastLine = -1;
 
   // Different heights so they cross and overtake rather than stack.
-  const stars: Array<[number, number]> = STAR_SEED.map(([x, y]) => [x, y]);
+  const stars: Star[] = STAR_SEED.map(([x, y]) => newStar(x, y, 0));
   const huginn: Raven = { id: "huginn", x: -RAVEN_W, y: 0, speed: 1.0, phase: 0 };
   const muninn: Raven = { id: "muninn", x: -RAVEN_W - 36, y: 5, speed: 1.6, phase: 2 };
 
@@ -201,11 +269,7 @@ function main(): void {
   const fullFrame = (): Elements => {
     const ravens: Elements =
       mode === "landed" ? [ravenElement(huginn, tick), perchedElement(muninn)] : [ravenElement(huginn, tick), ravenElement(muninn, tick)];
-    return [...skyElements(palette), ...starElements(palette, tick, stars), ...cloudElements(palette, tick), ...ravens];
-  };
-
-  const driftStars = (): void => {
-    for (const star of stars) star[0] = star[0] === 0 ? SCREEN_W - 1 : star[0] - 1;
+    return [...skyElements(palette), ...starElements(palette, tick, stars, true), ...cloudElements(palette, tick), ...ravens];
   };
 
   /** Only what moved this tick. */
@@ -213,8 +277,7 @@ function main(): void {
     const out: Elements = [ravenElement(huginn, tick)];
     if (mode === "flying") out.push(ravenElement(muninn, tick));
     if (tick % CLOUD_DRIFT_TICKS === 0) out.push(...cloudElements(palette, tick));
-    if (tick % STAR_DRIFT_TICKS === 0) driftStars();
-    if (tick % TWINKLE_TICKS === 0 || tick % STAR_DRIFT_TICKS === 0) out.push(...starElements(palette, tick, stars));
+    out.push(...starElements(palette, tick, stars, false));
     return out;
   };
 
