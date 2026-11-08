@@ -70,6 +70,28 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     `nyan-cat:rainbow`; `{ "on": false }` clears every app's draw. A device
     failure answers 502 and leaves the stored state alone.
 
+## JS apps (run on the bar itself)
+
+Since firmware 1.3.1 the bar runs JavaScript apps natively (JerryScript,
+HTTP API 27.12+). They live under `js-apps/<app id>/`, one folder per app,
+scaffolded with [busy-tools](https://github.com/busy-app/busy-tools) and
+built/installed with `busy-cli`. Node 24 is required (`.nvmrc` in each app).
+Unlike the Bun apps above, nothing runs on the Mac once an app is installed:
+the bar keeps it in its APPS menu and runs it on its own.
+
+- **js-apps/app.gavin.ravens** — *Ravens*. Huginn and Muninn flap across a
+  starry night sky at different speeds and heights, so they cross and overtake
+  each other.
+  - **OK** (short press) — Muninn lands bottom-left and a line from the
+    Hávamál scrolls past, then he takes off again.
+  - **Start** — switches between the night and dawn palettes.
+  - **Back** — exits (clears the display, stops every timer).
+  - Build and run from the app folder: `npm install`, `npm run typecheck`,
+    `npm run build`, then `npm run app:install` and `npm run app:run` with the
+    bar on USB (`npm run app:stop` / `npm run app:uninstall` to undo). The
+    sprites are XPM2 bitmaps built in `src/sprites.ts`; the lines are in
+    `src/havamal.ts`. `src/appmeta/icon_front_8x8.png` is the menu icon.
+
 ### Shared code
 
 `src/lib/` holds the rendering/animation pipeline every app is built on top
