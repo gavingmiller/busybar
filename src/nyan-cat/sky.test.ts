@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { skySceneFrames, SKY_WIDTH, SKY_HEIGHT, SKY_FRAME_COUNT, SKY_FPS, STARS, starGrid } from "./sky.ts";
+import { skySceneFrames, skyCatOrigin, SKY_WIDTH, SKY_HEIGHT, SKY_FRAME_COUNT, SKY_FPS, STARS, starGrid } from "./sky.ts";
 import { CAT_FRAMES } from "./sprite-data.ts";
 import { CAT_FPS, TRAIL_FPS, CAT_HEIGHT } from "./sprite.ts";
 import { TRAIL_PERIOD } from "./trail.ts";
@@ -34,6 +34,16 @@ describe("skySceneFrames", () => {
     expect(CAT_HEIGHT).toBeLessThanOrEqual(SKY_HEIGHT - 2);
     const catColour = px(frames[0]!, 50, 8); // inside the cat's body on the right half
     expect(catColour).not.toEqual(BLACK);
+  });
+
+  it("the rainbow trail runs off the left edge of the display instead of stopping mid-screen", () => {
+    const { y } = skyCatOrigin();
+    // Every band row at column 0 is painted on every frame (the wave only moves it ±1 row).
+    for (const i of [0, 7, 40, 95]) {
+      const litRows = Array.from({ length: SKY_HEIGHT }, (_, row) => row).filter((row) => px(frames[i]!, 0, row).join() !== BLACK.join());
+      expect(litRows.length).toBeGreaterThanOrEqual(CAT_HEIGHT - 2);
+      expect(Math.min(...litRows)).toBeGreaterThanOrEqual(y);
+    }
   });
 
   it("stars sit behind the scene and scroll left one pixel per frame", () => {

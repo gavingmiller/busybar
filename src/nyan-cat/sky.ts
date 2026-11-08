@@ -7,7 +7,7 @@
 import { Canvas } from "../lib/canvas.ts";
 import { FRONT_DISPLAY_WIDTH, FRONT_DISPLAY_HEIGHT } from "../lib/display.ts";
 import { CAT_FRAMES, NYAN_COLORS } from "./sprite-data.ts";
-import { CAT_WIDTH, CAT_HEIGHT, CAT_FPS, TRAIL_FPS, CAT_TRAIL_OVERLAP, DEFAULT_TRAIL_LENGTH, SCENE_FRAME_COUNT } from "./sprite.ts";
+import { CAT_WIDTH, CAT_HEIGHT, CAT_FPS, TRAIL_FPS, CAT_TRAIL_OVERLAP, SCENE_FRAME_COUNT } from "./sprite.ts";
 import { trailGrid, TRAIL_PERIOD } from "./trail.ts";
 
 export const SKY_WIDTH = FRONT_DISPLAY_WIDTH;
@@ -46,16 +46,22 @@ export function starGrid(frame: number): string[] {
   return rows.map((r) => r.join(""));
 }
 
-/** Where the cat's top-left sits on the display: scene centred, cat on the right, two rows of sky above. */
-export function skyCatOrigin(trailLength: number = DEFAULT_TRAIL_LENGTH): { x: number; y: number } {
-  const sceneW = trailLength - CAT_TRAIL_OVERLAP + CAT_WIDTH;
-  const left = Math.floor((SKY_WIDTH - sceneW) / 2);
-  return { x: left + trailLength - CAT_TRAIL_OVERLAP, y: Math.floor((SKY_HEIGHT - CAT_HEIGHT) / 2) };
+/** Sky showing to the right of the cat. */
+const RIGHT_MARGIN = 4;
+
+/** Where the cat's top-left sits on the display: near the right edge, vertically centred. */
+export function skyCatOrigin(): { x: number; y: number } {
+  return { x: SKY_WIDTH - CAT_WIDTH - RIGHT_MARGIN, y: Math.floor((SKY_HEIGHT - CAT_HEIGHT) / 2) };
+}
+
+/** The trail runs from the cat all the way off the left edge of the display. */
+export function skyTrailLength(): number {
+  return skyCatOrigin().x + CAT_TRAIL_OVERLAP;
 }
 
 /** One RGBA frame per loop step: stars, then the trail, then the cat on top. */
-export function skySceneFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
-  const { x: catX, y: catY } = skyCatOrigin(trailLength);
+export function skySceneFrames(trailLength: number = skyTrailLength()): Uint8Array[] {
+  const { x: catX, y: catY } = skyCatOrigin();
   const frames: Uint8Array[] = [];
   for (let i = 0; i < SKY_FRAME_COUNT; i++) {
     const canvas = new Canvas(SKY_WIDTH, SKY_HEIGHT);

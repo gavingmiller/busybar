@@ -22,7 +22,7 @@ export const CAT_FRAMES: string[][] = [
   [
     "...TTTTTTTTTTTTTT.........",
     "..TTTTTTTTTTTTTTTT........",
-    "TTTMMMMMMMMMMTTTTT........",
+    "TTTMMMMMMMMMMMMMTT........",
     "TTMMDMMMMMMMDMMMMT........",
     "TTMMMMDMMMMMHMMMMT.H......",
     "TTMMMMMMDMMMHHHHHHHHH.....",
@@ -36,7 +36,7 @@ export const CAT_FRAMES: string[][] = [
   [
     "...TTTTTTTTTTTTTT.........",
     "..TTTTTTTTTTTTTTTT........",
-    "TTTMMMMMMMMMMTTTTT........",
+    "TTTMMMMMMMMMMMMMTT........",
     "TTMMDMMMMMMMHMMMMT.H......",
     "TTMMMMDMMMMMHHMMMTHHH.....",
     "TTMMMMMMDMMHHHHHHHHHH.....",
@@ -50,7 +50,7 @@ export const CAT_FRAMES: string[][] = [
   [
     "...TTTTTTTTTTTTTT.........",
     "..TTTTTTTTTTTTTTTT........",
-    "TTTMMMMMMMMMMTTTTT........",
+    "TTTMMMMMMMMMMMMMTT........",
     "TTMMDMMMMMMMHMMMMT.H......",
     "TTMMMMDMMMMMHHMMMTHHH.....",
     "TTMMMMMMDMMHHHHHHHHHH.....",
@@ -64,7 +64,7 @@ export const CAT_FRAMES: string[][] = [
   [
     "...TTTTTTTTTTTTTT.........",
     "..TTTTTTTTTTTTTTTT........",
-    "TTTMMMMMMMMMMTTTTT........",
+    "TTTMMMMMMMMMMMMMTT........",
     "TTMMDMMMMMMMDMMMMT........",
     "TTMMMMDMMMMMHMMMMT.H......",
     "TTMMMMMMDMMMHHHHHHHHH.....",

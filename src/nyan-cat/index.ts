@@ -85,7 +85,7 @@ export async function runRainbow(
     width: SKY_WIDTH,
     height: SKY_HEIGHT,
     fps: SKY_FPS,
-    frames: skySceneFrames(trailLength),
+    frames: skySceneFrames(),
   });
   await uploadAsset(baseUrl, APPLICATION_NAME, SCENE_ASSET_FILENAME, bytes, fetchImpl);
 
