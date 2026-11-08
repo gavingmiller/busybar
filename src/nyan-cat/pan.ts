@@ -19,28 +19,35 @@ export const PAN = {
   driftPx: [8, 24] as const,
   /** Hold at the far point, ms. */
   holdMs: [500, 3_000] as const,
-  /** Duration of the drift out and the catch-up, ms. */
-  driftOutMs: 1_800,
-  catchUpMs: 1_400,
-  /** Interval between draws while moving; the device throttles above ~10 req/s. */
-  stepMs: 125,
-  minStepMs: 100,
-  maxStepPx: 4,
+  /** Nominal duration of the drift out and the catch-up, ms (stretched when the 1 px/step floor demands). */
+  driftOutMs: 2_600,
+  catchUpMs: 2_200,
+  /** Shortest gap between draws while moving; the device throttles above ~10 req/s. */
+  stepMs: 120,
+  minStepMs: 110,
   maxDriftPx: 24,
 };
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+/** Inverse of a quadratic ease-in-out: the time fraction at which the eased progress reaches `y`. */
+const easeInOutInverse = (y: number) => (y < 0.5 ? Math.sqrt(y / 2) : 1 - Math.sqrt((1 - y) / 2));
 const pick = (random: () => number, [min, max]: readonly [number, number]) => min + random() * (max - min);
 
-/** Steps for a move from `from` to `to` over `ms`, eased, one every PAN.stepMs. */
+/**
+ * Steps for a move from `from` to `to`: always one pixel per draw (so the
+ * motion is never jumpy), with the ease-in-out expressed in the time between
+ * draws — slow at both ends, fastest in the middle, never faster than
+ * PAN.minStepMs per pixel. `ms` is the nominal duration; it stretches if the
+ * per-pixel floor needs more.
+ */
 function moveSteps(from: number, to: number, ms: number, holdAfterMs: number): PanStep[] {
-  const n = Math.max(1, Math.round(ms / PAN.stepMs));
+  const n = Math.abs(to - from);
+  const dir = Math.sign(to - from);
   const steps: PanStep[] = [];
   for (let i = 1; i <= n; i++) {
-    const x = Math.round(lerp(from, to, easeInOut(i / n)));
+    const x = from + dir * i;
     const last = i === n;
-    steps.push({ x, waitMs: last ? holdAfterMs : PAN.stepMs });
+    const wait = last ? holdAfterMs : Math.max(PAN.minStepMs, Math.round((easeInOutInverse((i + 1) / n) - easeInOutInverse(i / n)) * ms));
+    steps.push({ x, waitMs: wait });
   }
   return steps;
 }

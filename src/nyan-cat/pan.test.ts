@@ -23,8 +23,13 @@ describe("planPan", () => {
       expect(x).toBeLessThanOrEqual(42);
       expect(x).toBeGreaterThanOrEqual(42 - PAN.maxDriftPx);
     }
-    // Moves are gentle: no step jumps more than a few pixels.
-    for (let i = 1; i < xs.length; i++) expect(Math.abs(xs[i]! - xs[i - 1]!)).toBeLessThanOrEqual(PAN.maxStepPx);
+    // Moves are smooth: every step is exactly one pixel; easing lives in the timing, not the distance.
+    for (let i = 1; i < xs.length; i++) expect(Math.abs(xs[i]! - xs[i - 1]!)).toBe(1);
+    // Eased: the first and last steps of the drift are slower than the middle one.
+    const drift = steps.slice(1, 1 + (42 - Math.min(...xs)));
+    const mid = drift[Math.floor(drift.length / 2)]!.waitMs;
+    expect(drift[0]!.waitMs).toBeGreaterThan(mid);
+    expect(drift[drift.length - 2]!.waitMs).toBeGreaterThan(mid);
   });
 
   it("the idle wait, drift distance and hold are random within their ranges", () => {
