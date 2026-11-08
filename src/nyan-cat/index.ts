@@ -29,13 +29,24 @@ export function nyanHomeElementX(): number {
   return skyCatOrigin().x - (CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP);
 }
 
-/** The cat layer element at element x `x` (home = nyanHomeElementX()). */
+/**
+ * The cat layer element at element x `x` (home = nyanHomeElementX()).
+ *
+ * `await_previous_end` matters: an upsert must carry `path` (the device
+ * 400s without it), and a plain re-send makes the firmware restart the
+ * asset, which at the pan's 9 upserts/s froze the cat's run cycle (4
+ * distinct leg frames in 4 s against 8–9 at rest, measured live). With
+ * `await_previous_end: true` the running range carries on under the new
+ * position (8 in 4 s, i.e. at-rest cadence).
+ */
 export function nyanCatLayerElement(x: number): Record<string, unknown> {
   return {
     id: NYAN_CAT_ELEMENT_ID,
     type: "animation",
     path: CAT_ASSET_FILENAME,
+    section: "default",
     loop: true,
+    await_previous_end: true,
     x,
     y: skyCatOrigin().y,
     z_index: 2,

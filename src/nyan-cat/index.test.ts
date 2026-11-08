@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from "bun:test";
-import { runStationary, runRainbow, NYAN_CAT_ELEMENT_ID, nyanHomeElementX } from "./index.ts";
+import { runStationary, runRainbow, NYAN_CAT_ELEMENT_ID, nyanHomeElementX, moveNyanCat } from "./index.ts";
 
 describe("runStationary", () => {
   it("clears every app's prior draw before drawing the current frame", async () => {
@@ -27,6 +27,22 @@ describe("runStationary", () => {
       url: "http://10.0.4.20/api/display/draw",
       method: "POST",
     });
+  });
+});
+
+describe("moveNyanCat", () => {
+  it("upserts only the cat layer at the new x, keeping the running animation (await_previous_end)", async () => {
+    const calls: Array<{ url: string; body: { elements: Array<Record<string, unknown>> } }> = [];
+    const fetchMock = mock(async (url: string, init: RequestInit) => {
+      calls.push({ url, body: JSON.parse(init.body as string) });
+      return new Response(JSON.stringify({ result: "OK" }), { status: 200 });
+    });
+    await moveNyanCat("http://10.0.4.20", -20, fetchMock as unknown as typeof fetch);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toBe("http://10.0.4.20/api/display/draw");
+    expect(calls[0]!.body.elements).toHaveLength(1);
+    expect(calls[0]!.body.elements[0]).toMatchObject({ id: NYAN_CAT_ELEMENT_ID, type: "animation", x: -20, loop: true, await_previous_end: true });
+    expect(typeof calls[0]!.body.elements[0]!.path).toBe("string");
   });
 });
 
