@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from "bun:test";
-import { runStationary, runRainbow } from "./index.ts";
+import { runStationary, runRainbow, NYAN_CAT_ELEMENT_ID, nyanHomeElementX } from "./index.ts";
 
 describe("runStationary", () => {
   it("clears every app's prior draw before drawing the current frame", async () => {
@@ -52,14 +52,19 @@ describe("runRainbow", () => {
 
     await runRainbow("http://10.0.4.20", fetchMock as unknown as typeof fetch, 0);
 
+    // Two layers now: the star field behind, the cat + trail in front, so the
+    // control server can pan the cat without moving the sky (the firmware
+    // composites transparent .anim layers since 1.3.1, verified live).
     const uploadCalls = calls.filter((c) => c.url.startsWith("http://10.0.4.20/api/assets/upload"));
-    expect(uploadCalls).toHaveLength(1);
-    const uploadCall = uploadCalls[0]!;
-    expect(uploadCall.method).toBe("POST");
-    expect(uploadCall.url).toMatch(/application_name=nyan_cat/);
-    expect(uploadCall.url).toMatch(/file=.+\.anim/);
-    expect(uploadCall.body).toBeInstanceOf(Uint8Array);
-    expect((uploadCall.body as Uint8Array).length).toBeGreaterThan(0);
+    expect(uploadCalls).toHaveLength(2);
+    for (const uploadCall of uploadCalls) {
+      expect(uploadCall.method).toBe("POST");
+      expect(uploadCall.url).toMatch(/application_name=nyan_cat/);
+      expect(uploadCall.url).toMatch(/file=.+\.anim/);
+      expect(uploadCall.body).toBeInstanceOf(Uint8Array);
+      expect((uploadCall.body as Uint8Array).length).toBeGreaterThan(0);
+    }
+    const uploadCall = uploadCalls[1]!;
 
     const drawCalls = calls.filter((c) => c.url === "http://10.0.4.20/api/display/draw");
     // Re-uploading over a filename the device is actively looping 508s
@@ -74,11 +79,12 @@ describe("runRainbow", () => {
     const payload = drawCalls[2]!.body as { application_name: string; elements: Array<Record<string, unknown>> };
     expect(payload.application_name).toBe("nyan_cat");
 
-    expect(payload.elements).toHaveLength(1);
-    const [el] = payload.elements;
-    // The scene is the whole front display now (stars behind the cat), so it is anchored at the origin.
-    expect(el).toMatchObject({ type: "animation", loop: true, display: "front", x: 0, y: 0 });
-    expect(typeof el!.path).toBe("string");
+    expect(payload.elements).toHaveLength(2);
+    const [stars, cat] = payload.elements;
+    expect(stars).toMatchObject({ id: "stars", type: "animation", loop: true, display: "front", x: 0, y: 0, z_index: 1 });
+    expect(cat).toMatchObject({ id: NYAN_CAT_ELEMENT_ID, type: "animation", loop: true, display: "front", x: nyanHomeElementX(), z_index: 2 });
+    expect(typeof stars!.path).toBe("string");
+    expect(typeof cat!.path).toBe("string");
 
     // The upload must happen before the draw references it.
     const drawIndex = calls.indexOf(drawCalls[2]!);

@@ -32,12 +32,14 @@ function deps(overrides: Partial<ServerDeps> = {}): ServerDeps {
     listApps: mock(async () => DEVICE_APPS),
     launchApp: mock(async () => {}),
     quitApp: mock(async () => {}),
+    startPan: mock(() => ({ stop: panStop })),
     now: () => new Date("2026-11-08T15:00:00.000Z"),
     ...overrides,
   };
 }
 
 const calls = (fn: unknown) => (fn as ReturnType<typeof mock>).mock.calls;
+let panStop = mock(() => {});
 const req = (path: string, init?: RequestInit) => new Request(`http://127.0.0.1:7495${path}`, init);
 const post = (id: string, body: unknown) =>
   req(`/api/apps/${id}`, {
@@ -182,6 +184,33 @@ describe("POST /api/apps/:id", () => {
     expect((await handler(post(NYAN_ID, { on: "yes" }))).status).toBe(400);
     expect((await handler(post(NYAN_ID, "{ nope"))).status).toBe(400);
     expect((await handler(post(NYAN_ID, {}))).status).toBe(400);
+  });
+});
+
+describe("panning", () => {
+  it("starts the cat pan after Nyan Cat is drawn, and stops it when anything else is turned on or Nyan Cat is turned off", async () => {
+    panStop = mock(() => {});
+    const d = deps();
+    const handler = createHandler(d);
+    await handler(post(NYAN_ID, { on: true }));
+    expect(d.startPan).toHaveBeenCalledTimes(1);
+    expect(calls(d.startPan)[0]![0]).toBe(BASE_URL);
+    expect(panStop).not.toHaveBeenCalled();
+
+    await handler(post("community.dino_run", { on: true }));
+    expect(panStop).toHaveBeenCalledTimes(1);
+    expect(d.startPan).toHaveBeenCalledTimes(1);
+
+    await handler(post(NYAN_ID, { on: true }));
+    expect(d.startPan).toHaveBeenCalledTimes(2);
+    await handler(post(NYAN_ID, { on: false }));
+    expect(panStop).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not start the pan when the draw failed", async () => {
+    const d = deps({ runRainbow: mock(async () => { throw new Error("508"); }) });
+    await createHandler(d)(post(NYAN_ID, { on: true }));
+    expect(d.startPan).not.toHaveBeenCalled();
   });
 });
 

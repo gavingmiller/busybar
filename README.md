@@ -42,9 +42,13 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   - `bun run nyan-cat:rainbow` — the whole front display as one scene
     (`src/nyan-cat/sky.ts`): a star field scrolls right-to-left behind the
     cat, which runs in place (a 4-frame leg cycle) while the rainbow trail
-    waves behind it, composited into a single native looping `.anim` asset
-    (96 frames at 16 fps, the smallest loop that closes for trail, legs and
-    stars together) (`src/lib/anim-file.ts` encodes the
+    waves behind it. Two native looping `.anim` layers (96 frames at 16 fps,
+    the smallest loop that closes for trail, legs and stars together): the
+    star field, and the cat with a display-width trail in front of it. The
+    control server (below) then "pans the camera": at random intervals the
+    cat falls behind (drifts left 8–24 px over ~2 s), hangs there, and
+    catches up — `src/nyan-cat/pan.ts`, driven by upserting just the cat
+    layer's x, which the firmware does without restarting its playback (`src/lib/anim-file.ts` encodes the
     device's `.anim` format, uploaded via `POST /api/assets/upload`) — the
     device plays/loops it forever on its own, no ongoing process, nothing to
     Ctrl+C. Composited in software (trail painted onto a `Canvas`, cat
@@ -79,9 +83,10 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     `~/Library/Application Support/busybar/state.json` (`unknown` until the
     first command, or after a firmware update reboots the bar).
   - `POST /api/apps/<id>` with `{ "on": true }` runs `nyan-cat:rainbow` for
-    `nyan_cat`, or `POST /api/apps/launch` for a JS app; `{ "on": false }`
-    quits / clears. A device failure answers 502 and leaves the stored state
-    alone.
+    `nyan_cat` (and starts its camera pan, which the server keeps running
+    until anything else is turned on), or `POST /api/apps/launch` for a JS
+    app; `{ "on": false }` quits / clears. A device failure answers 502 and
+    leaves the stored state alone.
 
 ## JS apps (run on the bar itself)
 

@@ -1,7 +1,7 @@
-import { drawFrame, uploadAsset, clearAllDisplays } from "../lib/busybar-client.ts";
+import { drawFrame, drawElements, uploadAsset, clearAllDisplays } from "../lib/busybar-client.ts";
 import { runAnimation, installShutdownHandler, type AnimationHandle } from "../lib/animate.ts";
 import { encodeAnimFile } from "../lib/anim-file.ts";
-import { skySceneFrames, SKY_WIDTH, SKY_HEIGHT, SKY_FPS } from "./sky.ts";
+import { starLayerFrames, catLayerFrames, skyCatOrigin, SKY_WIDTH, SKY_HEIGHT, SKY_FPS, CAT_LAYER_WIDTH, CAT_LAYER_TRAIL_LENGTH } from "./sky.ts";
 import {
   nyanCatPayload,
   sceneAnimationFrames,
@@ -19,7 +19,34 @@ import {
 const APPLICATION_NAME = "nyan_cat";
 const FRAME_INTERVAL_MS = 150;
 const FLYING_STEP_PX = 2;
-const SCENE_ASSET_FILENAME = "nyan-cat-scene.anim";
+const STARS_ASSET_FILENAME = "nyan-stars.anim";
+const CAT_ASSET_FILENAME = "nyan-cat-layer.anim";
+/** The cat layer's element id; the control server pans this element (see pan.ts). */
+export const NYAN_CAT_ELEMENT_ID = "cat";
+
+/** Element x that puts the cat at its home spot (the layer starts a trail-length to the left of the cat). */
+export function nyanHomeElementX(): number {
+  return skyCatOrigin().x - (CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP);
+}
+
+/** The cat layer element at element x `x` (home = nyanHomeElementX()). */
+export function nyanCatLayerElement(x: number): Record<string, unknown> {
+  return {
+    id: NYAN_CAT_ELEMENT_ID,
+    type: "animation",
+    path: CAT_ASSET_FILENAME,
+    loop: true,
+    x,
+    y: skyCatOrigin().y,
+    z_index: 2,
+    display: "front",
+  };
+}
+
+/** Upserts just the cat layer at a new x; used by the pan to move it without touching the stars. */
+export async function moveNyanCat(baseUrl: string, x: number, fetchImpl: typeof fetch = fetch): Promise<void> {
+  await drawElements(baseUrl, { application_name: APPLICATION_NAME, priority: DRAW_PRIORITY, elements: [nyanCatLayerElement(x)] }, fetchImpl);
+}
 // The composited scene samples at the trail's own native cadence (see
 // sceneAnimationFrames) — a similar visual pace to the old ~150ms/frame
 // polling loop, just now handled natively by the device instead of us
@@ -80,14 +107,13 @@ export async function runRainbow(
   // CAT_FRAMES) safe without a separate manual clear step.
   await clearAllDisplays(baseUrl, fetchImpl);
 
-  // The whole front display: a star field scrolls behind the stationary cat.
-  const bytes = encodeAnimFile({
-    width: SKY_WIDTH,
-    height: SKY_HEIGHT,
-    fps: SKY_FPS,
-    frames: skySceneFrames(),
-  });
-  await uploadAsset(baseUrl, APPLICATION_NAME, SCENE_ASSET_FILENAME, bytes, fetchImpl);
+  // Two transparent layers (the firmware composites them since 1.3.1): the
+  // star field over the whole display, and the cat + a display-width trail
+  // in front of it, so the cat can be panned without moving the sky.
+  const starsBytes = encodeAnimFile({ width: SKY_WIDTH, height: SKY_HEIGHT, fps: SKY_FPS, frames: starLayerFrames() });
+  await uploadAsset(baseUrl, APPLICATION_NAME, STARS_ASSET_FILENAME, starsBytes, fetchImpl);
+  const catBytes = encodeAnimFile({ width: CAT_LAYER_WIDTH, height: CAT_HEIGHT, fps: SKY_FPS, frames: catLayerFrames() });
+  await uploadAsset(baseUrl, APPLICATION_NAME, CAT_ASSET_FILENAME, catBytes, fetchImpl);
 
   if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
 
@@ -97,15 +123,8 @@ export async function runRainbow(
       application_name: APPLICATION_NAME,
       priority: DRAW_PRIORITY,
       elements: [
-        {
-          id: "scene-anim",
-          type: "animation",
-          path: SCENE_ASSET_FILENAME,
-          loop: true,
-          x: 0,
-          y: 0,
-          display: "front",
-        },
+        { id: "stars", type: "animation", path: STARS_ASSET_FILENAME, loop: true, x: 0, y: 0, z_index: 1, display: "front" },
+        nyanCatLayerElement(nyanHomeElementX()),
       ],
     },
     fetchImpl

@@ -8,7 +8,8 @@ import {
   quitApp as quitAppReal,
   type DeviceApp,
 } from "../lib/busybar-client.ts";
-import { runRainbow as runRainbowReal } from "../nyan-cat/index.ts";
+import { runRainbow as runRainbowReal, moveNyanCat, nyanHomeElementX } from "../nyan-cat/index.ts";
+import { startPan as startPanReal, type PanHandle } from "../nyan-cat/pan.ts";
 import { CONTROL_PAGE_HTML } from "./page.ts";
 
 export type AppState = "on" | "off" | "unknown";
@@ -44,6 +45,8 @@ export interface ServerDeps {
   listApps: (baseUrl: string, fetchImpl: typeof fetch) => Promise<DeviceApp[]>;
   launchApp: (baseUrl: string, appId: string, fetchImpl: typeof fetch) => Promise<void>;
   quitApp: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
+  /** Starts the Nyan Cat camera pan (nyan-cat/pan.ts) against the device; returns a handle to stop it. */
+  startPan: (baseUrl: string, fetchImpl: typeof fetch) => PanHandle;
   now: () => Date;
 }
 
@@ -113,6 +116,14 @@ async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<A
 }
 
 export function createHandler(deps: ServerDeps): (req: Request) => Promise<Response> {
+  // The pan is the one thing this server keeps running between requests; it
+  // lives only while Nyan Cat is the active app.
+  let pan: PanHandle | null = null;
+  const stopPan = (): void => {
+    pan?.stop();
+    pan = null;
+  };
+
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
 
@@ -154,10 +165,12 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
         // Only one thing is on the bar at a time, so turning anything on
         // means stopping whatever is running first: quit the JS app (a 409
         // "not running" is fine), drop every draw, then start the new one.
+        stopPan();
         await deps.quitApp(deps.baseUrl, deps.fetchImpl);
         if (on) {
           if (id === NYAN_ID) {
             await deps.runRainbow(deps.baseUrl, deps.fetchImpl);
+            pan = deps.startPan(deps.baseUrl, deps.fetchImpl);
           } else {
             await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
             await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
@@ -194,6 +207,12 @@ if (import.meta.main) {
     listApps: listAppsReal,
     launchApp: launchAppReal,
     quitApp: quitAppReal,
+    startPan: (baseUrl, fetchImpl) =>
+      startPanReal({
+        homeX: nyanHomeElementX(),
+        draw: (x) => moveNyanCat(baseUrl, x, fetchImpl),
+        onError: (err) => console.error(`nyan pan: ${err instanceof Error ? err.message : String(err)}`),
+      }),
     now: () => new Date(),
   });
   Bun.serve({ hostname: "127.0.0.1", port, fetch: handler });

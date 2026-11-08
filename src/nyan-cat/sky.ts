@@ -59,7 +59,34 @@ export function skyTrailLength(): number {
   return skyCatOrigin().x + CAT_TRAIL_OVERLAP;
 }
 
-/** One RGBA frame per loop step: stars, then the trail, then the cat on top. */
+/** Transparent background for a layer that the device composites over whatever is below it. */
+const CLEAR = "#00000000";
+
+/** The star field alone, SKY_WIDTH x SKY_HEIGHT with a transparent background, one frame per loop step. */
+export function starLayerFrames(): Uint8Array[] {
+  return Array.from({ length: SKY_FRAME_COUNT }, (_, i) => {
+    const canvas = new Canvas(SKY_WIDTH, SKY_HEIGHT);
+    canvas.paintGrid(starGrid(i), STAR_COLORS, 0, 0);
+    return canvas.toRGBA(CLEAR);
+  });
+}
+
+/** Trail length baked into the cat layer: a whole display width, so the trail still reaches the left edge when the cat drifts left. */
+export const CAT_LAYER_TRAIL_LENGTH = SKY_WIDTH;
+export const CAT_LAYER_WIDTH = CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP + CAT_WIDTH;
+
+/** The cat and its trail alone, CAT_LAYER_WIDTH x CAT_HEIGHT with a transparent background, one frame per loop step. */
+export function catLayerFrames(): Uint8Array[] {
+  return Array.from({ length: SKY_FRAME_COUNT }, (_, i) => {
+    const canvas = new Canvas(CAT_LAYER_WIDTH, CAT_HEIGHT);
+    canvas.paintGrid(trailGrid(i % TRAIL_PERIOD, CAT_LAYER_TRAIL_LENGTH, CAT_HEIGHT), NYAN_COLORS, 0, 0);
+    const catIndex = Math.floor((i * CAT_FPS) / TRAIL_FPS) % CAT_FRAMES.length;
+    canvas.paintGrid(CAT_FRAMES[catIndex]!, NYAN_COLORS, CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP, 0);
+    return canvas.toRGBA(CLEAR);
+  });
+}
+
+/** One RGBA frame per loop step: stars, then the trail, then the cat on top (the single-asset preview of the same scene). */
 export function skySceneFrames(trailLength: number = skyTrailLength()): Uint8Array[] {
   const { x: catX, y: catY } = skyCatOrigin();
   const frames: Uint8Array[] = [];
