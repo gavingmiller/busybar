@@ -13,6 +13,10 @@ import { catLayerFrames, CAT_LAYER_WIDTH, SKY_FPS, SKY_FRAME_COUNT } from "./sky
 import { CAT_HEIGHT } from "./sprite.ts";
 
 describe("excursions", () => {
+  it("names fit the firmware's section-name limit (\u22647 chars; confirmed live 2026-11-08: 8+ char names never play)", () => {
+    for (const e of EXCURSIONS) expect(e.name.length).toBeLessThanOrEqual(7);
+    expect(new Set(EXCURSIONS.map((e) => e.name)).size).toBe(EXCURSIONS.length);
+  });
   it("each lasts a whole number of home loops so the home loop can follow seamlessly", () => {
     expect(EXCURSIONS.length).toBeGreaterThanOrEqual(3);
     for (const e of EXCURSIONS) {

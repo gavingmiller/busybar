@@ -51,12 +51,12 @@ describe("runStationary", () => {
 describe("playNyanCatSection", () => {
   it("queues the cat layer's section behind the one playing (await_previous_end), at the fixed element position", async () => {
     const { calls, fetchMock } = device([]);
-    await playNyanCatSection("http://10.0.4.20", "exc_mid", false, fetchMock);
+    await playNyanCatSection("http://10.0.4.20", "exc_m", false, fetchMock);
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toBe("http://10.0.4.20/api/display/draw");
     const body = calls[0]!.body as { elements: Array<Record<string, unknown>> };
     expect(body.elements).toHaveLength(1);
-    expect(body.elements[0]).toMatchObject({ id: NYAN_CAT_ELEMENT_ID, type: "animation", section: "exc_mid", loop: false, await_previous_end: true, x: nyanHomeElementX() });
+    expect(body.elements[0]).toMatchObject({ id: NYAN_CAT_ELEMENT_ID, type: "animation", section: "exc_m", loop: false, await_previous_end: true, x: nyanHomeElementX() });
     expect(body.elements[0]!.path).toBe(nyanAssetNames().cat);
   });
 });

@@ -26,6 +26,9 @@ const MASK_ENCODING_FULLY_WHITE = 1;
 const HEADER_LENGTH = 34;
 const FRAME_HEADER_LENGTH = 5;
 
+/** Longest section name the firmware will find at playback time. */
+export const MAX_SECTION_NAME_LENGTH = 7;
+
 export interface AnimSection {
   /** Section name as referenced by an AnimationElement's `section` field. */
   name: string;
@@ -95,6 +98,12 @@ export function encodeAnimFile(options: EncodeAnimFileOptions): Uint8Array {
   const expected = width * height * 4;
   for (const section of sections) {
     if (section.frames.length === 0) throw new Error(`encodeAnimFile: section "${section.name}" has no frames`);
+    // The firmware keeps section names in a short fixed buffer: a name of 8+
+    // characters is accepted on upload but never found at playback, so the
+    // element silently keeps playing its current section (seen live 2026-11-08).
+    if (section.name.length === 0 || section.name.length > MAX_SECTION_NAME_LENGTH) {
+      throw new Error(`encodeAnimFile: section name "${section.name}" must be 1 to ${MAX_SECTION_NAME_LENGTH} characters`);
+    }
     section.frames.forEach((f, i) => {
       if (f.length !== expected) {
         throw new Error(`encodeAnimFile: frame ${i} of "${section.name}" has ${f.length} bytes, expected ${expected} for its size ${width}x${height}`);

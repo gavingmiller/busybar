@@ -225,4 +225,9 @@ describe("encodeAnimFile sections", () => {
     expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [] })).toThrow();
     expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [{ name: "x", frames: [] }] })).toThrow();
   });
+  it("rejects a section name longer than the firmware's 7-character limit (longer names silently fall back to the playing section)", () => {
+    expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [{ name: "exc_mid", frames: [red] }] })).not.toThrow();
+    expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [{ name: "exc_long", frames: [red] }] })).toThrow(/7 characters/);
+    expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [{ name: "", frames: [red] }] })).toThrow();
+  });
 });
