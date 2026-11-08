@@ -3,17 +3,22 @@
 // state is small and lives in the server's state file so a restart resumes
 // the round where it left off.
 
-export const SHUFFLE_ID = "shuffle";
-export const SHUFFLE_NAME = "Shuffle";
 export const SHUFFLE_INTERVAL_MS = 2 * 60 * 60 * 1000;
 
 export interface ShuffleState {
   /** Animations still to be shown this round, in play order. */
   deck: string[];
-  /** The animation currently on the bar. */
+  /** The animation currently on the bar (the server's `active` app while shuffle is on). */
   showing: string;
   /** UTC ISO 8601 `Z` instant of the next change. */
   nextAt: string;
+}
+
+/** Starts the clock on an animation already showing: it counts as this round's current card. */
+export function adoptShowing(state: ShuffleState | null, showing: string, ids: readonly string[], now: Date, random: () => number = Math.random): ShuffleState {
+  let deck = (state?.deck ?? []).filter((id) => ids.includes(id) && id !== showing);
+  if (deck.length === 0 && state === null) deck = shuffleDeck(ids.filter((id) => id !== showing), random);
+  return { deck, showing, nextAt: new Date(now.getTime() + SHUFFLE_INTERVAL_MS).toISOString() };
 }
 
 /** Fisher–Yates over a copy of `ids`, randomness injected for tests. */

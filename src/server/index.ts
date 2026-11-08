@@ -15,7 +15,7 @@ import { SKY_FPS, SKY_FRAME_COUNT } from "../nyan-cat/sky.ts";
 import { CONTROL_PAGE_HTML } from "./page.ts";
 import { runScene } from "../lib/scene.ts";
 import { SCENES } from "../scenes/index.ts";
-import { advanceShuffle, SHUFFLE_ID, SHUFFLE_INTERVAL_MS, SHUFFLE_NAME, type ShuffleState } from "./shuffle.ts";
+import { advanceShuffle, adoptShowing, SHUFFLE_INTERVAL_MS, type ShuffleState } from "./shuffle.ts";
 
 export type AppState = "on" | "off" | "unknown";
 export type AppKind = "draw" | "js";
@@ -31,12 +31,11 @@ export interface AppsStatus {
   apps: AppStatus[];
   /** UTC ISO 8601 `Z` instant of the last successful command, or null. */
   changedAt: string | null;
-  /** While Shuffle is on: the animation it currently has on the bar, and when it changes next (UTC ISO `Z`). */
-  showing?: string;
-  nextChangeAt?: string;
+  /** The global rotation: on, and when the next change is due (UTC ISO `Z`). */
+  shuffle: { on: boolean; nextChangeAt?: string };
 }
 
-/** What the state file holds: the one thing this server last put on the bar (plus Shuffle's round, when that is it). */
+/** What the state file holds: the one thing this server last put on the bar, plus the shuffle round while shuffle is on. */
 interface StoredState {
   active: string | null;
   changedAt: string;
@@ -141,11 +140,10 @@ async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<A
   const apps: AppStatus[] = [
     { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: stateOf(NYAN_ID) },
     ...deps.scenes.map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
-    { id: SHUFFLE_ID, name: SHUFFLE_NAME, kind: "draw", state: stateOf(SHUFFLE_ID) },
     ...deviceApps.map((a) => ({ id: a.id, name: a.name, kind: "js" as const, state: stateOf(a.id) })),
   ];
-  const shuffle = state?.active === SHUFFLE_ID ? state.shuffle : undefined;
-  return { apps, changedAt: state?.changedAt ?? null, ...(shuffle ? { showing: shuffle.showing, nextChangeAt: shuffle.nextAt } : {}) };
+  const shuffle = state?.shuffle ? { on: true, nextChangeAt: state.shuffle.nextAt } : { on: false };
+  return { apps, changedAt: state?.changedAt ?? null, shuffle };
 }
 
 export function createHandler(deps: ServerDeps): (req: Request) => Promise<Response> {
@@ -192,19 +190,20 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     shuffleTimer = schedule(() => { shuffleTimer = null; void shuffleTick(); }, Math.max(0, ms));
   };
   /** Deals the next card, shows it, persists, and books the following change. */
-  const shuffleAdvance = async (previous: ShuffleState | null): Promise<ShuffleState> => {
+  const shuffleAdvance = async (previous: ShuffleState | null): Promise<StoredState> => {
     const now = deps.now();
     const next = advanceShuffle(previous, animationIds(), now, random);
     await showAnimation(next.showing);
-    writeState(deps.stateFile, { active: SHUFFLE_ID, changedAt: now.toISOString(), shuffle: next });
+    const state: StoredState = { active: next.showing, changedAt: now.toISOString(), shuffle: next };
+    writeState(deps.stateFile, state);
     armShuffle(SHUFFLE_INTERVAL_MS);
-    return next;
+    return state;
   };
   const shuffleTick = async (): Promise<void> => {
     const state = readState(deps.stateFile);
-    if (state?.active !== SHUFFLE_ID) return;
+    if (!state?.shuffle) return;
     try {
-      await shuffleAdvance(state.shuffle ?? null);
+      await shuffleAdvance(state.shuffle);
     } catch (err) {
       report(err);
       armShuffle(SHUFFLE_RETRY_MS);
@@ -212,9 +211,7 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
   };
   {
     const stored = readState(deps.stateFile);
-    if (stored?.active === SHUFFLE_ID && stored.shuffle) {
-      armShuffle(new Date(stored.shuffle.nextAt).getTime() - deps.now().getTime());
-    }
+    if (stored?.shuffle) armShuffle(new Date(stored.shuffle.nextAt).getTime() - deps.now().getTime());
   }
 
   return async (req: Request): Promise<Response> => {
@@ -229,6 +226,37 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     if (req.method === "GET" && url.pathname === "/api/apps") {
       try {
         return json(await statusFor(deps, readState(deps.stateFile)));
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : String(err) }, 502);
+      }
+    }
+
+    if (url.pathname === "/api/shuffle") {
+      if (req.method !== "POST") return json({ error: "Method Not Allowed" }, 405);
+      let on: unknown;
+      try {
+        on = ((await req.json()) as { on?: unknown } | null)?.on;
+      } catch {
+        return json({ error: "Body must be JSON" }, 400);
+      }
+      if (typeof on !== "boolean") return json({ error: 'Body must be { "on": true | false }' }, 400);
+      const current = readState(deps.stateFile);
+      let state: StoredState;
+      try {
+        if (!on) {
+          stopShuffle();
+          state = { active: current?.active ?? null, changedAt: current?.changedAt ?? deps.now().toISOString() };
+          writeState(deps.stateFile, state);
+        } else if (current?.active && animationIds().includes(current.active)) {
+          // Something is already showing: it becomes this round's current card; the clock starts now.
+          const round = adoptShowing(current.shuffle ?? null, current.active, animationIds(), deps.now(), random);
+          state = { active: current.active, changedAt: current.changedAt, shuffle: round };
+          writeState(deps.stateFile, state);
+          armShuffle(SHUFFLE_INTERVAL_MS);
+        } else {
+          state = await shuffleAdvance(null);
+        }
+        return json(await statusFor(deps, state));
       } catch (err) {
         return json({ error: err instanceof Error ? err.message : String(err) }, 502);
       }
@@ -254,34 +282,34 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
         const isAnimation = animationIds().includes(id);
         const known =
           isAnimation ||
-          id === SHUFFLE_ID ||
           (await deps.listApps(deps.baseUrl, deps.fetchImpl)).some((a) => a.id === id);
         if (!known) return json({ error: `Unknown app "${id}"` }, 404);
 
         // Only one thing is on the bar at a time, so turning anything on
-        // means stopping whatever is running first: the shuffle timer, the
-        // pan, the JS app (a 409 "not running" is fine), every draw, then
-        // start the new one.
+        // means stopping whatever is running first: the pan, the JS app (a
+        // 409 "not running" is fine), every draw, then start the new one.
+        // Shuffle survives a hand-picked animation (it becomes the current
+        // card) but not a JS app or turning the bar off.
+        const current = readState(deps.stateFile);
         stopShuffle();
-        if (on && id === SHUFFLE_ID) {
-          const round = await shuffleAdvance(null);
-          state = { active: SHUFFLE_ID, changedAt: deps.now().toISOString(), shuffle: round };
+        const now = deps.now();
+        if (on && isAnimation) {
+          await showAnimation(id);
+          const round = current?.shuffle ? adoptShowing(current.shuffle, id, animationIds(), now, random) : undefined;
+          state = { active: id, changedAt: now.toISOString(), ...(round ? { shuffle: round } : {}) };
+          if (round) armShuffle(SHUFFLE_INTERVAL_MS);
         } else {
-          if (on && isAnimation) {
-            await showAnimation(id);
-          } else {
-            stopPan();
-            await deps.quitApp(deps.baseUrl, deps.fetchImpl);
-            if (on) {
-              await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
-              await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
-            } else if (isAnimation || id === SHUFFLE_ID) {
-              await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
-            }
+          stopPan();
+          await deps.quitApp(deps.baseUrl, deps.fetchImpl);
+          if (on) {
+            await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
+            await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
+          } else if (isAnimation) {
+            await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
           }
-          state = { active: on ? id : null, changedAt: deps.now().toISOString() };
-          writeState(deps.stateFile, state);
+          state = { active: on ? id : null, changedAt: now.toISOString() };
         }
+        writeState(deps.stateFile, state);
       } catch (err) {
         return json({ error: err instanceof Error ? err.message : String(err) }, 502);
       }

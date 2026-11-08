@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { advanceShuffle, shuffleDeck, SHUFFLE_INTERVAL_MS, type ShuffleState } from "./shuffle.ts";
+import { advanceShuffle, adoptShowing, shuffleDeck, SHUFFLE_INTERVAL_MS, type ShuffleState } from "./shuffle.ts";
 
 const IDS = ["nyan_cat", "lava_lamp", "matrix_rain", "aquarium"];
 const seq = (...values: number[]) => { let i = 0; return () => values[Math.min(i++, values.length - 1)]!; };
@@ -47,5 +47,15 @@ describe("advanceShuffle", () => {
     expect(s2.deck).toEqual([]);
     const s3 = advanceShuffle(s2, [...IDS, "new_scene"], NOW, seq(0.5));
     expect([s3.showing, ...s3.deck].sort()).toEqual([...IDS, "new_scene"].sort());
+  });
+
+  it("adoptShowing makes a hand-picked animation the current card: dealt out of the deck, clock restarted", () => {
+    const fresh = adoptShowing(null, "lava_lamp", IDS, NOW, seq(0.5));
+    expect(fresh.showing).toBe("lava_lamp");
+    expect([...fresh.deck].sort()).toEqual(IDS.filter((i) => i !== "lava_lamp").sort());
+    expect(fresh.nextAt).toBe("2026-11-09T00:00:00.000Z");
+    const mid: ShuffleState = { deck: ["aquarium", "matrix_rain"], showing: "nyan_cat", nextAt: NOW.toISOString() };
+    const picked = adoptShowing(mid, "aquarium", IDS, NOW, seq(0.5));
+    expect(picked).toEqual({ deck: ["matrix_rain"], showing: "aquarium", nextAt: "2026-11-09T00:00:00.000Z" });
   });
 });

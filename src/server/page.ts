@@ -86,6 +86,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   <p class="note">One app shows at a time. The bar can't report what it is showing, so this is the last command sent from here.</p>
   <div class="status" id="status" aria-live="polite"></div>
 
+  <section class="card" id="shuffle"></section>
   <section class="card" id="apps"></section>
 
   <div class="theme" id="theme">
@@ -131,6 +132,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   }
 
   var appsEl = document.getElementById('apps');
+  var shuffleEl = document.getElementById('shuffle');
   var statusEl = document.getElementById('status');
 
   function fmt(iso) {
@@ -142,7 +144,40 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     // Pantheon. Regina is fixed UTC-6, the same zone the bar itself runs on.
     return d.toLocaleString('en-CA', { timeZone: 'America/Regina', month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
+  function renderShuffle(data) {
+    shuffleEl.textContent = '';
+    var on = !!(data.shuffle && data.shuffle.on);
+    var row = document.createElement('div');
+    row.className = 'row';
+    var label = document.createElement('div');
+    label.className = 'label';
+    var dot = document.createElement('span');
+    dot.className = 'dot' + (on ? ' on' : '');
+    label.appendChild(dot);
+    label.appendChild(document.createTextNode('Shuffle'));
+    var note = document.createElement('span');
+    note.className = 'kind';
+    note.textContent = on && data.shuffle.nextChangeAt ? 'next change ' + fmt(data.shuffle.nextChangeAt) : 'a different animation every 2 hours';
+    label.appendChild(note);
+    var seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', 'Shuffle');
+    ['On', 'Off'].forEach(function (text) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = text;
+      var want = text === 'On';
+      b.setAttribute('aria-pressed', String(on === want));
+      b.addEventListener('click', function () { sendShuffle(want); });
+      seg.appendChild(b);
+    });
+    row.appendChild(label);
+    row.appendChild(seg);
+    shuffleEl.appendChild(row);
+  }
   function render(data) {
+    renderShuffle(data);
     appsEl.textContent = '';
     var active = null;
     data.apps.forEach(function (app) {
@@ -160,18 +195,6 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
         kind.className = 'kind';
         kind.textContent = 'JS app';
         label.appendChild(kind);
-      }
-      if (app.id === 'shuffle') {
-        var note = document.createElement('span');
-        note.className = 'kind';
-        if (app.state === 'on' && data.showing) {
-          var showingApp = null;
-          data.apps.forEach(function (a) { if (a.id === data.showing) showingApp = a; });
-          note.textContent = 'showing ' + (showingApp ? showingApp.name : data.showing) + (data.nextChangeAt ? ', next ' + fmt(data.nextChangeAt) : '');
-        } else {
-          note.textContent = 'a different animation every 2 hours';
-        }
-        label.appendChild(note);
       }
       var seg = document.createElement('div');
       seg.className = 'seg';
@@ -198,13 +221,13 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     else statusEl.textContent = 'Turned off ' + fmt(data.changedAt);
   }
   function setBusy(text) {
-    var buttons = appsEl.querySelectorAll('button');
+    var buttons = document.querySelectorAll('#apps button, #shuffle button');
     for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
     statusEl.className = 'status busy';
     statusEl.textContent = text;
   }
   function setError(text) {
-    var buttons = appsEl.querySelectorAll('button');
+    var buttons = document.querySelectorAll('#apps button, #shuffle button');
     for (var i = 0; i < buttons.length; i++) buttons[i].disabled = false;
     statusEl.className = 'status error';
     statusEl.textContent = text;
@@ -213,6 +236,17 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   function send(app, on) {
     setBusy(on ? 'Starting ' + app.name + ' on the bar\\u2026' : 'Stopping ' + app.name + '\\u2026');
     fetch('/api/apps/' + encodeURIComponent(app.id), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: on }) })
+      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
+        render(r.body);
+      })
+      .catch(function (err) { setError('Failed: ' + err.message); });
+  }
+
+  function sendShuffle(on) {
+    setBusy(on ? 'Starting the shuffle\\u2026' : 'Stopping the shuffle\\u2026');
+    fetch('/api/shuffle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: on }) })
       .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
       .then(function (r) {
         if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
