@@ -1,7 +1,7 @@
 import { device } from "@shared/device";
 import type { DisplayDrawParams } from "@busy-app/busy-lib";
 import manifest from "./appmeta/manifest.json";
-import { RAVEN_FRAMES, RAVEN_PERCHED, RAVEN_W, PERCHED_W, PERCHED_H } from "./sprites";
+import { RAVEN_FRAMES, RAVEN_PERCHED, RAVEN_W, PERCHED_W, PERCHED_H, CLOUD_W, cloudXpm } from "./sprites";
 import { HAVAMAL, nextLine } from "./havamal";
 
 /** The name the app draws under; the device clears elements by this id. */
@@ -16,6 +16,14 @@ const TICK_MS = 160;
 const FLAP_TICKS = 1;
 /** Stars twinkle every N ticks. */
 const TWINKLE_TICKS = 5;
+/** Stars drift one pixel left every N ticks (the far layer of the parallax). */
+const STAR_DRIFT_TICKS = 6;
+/** Clouds drift one pixel left every N ticks (nearer than the stars, farther than the ravens). */
+const CLOUD_DRIFT_TICKS = 2;
+/** The cloud layer repeats every N pixels, same layout as Dino Run's sky. */
+const CLOUD_PERIOD = 144;
+/** Cloud anchors on that loop, lifted from Dino Run's sky (x, y). */
+const CLOUDS: ReadonlyArray<readonly [number, number]> = [[10, 3], [70, 6], [112, 2]];
 
 /** Scrolling speed of the Hávamál line, in pixels per minute (the device's unit). */
 const SCROLL_RATE = 1500;
@@ -32,6 +40,7 @@ interface Palette {
   skyBottom: string;
   star: string;
   starDim: string;
+  cloud: string;
   text: string;
 }
 
@@ -41,6 +50,7 @@ const NIGHT: Palette = {
   skyBottom: "#0A1030FF",
   star: "#FFFFFFFF",
   starDim: "#8090C0FF",
+  cloud: "#30344A",
   text: "#E8E8FFFF",
 };
 
@@ -50,11 +60,12 @@ const DAWN: Palette = {
   skyBottom: "#C04820FF",
   star: "#FFE0A0FF",
   starDim: "#A06040FF",
+  cloud: "#6A3A48",
   text: "#FFF4D0FF",
 };
 
-/** Fixed star positions, laid out by hand so none sits under the landing spot. */
-const STARS: ReadonlyArray<readonly [number, number]> = [
+/** Starting star positions; they drift left from here and wrap around. */
+const STAR_SEED: ReadonlyArray<readonly [number, number]> = [
   [3, 1], [11, 4], [19, 0], [27, 6], [35, 2], [44, 5], [52, 1], [60, 3], [68, 0], [66, 7], [8, 9], [40, 10],
 ];
 
@@ -78,9 +89,9 @@ function skyElements(p: Palette): Elements {
   ];
 }
 
-function starElements(p: Palette, tick: number): Elements {
+function starElements(p: Palette, tick: number, stars: ReadonlyArray<readonly [number, number]>): Elements {
   const phase = Math.floor(tick / TWINKLE_TICKS);
-  return STARS.map(([x, y], i) => ({
+  return stars.map(([x, y], i) => ({
     id: `star-${i}`,
     type: "rectangle" as const,
     x,
@@ -92,6 +103,17 @@ function starElements(p: Palette, tick: number): Elements {
     border_width: 0,
     z_index: 1,
   }));
+}
+
+/** Three clouds on a 144 px loop, like Dino Run's sky; a cloud off the right side parks off-screen left. */
+function cloudElements(p: Palette, tick: number): Elements {
+  const offset = Math.floor(tick / CLOUD_DRIFT_TICKS) % CLOUD_PERIOD;
+  const xpm = cloudXpm(p.cloud);
+  return CLOUDS.map(([cx, cy], i) => {
+    const wrapped = (((cx - offset) % CLOUD_PERIOD) + CLOUD_PERIOD) % CLOUD_PERIOD;
+    const x = wrapped < SCREEN_W + CLOUD_W ? wrapped - CLOUD_W : -CLOUD_W;
+    return { id: `cloud-${i}`, type: "xpmbitmap" as const, x, y: cy, data: xpm, z_index: 1 };
+  });
 }
 
 function ravenElement(r: Raven, tick: number): Element {
@@ -151,6 +173,7 @@ function main(): void {
   let lastLine = -1;
 
   // Different heights so they cross and overtake rather than stack.
+  const stars: Array<[number, number]> = STAR_SEED.map(([x, y]) => [x, y]);
   const huginn: Raven = { id: "huginn", x: -RAVEN_W, y: 0, speed: 1.0, phase: 0 };
   const muninn: Raven = { id: "muninn", x: -RAVEN_W - 36, y: 5, speed: 1.6, phase: 2 };
 
@@ -178,14 +201,20 @@ function main(): void {
   const fullFrame = (): Elements => {
     const ravens: Elements =
       mode === "landed" ? [ravenElement(huginn, tick), perchedElement(muninn)] : [ravenElement(huginn, tick), ravenElement(muninn, tick)];
-    return [...skyElements(palette), ...starElements(palette, tick), ...ravens];
+    return [...skyElements(palette), ...starElements(palette, tick, stars), ...cloudElements(palette, tick), ...ravens];
+  };
+
+  const driftStars = (): void => {
+    for (const star of stars) star[0] = star[0] === 0 ? SCREEN_W - 1 : star[0] - 1;
   };
 
   /** Only what moved this tick. */
   const tickFrame = (): Elements => {
     const out: Elements = [ravenElement(huginn, tick)];
     if (mode === "flying") out.push(ravenElement(muninn, tick));
-    if (tick % TWINKLE_TICKS === 0) out.push(...starElements(palette, tick));
+    if (tick % CLOUD_DRIFT_TICKS === 0) out.push(...cloudElements(palette, tick));
+    if (tick % STAR_DRIFT_TICKS === 0) driftStars();
+    if (tick % TWINKLE_TICKS === 0 || tick % STAR_DRIFT_TICKS === 0) out.push(...starElements(palette, tick, stars));
     return out;
   };
 

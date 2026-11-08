@@ -120,3 +120,19 @@ export const RAVEN_FRAMES: readonly string[] = [FLY0, FLY1, FLY2, FLY3, FLY4].ma
 );
 
 export const RAVEN_PERCHED: string = generateXpm2({ palette: RAVEN_PALETTE, grid: PERCHED });
+
+/** Cloud from Dino Run's sky (alexseminoisok/busybar-dino-run, sprites.py), 9x3. */
+const CLOUD = [
+  "..ccc....",
+  ".cc..cc..",
+  "ccccccccc",
+];
+export const CLOUD_W = 9;
+export const CLOUD_H = 3;
+
+const cloudCache: Record<string, string> = {};
+/** The cloud bitmap in a palette's cloud colour (built once per colour). */
+export function cloudXpm(color: string): string {
+  if (!cloudCache[color]) cloudCache[color] = generateXpm2({ palette: { ".": "none", c: color }, grid: CLOUD });
+  return cloudCache[color];
+}

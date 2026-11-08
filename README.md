@@ -87,7 +87,9 @@ the bar keeps it in its APPS menu and runs it on its own.
 
 - **js-apps/app.gavin.ravens** — *Ravens*. Huginn and Muninn flap across a
   starry night sky at different speeds and heights, so they cross and overtake
-  each other.
+  each other. The sky scrolls in parallax: Dino Run's three clouds (its 9x3
+  cloud sprite on the same 144 px loop) drift left at half a pixel a tick,
+  and the stars drift left one pixel every six ticks.
   - **OK** (short press) — Muninn lands bottom-left and a line from the
     Hávamál scrolls past, then he takes off again.
   - **Start** — switches between the night and dawn palettes.
