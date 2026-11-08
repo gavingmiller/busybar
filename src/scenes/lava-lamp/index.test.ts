@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 import {
-  LAVA_LAMP, LAVA_FPS, LAVA_LOOP_S, LAVA_FRAME_COUNT, PALETTE, BLOBS, blobStates, renderFrame,
+  LAVA_LAMP, LAVA_FPS, LAVA_LOOP_S, LAVA_FRAME_COUNT, MOTION_LOOP_S, PALETTES, paletteAt, BLOBS, blobStates, renderFrame,
 } from "./index.ts";
 
 const px = (frame: Uint8Array, x: number, y: number) => {
@@ -21,7 +21,8 @@ describe("LAVA_LAMP scene", () => {
     expect(LAVA_FPS).toBeGreaterThanOrEqual(24);
     expect(LAVA_FPS).toBeLessThanOrEqual(48);
     expect(LAVA_LOOP_S).toBeGreaterThanOrEqual(10);
-    expect(LAVA_LOOP_S).toBeLessThanOrEqual(30);
+    expect(LAVA_LOOP_S).toBeLessThanOrEqual(60);
+    expect(LAVA_LOOP_S % MOTION_LOOP_S).toBe(0); // the blob motion repeats a whole number of times per colour cycle
     expect(frames).toHaveLength(LAVA_FRAME_COUNT);
     expect(LAVA_FRAME_COUNT).toBe(LAVA_FPS * LAVA_LOOP_S);
     for (const f of frames) {
@@ -55,27 +56,49 @@ describe("LAVA_LAMP scene", () => {
     expect(s0.some((s, k) => Math.abs(s.y - s1[k]!.y) > 0 && Math.abs(s.y - s1[k]!.y) < 1)).toBe(true);
   });
 
-  it("uses the classic lamp palette: dark plum background, orange-to-amber lava, nothing outside that gamut", () => {
-    const [lava, hi, bg] = [hex(PALETTE.lava), hex(PALETTE.highlight), hex(PALETTE.background)];
-    expect(PALETTE).toEqual({ lava: "#FF5A24", highlight: "#FFB000", background: "#190019" });
-    let lavaPixels = 0, bgPixels = 0;
-    for (const f of [frames[0]!, frames[Math.floor(LAVA_FRAME_COUNT / 2)]!]) {
-      for (let y = 0; y < FRONT_HEIGHT; y++) for (let x = 0; x < FRONT_WIDTH; x++) {
-        const [r, g, b] = px(f, x, y);
-        // a mix of bg, lava and highlight: red >= green >= blue-ish, never green/blue dominant
-        expect(r).toBeGreaterThanOrEqual(g - 1);
-        expect(r).toBeGreaterThanOrEqual(b - 1);
-        expect(b).toBeLessThanOrEqual(Math.max(bg[2]!, lava[2]!, hi[2]!) + 1);
-        if (r > 200) lavaPixels++;
-        if (r <= bg[0]! + 2 && g <= bg[1]! + 2) bgPixels++;
-      }
+  it("cycles slowly through the original's six themes, starting on classic and closing the ring on the loop", () => {
+    expect(PALETTES.map((p) => p.name)).toEqual(["classic", "sunset", "magenta", "ocean", "ice", "toxic"]);
+    expect(PALETTES[0]).toMatchObject({ lava: "#FF5A24", highlight: "#FFB000", background: "#190019" });
+    expect(paletteAt(0)).toEqual(hex(PALETTES[0]!.lava).concat(hex(PALETTES[0]!.highlight), hex(PALETTES[0]!.background)));
+    expect(paletteAt(LAVA_FRAME_COUNT)).toEqual(paletteAt(0));
+    const seg = LAVA_FRAME_COUNT / PALETTES.length;
+    // Each theme is pure at the start of its segment, and half-way between two it is a true blend.
+    expect(paletteAt(3 * seg)).toEqual(hex(PALETTES[3]!.lava).concat(hex(PALETTES[3]!.highlight), hex(PALETTES[3]!.background)));
+    const mid = paletteAt(0.5 * seg);
+    const a = hex(PALETTES[0]!.lava), b = hex(PALETTES[1]!.lava);
+    for (let k = 0; k < 3; k++) {
+      expect(mid[k]!).toBeGreaterThanOrEqual(Math.min(a[k]!, b[k]!) - 1);
+      expect(mid[k]!).toBeLessThanOrEqual(Math.max(a[k]!, b[k]!) + 1);
     }
-    expect(lavaPixels).toBeGreaterThan(80);
-    expect(bgPixels).toBeGreaterThan(200);
+    // The change is gradual: neighbouring frames never jump.
+    for (const f of [1, Math.floor(seg * 0.5), Math.floor(seg * 1.5), LAVA_FRAME_COUNT - 1]) {
+      const p0 = paletteAt(f - 1), p1 = paletteAt(f);
+      for (let k = 0; k < 9; k++) expect(Math.abs(p1[k]! - p0[k]!)).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("renders those colours: orange lava at the start, blue in the ocean segment, green in the toxic one, with dark glass throughout", () => {
+    const seg = LAVA_FRAME_COUNT / PALETTES.length;
+    const dominant = (f: Uint8Array) => {
+      let r = 0, g = 0, b = 0, dark = 0;
+      for (let y = 0; y < FRONT_HEIGHT; y++) for (let x = 0; x < FRONT_WIDTH; x++) {
+        const [pr, pg, pb] = px(f, x, y);
+        if (pr + pg + pb < 60) dark++;
+        else if (pr + pg + pb > 350) { if (pr >= pg && pr >= pb) r++; else if (pg >= pb) g++; else b++; }
+      }
+      return { r, g, b, dark };
+    };
+    const classic = dominant(frames[0]!);
+    const ocean = dominant(frames[Math.round(3 * seg)]!);
+    const toxic = dominant(frames[Math.round(5 * seg)]!);
+    expect(classic.r).toBeGreaterThan(40); expect(classic.b).toBe(0);
+    expect(ocean.b).toBeGreaterThan(40); expect(ocean.r).toBe(0);
+    expect(toxic.g).toBeGreaterThan(40); expect(toxic.b).toBe(0);
+    for (const d of [classic, ocean, toxic]) expect(d.dark).toBeGreaterThan(200);
   });
 
   it("encodes to a modest .anim asset", () => {
     const bytes = encodeAnimFile({ width: FRONT_WIDTH, height: FRONT_HEIGHT, fps: LAVA_FPS, frames });
-    expect(bytes.length).toBeLessThan(6 * 1024 * 1024);
+    expect(bytes.length).toBeLessThan(8 * 1024 * 1024);
   });
 });

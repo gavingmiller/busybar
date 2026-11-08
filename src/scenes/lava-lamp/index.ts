@@ -7,12 +7,25 @@
 
 import { type Scene, FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 
-export const LAVA_FPS = 30;
-export const LAVA_LOOP_S = 20;
+export const LAVA_FPS = 24;
+/** One rise-and-fall cycle of the blobs. */
+export const MOTION_LOOP_S = 20;
+/** The whole asset: one slow tour of every palette, with the motion repeating underneath. */
+export const LAVA_LOOP_S = 60;
 export const LAVA_FRAME_COUNT = LAVA_FPS * LAVA_LOOP_S;
+const MOTION_FRAME_COUNT = LAVA_FPS * MOTION_LOOP_S;
 
-/** The original's "classic" palette: lava, highlight, background. */
-export const PALETTE = { lava: "#FF5A24", highlight: "#FFB000", background: "#190019" } as const;
+export interface Palette { name: string; lava: string; highlight: string; background: string }
+
+/** The original app's themes, ordered so neighbours blend pleasantly; the cycle tours them in this order. */
+export const PALETTES: readonly Palette[] = [
+  { name: "classic", lava: "#FF5A24", highlight: "#FFB000", background: "#190019" },
+  { name: "sunset", lava: "#FF3A5E", highlight: "#FFB13B", background: "#21000B" },
+  { name: "magenta", lava: "#FF2D95", highlight: "#9B4DFF", background: "#120018" },
+  { name: "ocean", lava: "#00D4FF", highlight: "#0077FF", background: "#001226" },
+  { name: "ice", lava: "#D8FFFF", highlight: "#5DEBFF", background: "#00141A" },
+  { name: "toxic", lava: "#7CFF00", highlight: "#D7FF2F", background: "#061400" },
+];
 
 const TAU = Math.PI * 2;
 
@@ -68,9 +81,9 @@ export interface BlobState {
   heatPhase: number;
 }
 
-/** Where each blob is on frame `frame` (any integer; periodic in LAVA_FRAME_COUNT). */
+/** Where each blob is on frame `frame` (any integer; periodic in MOTION_FRAME_COUNT). */
 export function blobStates(frame: number): BlobState[] {
-  const u = frame / LAVA_FRAME_COUNT; // loop fraction
+  const u = (frame % MOTION_FRAME_COUNT) / MOTION_FRAME_COUNT; // motion-loop fraction
   return BLOBS.map((b) => {
     const riseAngle = TAU * (b.riseCycles * u) + b.risePhase;
     const y = b.midY - b.rise * Math.sin(riseAngle);
@@ -88,19 +101,33 @@ export function blobStates(frame: number): BlobState[] {
       lobeDx: Math.cos(lobeAngle) * r * 0.55,
       lobeDy: Math.sin(lobeAngle) * r * 0.55,
       lobeW: b.lobeW,
-      heatPhase: b.lobePhase + TAU * 0.35 * u * LAVA_LOOP_S / TAU * 0 + b.pulsePhase,
+      heatPhase: b.lobePhase + b.pulsePhase,
     };
   });
 }
 
 const hex = (s: string): [number, number, number] => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
-const LAVA = hex(PALETTE.lava);
-const HI = hex(PALETTE.highlight);
-const BG = hex(PALETTE.background);
 const mix = (a: readonly number[], b: readonly number[], t: number): [number, number, number] =>
   [a[0]! + (b[0]! - a[0]!) * t, a[1]! + (b[1]! - a[1]!) * t, a[2]! + (b[2]! - a[2]!) * t];
 const scale = (c: readonly number[], k: number): [number, number, number] => [c[0]! * k, c[1]! * k, c[2]! * k];
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const smooth = (t: number) => t * t * (3 - 2 * t);
+
+/**
+ * The lava, highlight and background colours on frame `frame` as nine channel
+ * values: the palette ring is walked once per LAVA_LOOP_S, each theme pure at
+ * the start of its segment and eased into the next, so the colour shifts
+ * imperceptibly from frame to frame and the ring closes on the loop.
+ */
+export function paletteAt(frame: number): number[] {
+  const n = PALETTES.length;
+  const pos = (((frame % LAVA_FRAME_COUNT) + LAVA_FRAME_COUNT) % LAVA_FRAME_COUNT) / LAVA_FRAME_COUNT * n;
+  const i = Math.floor(pos);
+  const t = smooth(pos - i);
+  const a = PALETTES[i]!, b = PALETTES[(i + 1) % n]!;
+  const blend = (x: string, y: string) => mix(hex(x), hex(y), t).map(Math.round);
+  return [...blend(a.lava, b.lava), ...blend(a.highlight, b.highlight), ...blend(a.background, b.background)];
+}
 
 // Rendering constants from the original's defaults.
 const SOFTNESS = 0.65;
@@ -113,7 +140,9 @@ const EDGE_FLOOR = 0.08;
 export function renderFrame(frame: number): Uint8Array {
   const out = new Uint8Array(FRONT_WIDTH * FRONT_HEIGHT * 4);
   const states = blobStates(frame);
-  const t = (frame / LAVA_FRAME_COUNT) * LAVA_LOOP_S;
+  const t = ((frame % MOTION_FRAME_COUNT) / MOTION_FRAME_COUNT) * MOTION_LOOP_S;
+  const pal = paletteAt(frame);
+  const LAVA = pal.slice(0, 3), HI = pal.slice(3, 6), BG: [number, number, number] = [pal[6]!, pal[7]!, pal[8]!];
   const edgeK = 0.10 + SOFTNESS * 0.26;
   const haloC = scale(LAVA, 0.24 * BRIGHTNESS);
   for (let y = 0; y < FRONT_HEIGHT; y++) {
@@ -132,7 +161,7 @@ export function renderFrame(frame: number): Uint8Array {
         c += s.lobeW / (ldx * ldx + ldy * ldy + 0.16);
         field += c;
         // Heat varies per blob on a loop-closing cycle (the original used t*0.35 with a random phase).
-        heat += c * (0.72 + 0.28 * Math.sin(s.heatPhase + TAU * Math.round(0.35 * LAVA_LOOP_S / TAU) * (t / LAVA_LOOP_S)));
+        heat += c * (0.72 + 0.28 * Math.sin(s.heatPhase + TAU * Math.round(0.35 * MOTION_LOOP_S / TAU) * (t / MOTION_LOOP_S)));
       }
       const f = field * 0.54 * DENSITY;
       const edge = 1 / (1 + Math.exp(-(f - 1) / edgeK));
