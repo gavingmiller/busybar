@@ -148,3 +148,42 @@ describe("uploadAsset", () => {
     ).rejects.toThrow(/400/);
   });
 });
+
+describe("JS apps API", () => {
+  const { listApps, launchApp, quitApp } = require("./busybar-client.ts");
+
+  it("listApps GETs /api/apps/list and returns the apps array", async () => {
+    const fetchMock = mock(async () =>
+      new Response(JSON.stringify({ apps: [{ id: "community.dino_run", name: "Dino Run" }] }), { status: 200 })
+    );
+    const apps = await listApps("http://10.0.4.20", fetchMock as unknown as typeof fetch);
+    expect(fetchMock.mock.calls[0]![0]).toBe("http://10.0.4.20/api/apps/list");
+    expect(apps).toEqual([{ id: "community.dino_run", name: "Dino Run" }]);
+  });
+
+  it("launchApp POSTs /api/apps/launch with the app_id", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ result: "OK" }), { status: 200 }));
+    await launchApp("http://10.0.4.20", "community.dino_run", fetchMock as unknown as typeof fetch);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("http://10.0.4.20/api/apps/launch?app_id=community.dino_run");
+    expect((init as RequestInit).method).toBe("POST");
+  });
+
+  it("launchApp throws on a non-OK status", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ error: "busy" }), { status: 409 }));
+    await expect(launchApp("http://10.0.4.20", "x", fetchMock as unknown as typeof fetch)).rejects.toThrow(/409/);
+  });
+
+  it("quitApp POSTs /api/apps/quit and treats 409 'not running' as success", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ error: "Application is not running" }), { status: 409 }));
+    await quitApp("http://10.0.4.20", fetchMock as unknown as typeof fetch);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("http://10.0.4.20/api/apps/quit");
+    expect((init as RequestInit).method).toBe("POST");
+  });
+
+  it("quitApp throws on other failures", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ error: "nope" }), { status: 503 }));
+    await expect(quitApp("http://10.0.4.20", fetchMock as unknown as typeof fetch)).rejects.toThrow(/503/);
+  });
+});

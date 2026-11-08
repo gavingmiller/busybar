@@ -89,3 +89,52 @@ export async function uploadAsset(
     throw new Error(`BUSY Bar rejected asset upload: ${res.status} ${await res.text()}`);
   }
 }
+
+/** An installed JS app as reported by `GET /api/apps/list` (firmware ≥ 1.3.1). */
+export interface DeviceApp {
+  id: string;
+  name: string;
+  version?: string;
+  api_version?: string;
+  author?: string;
+  description?: string;
+  is_debug?: boolean;
+  icon_path?: string;
+}
+
+/** Lists the JS apps installed on the device. */
+export async function listApps(
+  baseUrl: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<DeviceApp[]> {
+  const res = await fetchImpl(`${baseUrl}/api/apps/list`);
+  if (!res.ok) {
+    throw new Error(`BUSY Bar rejected app list request: ${res.status} ${await res.text()}`);
+  }
+  const body = (await res.json()) as { apps?: DeviceApp[] };
+  return body.apps ?? [];
+}
+
+/** Launches an installed JS app by id. */
+export async function launchApp(
+  baseUrl: string,
+  appId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<void> {
+  const res = await fetchImpl(`${baseUrl}/api/apps/launch?app_id=${encodeURIComponent(appId)}`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    throw new Error(`BUSY Bar rejected launch: ${res.status} ${await res.text()}`);
+  }
+}
+
+/**
+ * Quits whichever JS app is running. The device answers 409 when nothing is
+ * running; that is the state we wanted, so it counts as success.
+ */
+export async function quitApp(baseUrl: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+  const res = await fetchImpl(`${baseUrl}/api/apps/quit`, { method: "POST" });
+  if (res.ok || res.status === 409) return;
+  throw new Error(`BUSY Bar rejected quit: ${res.status} ${await res.text()}`);
+}

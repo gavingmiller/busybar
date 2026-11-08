@@ -1,16 +1,36 @@
 import { mkdirSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
-import { clearAllDisplays as clearAllDisplaysReal } from "../lib/busybar-client.ts";
+import {
+  clearAllDisplays as clearAllDisplaysReal,
+  listApps as listAppsReal,
+  launchApp as launchAppReal,
+  quitApp as quitAppReal,
+  type DeviceApp,
+} from "../lib/busybar-client.ts";
 import { runRainbow as runRainbowReal } from "../nyan-cat/index.ts";
 import { CONTROL_PAGE_HTML } from "./page.ts";
 
-export type NyanState = "on" | "off" | "unknown";
+export type AppState = "on" | "off" | "unknown";
+export type AppKind = "draw" | "js";
 
-export interface NyanStatus {
-  state: NyanState;
+export interface AppStatus {
+  id: string;
+  name: string;
+  kind: AppKind;
+  state: AppState;
+}
+
+export interface AppsStatus {
+  apps: AppStatus[];
   /** UTC ISO 8601 `Z` instant of the last successful command, or null. */
   changedAt: string | null;
+}
+
+/** What the state file holds: the one thing this server last put on the bar. */
+interface StoredState {
+  active: string | null;
+  changedAt: string;
 }
 
 export interface ServerDeps {
@@ -21,9 +41,14 @@ export interface ServerDeps {
   fetchImpl: typeof fetch;
   runRainbow: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
   clearAllDisplays: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
+  listApps: (baseUrl: string, fetchImpl: typeof fetch) => Promise<DeviceApp[]>;
+  launchApp: (baseUrl: string, appId: string, fetchImpl: typeof fetch) => Promise<void>;
+  quitApp: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
   now: () => Date;
 }
 
+/** The draw-API Nyan Cat; not a JS app, so it has no device id of its own. */
+export const NYAN_ID = "nyan_cat";
 export const DEFAULT_PORT = 7495;
 export const DEFAULT_BASE_URL = "http://10.0.4.20";
 export const DEFAULT_STATE_FILE = join(
@@ -41,34 +66,50 @@ const json = (body: unknown, status = 200) =>
   });
 
 /**
- * The device exposes no endpoint that reports what is currently drawn, so
- * the only truth we can offer is the last command this server successfully
- * sent. It lives in a file, never only in memory, so a restart of the
- * server (launchd KeepAlive) doesn't forget it.
+ * The device exposes no endpoint that reports what is currently drawn or
+ * which JS app is running, so the only truth we can offer is the last
+ * command this server successfully sent. It lives in a file, never only in
+ * memory, so a restart of the server (launchd KeepAlive) doesn't forget it.
+ * Only one thing is ever on the bar at once, so the model is "the active
+ * app" rather than a flag per app.
  */
-function readStatus(stateFile: string): NyanStatus {
+function readState(stateFile: string): StoredState | null {
   let raw: string;
   try {
     raw = readFileSync(stateFile, "utf8");
   } catch {
-    return { state: "unknown", changedAt: null };
+    return null;
   }
   try {
     const parsed = JSON.parse(raw);
-    if ((parsed.state === "on" || parsed.state === "off") && typeof parsed.changedAt === "string") {
-      return { state: parsed.state, changedAt: parsed.changedAt };
+    if (
+      (parsed.active === null || typeof parsed.active === "string") &&
+      typeof parsed.changedAt === "string"
+    ) {
+      return { active: parsed.active, changedAt: parsed.changedAt };
     }
   } catch {
     // fall through — a corrupt file is the same as no file
   }
-  return { state: "unknown", changedAt: null };
+  return null;
 }
 
-function writeStatus(stateFile: string, status: NyanStatus): void {
+function writeState(stateFile: string, state: StoredState): void {
   mkdirSync(dirname(stateFile), { recursive: true });
   const tmp = `${stateFile}.tmp`;
-  writeFileSync(tmp, JSON.stringify(status));
+  writeFileSync(tmp, JSON.stringify(state));
   renameSync(tmp, stateFile);
+}
+
+async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<AppsStatus> {
+  const deviceApps = await deps.listApps(deps.baseUrl, deps.fetchImpl);
+  const stateOf = (id: string): AppState =>
+    state === null ? "unknown" : state.active === id ? "on" : "off";
+  const apps: AppStatus[] = [
+    { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: stateOf(NYAN_ID) },
+    ...deviceApps.map((a) => ({ id: a.id, name: a.name, kind: "js" as const, state: stateOf(a.id) })),
+  ];
+  return { apps, changedAt: state?.changedAt ?? null };
 }
 
 export function createHandler(deps: ServerDeps): (req: Request) => Promise<Response> {
@@ -81,36 +122,63 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
       });
     }
 
-    if (url.pathname === "/api/nyan") {
-      if (req.method === "GET") return json(readStatus(deps.stateFile));
-
-      if (req.method === "POST") {
-        let body: unknown;
-        try {
-          body = await req.json();
-        } catch {
-          return json({ error: "Body must be JSON" }, 400);
-        }
-        const on = (body as { on?: unknown } | null)?.on;
-        if (typeof on !== "boolean") {
-          return json({ error: "Body must be { \"on\": true | false }" }, 400);
-        }
-
-        try {
-          if (on) await deps.runRainbow(deps.baseUrl, deps.fetchImpl);
-          else await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
-        } catch (err) {
-          return json({ error: err instanceof Error ? err.message : String(err) }, 502);
-        }
-
-        const status: NyanStatus = { state: on ? "on" : "off", changedAt: deps.now().toISOString() };
-        writeStatus(deps.stateFile, status);
-        return json(status);
+    if (req.method === "GET" && url.pathname === "/api/apps") {
+      try {
+        return json(await statusFor(deps, readState(deps.stateFile)));
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : String(err) }, 502);
       }
-
-      return json({ error: "Method Not Allowed" }, 405);
     }
 
+    const match = url.pathname.match(/^\/api\/apps\/([^/]+)$/);
+    if (match && req.method === "POST") {
+      const id = decodeURIComponent(match[1]!);
+
+      let body: unknown;
+      try {
+        body = await req.json();
+      } catch {
+        return json({ error: "Body must be JSON" }, 400);
+      }
+      const on = (body as { on?: unknown } | null)?.on;
+      if (typeof on !== "boolean") {
+        return json({ error: 'Body must be { "on": true | false }' }, 400);
+      }
+
+      try {
+        const known =
+          id === NYAN_ID ||
+          (await deps.listApps(deps.baseUrl, deps.fetchImpl)).some((a) => a.id === id);
+        if (!known) return json({ error: `Unknown app "${id}"` }, 404);
+
+        // Only one thing is on the bar at a time, so turning anything on
+        // means stopping whatever is running first: quit the JS app (a 409
+        // "not running" is fine), drop every draw, then start the new one.
+        await deps.quitApp(deps.baseUrl, deps.fetchImpl);
+        if (on) {
+          if (id === NYAN_ID) {
+            await deps.runRainbow(deps.baseUrl, deps.fetchImpl);
+          } else {
+            await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
+            await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
+          }
+        } else if (id === NYAN_ID) {
+          await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
+        }
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : String(err) }, 502);
+      }
+
+      const state: StoredState = { active: on ? id : null, changedAt: deps.now().toISOString() };
+      writeState(deps.stateFile, state);
+      try {
+        return json(await statusFor(deps, state));
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : String(err) }, 502);
+      }
+    }
+
+    if (url.pathname === "/api/apps" || match) return json({ error: "Method Not Allowed" }, 405);
     return json({ error: "Not Found" }, 404);
   };
 }
@@ -123,6 +191,9 @@ if (import.meta.main) {
     fetchImpl: fetch,
     runRainbow: runRainbowReal,
     clearAllDisplays: clearAllDisplaysReal,
+    listApps: listAppsReal,
+    launchApp: launchAppReal,
+    quitApp: quitAppReal,
     now: () => new Date(),
   });
   Bun.serve({ hostname: "127.0.0.1", port, fetch: handler });

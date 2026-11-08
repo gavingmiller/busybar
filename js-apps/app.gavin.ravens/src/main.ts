@@ -1,7 +1,7 @@
 import { device } from "@shared/device";
 import type { DisplayDrawParams } from "@busy-app/busy-lib";
 import manifest from "./appmeta/manifest.json";
-import { RAVEN_FRAMES, RAVEN_PERCHED, RAVEN_W, RAVEN_H } from "./sprites";
+import { RAVEN_FRAMES, RAVEN_PERCHED, RAVEN_W, PERCHED_W, PERCHED_H } from "./sprites";
 import { HAVAMAL, nextLine } from "./havamal";
 
 /** The name the app draws under; the device clears elements by this id. */
@@ -13,7 +13,7 @@ const SCREEN_H = 16;
 /** Animation tick. Each tick is one display request, so this stays well under 10/s. */
 const TICK_MS = 160;
 /** Wing frame flips every N ticks. */
-const FLAP_TICKS = 2;
+const FLAP_TICKS = 1;
 /** Stars twinkle every N ticks. */
 const TWINKLE_TICKS = 5;
 
@@ -111,14 +111,14 @@ function perchedElement(r: Raven): Element {
     id: r.id,
     type: "xpmbitmap",
     x: Math.round(r.x),
-    y: SCREEN_H - RAVEN_H,
+    y: SCREEN_H - PERCHED_H,
     data: RAVEN_PERCHED,
     z_index: 3,
   };
 }
 
 function lineElement(p: Palette, text: string): Element {
-  const labelX = RAVEN_W + 2;
+  const labelX = PERCHED_W + 2;
   return {
     id: "line",
     type: "text",
@@ -131,13 +131,14 @@ function lineElement(p: Palette, text: string): Element {
     scroll_rate: SCROLL_RATE,
     scroll_start_delay: 400,
     scroll_repeat_delay: 60_000,
-    z_index: 2,
+    // Above the ravens: Huginn keeps flying across the full height while the line shows.
+    z_index: 4,
   };
 }
 
 /** How long the line needs to scroll fully past, plus a beat before take-off. */
 function lineDurationMs(text: string): number {
-  const travelPx = text.length * SMALL_FONT_PX_PER_CHAR + (SCREEN_W - RAVEN_W - 2);
+  const travelPx = text.length * SMALL_FONT_PX_PER_CHAR + (SCREEN_W - PERCHED_W - 2);
   return 400 + Math.ceil((travelPx / SCROLL_RATE) * 60_000) + 1200;
 }
 
@@ -149,8 +150,9 @@ function main(): void {
   let inFlight = false;
   let lastLine = -1;
 
-  const huginn: Raven = { id: "huginn", x: -RAVEN_W, y: 2, speed: 1.0, phase: 0 };
-  const muninn: Raven = { id: "muninn", x: -RAVEN_W - 30, y: 7, speed: 1.6, phase: 1 };
+  // Both fly at y 0: the traced sprite is the full 16 px of the bar.
+  const huginn: Raven = { id: "huginn", x: -RAVEN_W, y: 0, speed: 1.0, phase: 0 };
+  const muninn: Raven = { id: "muninn", x: -RAVEN_W - 36, y: 0, speed: 1.6, phase: 2 };
 
   const report = (err: unknown) =>
     console.error(`${APP}: ${err instanceof Error ? err.message : String(err)}`);

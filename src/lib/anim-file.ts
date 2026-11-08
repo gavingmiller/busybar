@@ -1,36 +1,46 @@
-// Encoder for BUSY Bar's ".anim" binary format, reverse-engineered from the
-// (public) firmware source: github.com/busy-app/busybar-firmware,
-// lib/anim_file/anim_file_format.h, cross-checked against the reference
-// Python encoder at scripts/seq2anim.py. Not documented in the device's own
-// OpenAPI spec or the busy.app docs mirror.
+// Encoder for BUSY Bar's ".anim" binary format, major version 1 ("bicycle1"),
+// reverse-engineered from the (public) firmware source:
+// github.com/busy-app/busybar-firmware, lib/anim_file/anim_file_format.h,
+// cross-checked against the reference Python encoder at scripts/seq2anim.py.
+// Not documented in the device's own OpenAPI spec or the busy.app docs mirror.
 //
-// File layout: AnimFileHeader (36 bytes) -> Sections chunk -> Frames chunk.
+// Firmware 1.3.1 (HTTP API 27.14, 2026-11) replaced the earlier "bicycle0"
+// layout: durations are gone (every display frame is a file frame), and each
+// frame carries a *mask* saying which pixels changed since the previous
+// frame, followed by only those pixels. The device shows a purple [x] for a
+// file in the old layout.
+//
+// File layout: AnimFileHeader (34 bytes) -> Sections chunk -> Frames chunk.
 // All integers little-endian. We only ever emit one "default" section
-// (covering the whole animation) and Bgra8888 color format (the only mode
-// this project needs — full RGBA color with alpha), Raw encoding only (RLE
-// is optional per the spec; not needed for correctness).
+// (covering the whole animation) and Bgra8888 color format (full RGBA with
+// alpha). Masks: FullyWhite (keyframe, all pixels, no mask data) or
+// FullyBlack (frame identical to the previous one, no pixels at all).
+// Pixels: Raw only — RLE/QOI-like and partial bitmap masks are optional
+// compression this project doesn't need for correctness.
 
-const SIGNATURE = "bicycle0";
+const SIGNATURE = "bicycle1";
 const COLOR_FORMAT_BGRA8888 = 2;
-const FRAME_ENCODING_RAW = 0;
-const HEADER_LENGTH = 36;
+const PIXEL_ENCODING_RAW = 0;
+const MASK_ENCODING_FULLY_BLACK = 0;
+const MASK_ENCODING_FULLY_WHITE = 1;
+const HEADER_LENGTH = 34;
+const FRAME_HEADER_LENGTH = 5;
 
 export interface EncodeAnimFileOptions {
   width: number;
   height: number;
   fps: number;
-  /** One entry per source (display) frame, each RGBA bytes, width*height*4 long. */
+  /** One entry per display frame, each RGBA bytes, width*height*4 long. */
   frames: Uint8Array[];
 }
 
 interface FileFrame {
-  /** How many consecutive identical source frames this one represents. */
-  duration: number;
-  /** Packed Bgra8888 pixel bytes for this frame. */
+  maskEncoding: number;
+  /** Packed Bgra8888 pixel bytes; empty when the frame repeats the previous one. */
   data: Uint8Array;
 }
 
-/** RGBA -> Bgra8888 (B, G, R, A per pixel — this device format's own byte order, not the debunked toDeviceColor R/B swap). */
+/** RGBA -> Bgra8888 (B, G, R, A per pixel — this format's own byte order, not the debunked toDeviceColor R/B swap). */
 function packBgra8888(rgba: Uint8Array): Uint8Array {
   const out = new Uint8Array(rgba.length);
   for (let i = 0; i < rgba.length; i += 4) {
@@ -48,17 +58,17 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   return true;
 }
 
-/** Collapses consecutive identical source frames into one FileFrame with duration > 1. */
+/** A keyframe for the first frame and for any frame that differs; a no-pixel "repeat" frame otherwise. */
 function buildFileFrames(frames: Uint8Array[]): FileFrame[] {
   const fileFrames: FileFrame[] = [];
+  let previous: Uint8Array | null = null;
   for (const frame of frames) {
-    const packed = packBgra8888(frame);
-    const last = fileFrames[fileFrames.length - 1];
-    if (last && sameBytes(last.data, packed) && last.duration < 255) {
-      last.duration++;
+    if (previous && sameBytes(previous, frame)) {
+      fileFrames.push({ maskEncoding: MASK_ENCODING_FULLY_BLACK, data: new Uint8Array(0) });
     } else {
-      fileFrames.push({ duration: 1, data: packed });
+      fileFrames.push({ maskEncoding: MASK_ENCODING_FULLY_WHITE, data: packBgra8888(frame) });
     }
+    previous = frame;
   }
   return fileFrames;
 }
@@ -66,13 +76,19 @@ function buildFileFrames(frames: Uint8Array[]): FileFrame[] {
 export function encodeAnimFile(options: EncodeAnimFileOptions): Uint8Array {
   const { width, height, fps, frames } = options;
   if (frames.length === 0) throw new Error("encodeAnimFile: at least one frame is required");
+  const expected = width * height * 4;
+  frames.forEach((f, i) => {
+    if (f.length !== expected) {
+      throw new Error(`encodeAnimFile: frame ${i} has ${f.length} bytes, expected ${expected} for its size ${width}x${height}`);
+    }
+  });
 
   const fileFrames = buildFileFrames(frames);
-  const maxEncodedLength = Math.max(...fileFrames.map((f) => f.data.length));
+  const maxPixelLength = Math.max(...fileFrames.map((f) => f.data.length));
 
   const sectionName = "default\0";
-  const sectionsChunkLength = 4 + 4 + 4 + 1 + sectionName.length; // start,end,frame_offs,duration_override,name
-  const framesChunkLength = fileFrames.reduce((sum, f) => sum + 4 + f.data.length, 0);
+  const sectionsChunkLength = 4 + 4 + 4 + sectionName.length; // start, end, frame_offs, name
+  const framesChunkLength = fileFrames.reduce((sum, f) => sum + FRAME_HEADER_LENGTH + f.data.length, 0);
 
   const totalLength = HEADER_LENGTH + sectionsChunkLength + framesChunkLength;
   const out = new Uint8Array(totalLength);
@@ -84,31 +100,30 @@ export function encodeAnimFile(options: EncodeAnimFileOptions): Uint8Array {
   dv.setUint8(9, width);
   dv.setUint8(10, height);
   dv.setUint8(11, COLOR_FORMAT_BGRA8888);
-  dv.setUint8(12, fps);
-  dv.setUint16(13, maxEncodedLength, true);
-  dv.setUint8(15, 0); // _unused
-  dv.setUint32(16, sectionsChunkLength, true);
-  dv.setUint32(20, framesChunkLength, true);
-  dv.setUint32(24, 1, true); // section_count
-  dv.setUint32(28, fileFrames.length, true); // file_frame_count
-  dv.setUint32(32, frames.length, true); // display_frame_count
+  dv.setUint16(12, 0, true); // max_mask_length (bits) — our masks carry no data
+  dv.setUint16(14, maxPixelLength, true);
+  dv.setUint8(16, fps);
+  dv.setUint8(17, 0); // _unused
+  dv.setUint32(18, sectionsChunkLength, true);
+  dv.setUint32(22, framesChunkLength, true);
+  dv.setUint32(26, 1, true); // section_count
+  dv.setUint32(30, fileFrames.length, true); // frame_count
 
-  // Sections chunk: single "default" section spanning every display frame.
+  // Sections chunk: single "default" section spanning every frame.
   const sectionsOffset = HEADER_LENGTH;
   dv.setUint32(sectionsOffset + 0, 0, true); // start
-  dv.setUint32(sectionsOffset + 4, frames.length - 1, true); // end
-  dv.setUint32(sectionsOffset + 8, HEADER_LENGTH + sectionsChunkLength, true); // frame_offs (first file frame's offset)
-  dv.setUint8(sectionsOffset + 12, fileFrames[0]!.duration); // duration_override
-  new TextEncoder().encodeInto(sectionName, out.subarray(sectionsOffset + 13, sectionsOffset + 13 + sectionName.length));
+  dv.setUint32(sectionsOffset + 4, fileFrames.length - 1, true); // end
+  dv.setUint32(sectionsOffset + 8, HEADER_LENGTH + sectionsChunkLength, true); // frame_offs
+  new TextEncoder().encodeInto(sectionName, out.subarray(sectionsOffset + 12, sectionsOffset + 12 + sectionName.length));
 
   // Frames chunk
   let offset = HEADER_LENGTH + sectionsChunkLength;
   for (const fileFrame of fileFrames) {
-    dv.setUint8(offset + 0, FRAME_ENCODING_RAW);
-    dv.setUint8(offset + 1, fileFrame.duration);
-    dv.setUint16(offset + 2, fileFrame.data.length, true);
-    out.set(fileFrame.data, offset + 4);
-    offset += 4 + fileFrame.data.length;
+    dv.setUint8(offset + 0, PIXEL_ENCODING_RAW | (fileFrame.maskEncoding << 4));
+    dv.setUint16(offset + 1, 0, true); // mask_length (bits)
+    dv.setUint16(offset + 3, fileFrame.data.length, true); // pixel_length (bytes)
+    out.set(fileFrame.data, offset + FRAME_HEADER_LENGTH);
+    offset += FRAME_HEADER_LENGTH + fileFrame.data.length;
   }
 
   return out;

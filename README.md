@@ -52,8 +52,11 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   - `bun run color-grid` — draws the grid and prints the row/column key.
 
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
-  only) with a web page that turns Nyan Cat on and off. Pantheon embeds it as
-  its "BUSY Bar" tab, so the toggle lives in the hub.
+  only) with a web page that turns every app on the bar on and off: Nyan Cat
+  (the draw-API animation above) plus each JS app the bar reports as
+  installed. Pantheon embeds it as its "BUSY Bar" tab, so the toggles live in
+  the hub. One thing shows at a time, so turning anything on first quits the
+  running JS app and clears every draw.
   - `bun run server` — run it by hand (`BUSYBAR_CONTROL_PORT`,
     `BUSYBAR_BASE_URL` and `BUSYBAR_STATE_FILE` override the defaults).
   - `bun run install-launchd` — installs `launchd/com.busybar.server.plist`
@@ -62,13 +65,16 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     truth; edit it there and re-run.
   - `GET /` — the control page (Light / Dark / System theme, hidden inside
     Pantheon where it follows `prefers-color-scheme`).
-  - `GET /api/nyan` → `{ "state": "on" | "off" | "unknown", "changedAt": <UTC ISO Z> }`.
-    The device has no endpoint that reports what it is drawing, so this is
-    the last command the server successfully sent, persisted in
-    `~/Library/Application Support/busybar/state.json`.
-  - `POST /api/nyan` with `{ "on": true }` runs the same thing as
-    `nyan-cat:rainbow`; `{ "on": false }` clears every app's draw. A device
-    failure answers 502 and leaves the stored state alone.
+  - `GET /api/apps` → `{ "apps": [{ "id", "name", "kind": "draw" | "js",
+    "state": "on" | "off" | "unknown" }], "changedAt": <UTC ISO Z> }`. The
+    device has no endpoint that reports what it is showing, so the states
+    come from the last command the server successfully sent, persisted in
+    `~/Library/Application Support/busybar/state.json` (`unknown` until the
+    first command, or after a firmware update reboots the bar).
+  - `POST /api/apps/<id>` with `{ "on": true }` runs `nyan-cat:rainbow` for
+    `nyan_cat`, or `POST /api/apps/launch` for a JS app; `{ "on": false }`
+    quits / clears. A device failure answers 502 and leaves the stored state
+    alone.
 
 ## JS apps (run on the bar itself)
 
@@ -91,6 +97,19 @@ the bar keeps it in its APPS menu and runs it on its own.
     bar on USB (`npm run app:stop` / `npm run app:uninstall` to undo). The
     sprites are XPM2 bitmaps built in `src/sprites.ts`; the lines are in
     `src/havamal.ts`. `src/appmeta/icon_front_8x8.png` is the menu icon.
+    The raven is traced from the sixth sprite of an itch.io raven sheet
+    Gavin picked (the first flying pose), five flap frames at 20x16, with
+    the sheet's standing pose for the perch.
+- **js-apps/gavin.dino_auto** — *Dino Run Auto*. The community
+  [Dino Run](https://github.com/alexseminoisok/busybar-dino-run) endless
+  runner playing itself: an autopilot in the game loop simulates the game's
+  own collision model one jump ahead and jumps or ducks when staying put
+  would hit; the title and game-over screens auto-advance, so it loops
+  forever as a stand-alone animation. **Back** still exits. Nothing of the
+  game is vendored: `build.sh` downloads the upstream release package,
+  `patch.py` rewrites `scripts/main.js` and the manifest (new id, sound off
+  by default), and `./build.sh --install` stages and installs the result on
+  the bar over USB. Needs `gh` and Python 3.
 
 ### Shared code
 

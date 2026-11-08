@@ -52,12 +52,14 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 20px;
+    padding: 4px 20px;
     margin-bottom: 16px;
   }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+  .row + .row { border-top: 1px solid var(--border); }
   .label { font-size: 18px; font-weight: 600; }
-  .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+  .kind { color: var(--muted); font-size: 13px; font-weight: 400; margin-left: 8px; }
+  .note { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
   .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .seg button {
     font: inherit; font-size: 16px; padding: 8px 16px; border: 0; cursor: pointer;
@@ -66,7 +68,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   .seg button + button { border-left: 1px solid var(--border); }
   .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
   .seg button:disabled { cursor: progress; opacity: .7; }
-  .status { margin-top: 12px; font-size: 14px; min-height: 1.5em; }
+  .status { margin: 0 0 16px; font-size: 14px; min-height: 1.5em; }
   .status.busy { animation: busy-pulse 1.3s ease-in-out infinite; color: var(--muted); }
   .status.error { color: var(--error); }
   .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--off); margin-right: 8px; vertical-align: middle; }
@@ -81,18 +83,10 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
 <body>
 <main>
   <h1>BUSY Bar</h1>
+  <p class="note">One app shows at a time. The bar can't report what it is showing, so this is the last command sent from here.</p>
+  <div class="status" id="status" aria-live="polite"></div>
 
-  <section class="card">
-    <div class="row">
-      <div class="label"><span class="dot" id="dot"></span>Nyan Cat</div>
-      <div class="seg" role="group" aria-label="Nyan Cat">
-        <button type="button" id="btn-on" aria-pressed="false">On</button>
-        <button type="button" id="btn-off" aria-pressed="false">Off</button>
-      </div>
-    </div>
-    <div class="status" id="status" aria-live="polite"></div>
-    <p class="note" id="note">The bar can't report what it is showing, so this is the last command sent from here.</p>
-  </section>
+  <section class="card" id="apps"></section>
 
   <div class="theme" id="theme">
     <div class="seg" role="group" aria-label="Theme">
@@ -136,10 +130,8 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     });
   }
 
-  var btnOn = document.getElementById('btn-on');
-  var btnOff = document.getElementById('btn-off');
+  var appsEl = document.getElementById('apps');
   var statusEl = document.getElementById('status');
-  var dot = document.getElementById('dot');
 
   function fmt(iso) {
     if (!iso) return '';
@@ -150,44 +142,81 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     // Pantheon. Regina is fixed UTC-6, the same zone the bar itself runs on.
     return d.toLocaleString('en-CA', { timeZone: 'America/Regina', month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
-  function render(s) {
-    btnOn.setAttribute('aria-pressed', String(s.state === 'on'));
-    btnOff.setAttribute('aria-pressed', String(s.state === 'off'));
-    dot.className = 'dot' + (s.state === 'on' ? ' on' : '');
+  function render(data) {
+    appsEl.textContent = '';
+    var active = null;
+    data.apps.forEach(function (app) {
+      if (app.state === 'on') active = app;
+      var row = document.createElement('div');
+      row.className = 'row';
+      var label = document.createElement('div');
+      label.className = 'label';
+      var dot = document.createElement('span');
+      dot.className = 'dot' + (app.state === 'on' ? ' on' : '');
+      label.appendChild(dot);
+      label.appendChild(document.createTextNode(app.name));
+      if (app.kind === 'js') {
+        var kind = document.createElement('span');
+        kind.className = 'kind';
+        kind.textContent = 'JS app';
+        label.appendChild(kind);
+      }
+      var seg = document.createElement('div');
+      seg.className = 'seg';
+      seg.setAttribute('role', 'group');
+      seg.setAttribute('aria-label', app.name);
+      ['On', 'Off'].forEach(function (text) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = text;
+        var on = text === 'On';
+        b.setAttribute('aria-pressed', String(app.state === (on ? 'on' : 'off')));
+        b.setAttribute('data-app', app.id);
+        b.setAttribute('data-on', String(on));
+        b.addEventListener('click', function () { send(app, on); });
+        seg.appendChild(b);
+      });
+      row.appendChild(label);
+      row.appendChild(seg);
+      appsEl.appendChild(row);
+    });
     statusEl.className = 'status';
-    if (s.state === 'unknown') statusEl.textContent = 'No command sent yet.';
-    else statusEl.textContent = (s.state === 'on' ? 'Turned on ' : 'Turned off ') + fmt(s.changedAt);
+    if (!data.changedAt) statusEl.textContent = 'No command sent yet.';
+    else if (active) statusEl.textContent = active.name + ' turned on ' + fmt(data.changedAt);
+    else statusEl.textContent = 'Turned off ' + fmt(data.changedAt);
   }
   function setBusy(text) {
-    btnOn.disabled = true; btnOff.disabled = true;
+    var buttons = appsEl.querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
     statusEl.className = 'status busy';
     statusEl.textContent = text;
   }
   function setError(text) {
-    btnOn.disabled = false; btnOff.disabled = false;
+    var buttons = appsEl.querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) buttons[i].disabled = false;
     statusEl.className = 'status error';
     statusEl.textContent = text;
   }
-  function done(s) {
-    btnOn.disabled = false; btnOff.disabled = false;
-    render(s);
-  }
 
-  function send(on) {
-    setBusy(on ? 'Drawing Nyan Cat on the bar\\u2026' : 'Clearing the bar\\u2026');
-    fetch('/api/nyan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: on }) })
+  function send(app, on) {
+    setBusy(on ? 'Starting ' + app.name + ' on the bar\\u2026' : 'Stopping ' + app.name + '\\u2026');
+    fetch('/api/apps/' + encodeURIComponent(app.id), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: on }) })
       .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
       .then(function (r) {
         if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
-        done(r.body);
+        render(r.body);
       })
       .catch(function (err) { setError('Failed: ' + err.message); });
   }
-  btnOn.addEventListener('click', function () { send(true); });
-  btnOff.addEventListener('click', function () { send(false); });
 
-  fetch('/api/nyan').then(function (r) { return r.json(); }).then(render)
-    .catch(function (err) { setError('Could not read state: ' + err.message); });
+  setBusy('Reading the bar\\u2019s app list\\u2026');
+  fetch('/api/apps')
+    .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+    .then(function (r) {
+      if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
+      render(r.body);
+    })
+    .catch(function (err) { setError('Could not read the bar: ' + err.message); });
 })();
 </script>
 </body>
