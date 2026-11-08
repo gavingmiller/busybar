@@ -51,6 +51,25 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   2-step saturation ramp, plus a 12-step grayscale ramp.
   - `bun run color-grid` — draws the grid and prints the row/column key.
 
+- **server** — a small always-on control server (`127.0.0.1:7495`, loopback
+  only) with a web page that turns Nyan Cat on and off. Pantheon embeds it as
+  its "BUSY Bar" tab, so the toggle lives in the hub.
+  - `bun run server` — run it by hand (`BUSYBAR_CONTROL_PORT`,
+    `BUSYBAR_BASE_URL` and `BUSYBAR_STATE_FILE` override the defaults).
+  - `bun run install-launchd` — installs `launchd/com.busybar.server.plist`
+    into `~/Library/LaunchAgents` (KeepAlive, starts at login, logs to
+    `~/Library/Logs/busybar/server.log`). The repo copy is the source of
+    truth; edit it there and re-run.
+  - `GET /` — the control page (Light / Dark / System theme, hidden inside
+    Pantheon where it follows `prefers-color-scheme`).
+  - `GET /api/nyan` → `{ "state": "on" | "off" | "unknown", "changedAt": <UTC ISO Z> }`.
+    The device has no endpoint that reports what it is drawing, so this is
+    the last command the server successfully sent, persisted in
+    `~/Library/Application Support/busybar/state.json`.
+  - `POST /api/nyan` with `{ "on": true }` runs the same thing as
+    `nyan-cat:rainbow`; `{ "on": false }` clears every app's draw. A device
+    failure answers 502 and leaves the stored state alone.
+
 ### Shared code
 
 `src/lib/` holds the rendering/animation pipeline every app is built on top

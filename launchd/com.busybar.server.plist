@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  BUSY Bar control server :7495 (2026-11-08). Serves the on/off control page
+  that Pantheon embeds as its "BUSY Bar" tab. Loopback only: the device is
+  on USB from this Mac, so there is nothing to reach from elsewhere.
+  launchd adds restart on crash and start at login.
+-->
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/Users/gmiller/.bun/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+	</dict>
+	<key>KeepAlive</key>
+	<true/>
+	<key>Label</key>
+	<string>com.busybar.server</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/gmiller/.bun/bin/bun</string>
+		<string>src/server/index.ts</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/gmiller/Library/Logs/busybar/server.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/gmiller/Library/Logs/busybar/server.log</string>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>WorkingDirectory</key>
+	<string>/Users/gmiller/projects/busybar</string>
+</dict>
+</plist>

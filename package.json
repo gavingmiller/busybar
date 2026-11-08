@@ -10,6 +10,8 @@
     "nyan-cat:flying": "bun src/nyan-cat/index.ts flying",
     "nyan-cat:rainbow": "bun src/nyan-cat/index.ts rainbow",
     "color-grid": "bun src/color-grid/index.ts",
+    "server": "bun src/server/index.ts",
+    "install-launchd": "bash launchd/install.sh",
     "test": "bun test"
   },
   "devDependencies": {
