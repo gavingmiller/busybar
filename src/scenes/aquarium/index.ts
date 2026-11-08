@@ -9,7 +9,7 @@
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 
 export const AQUARIUM_FPS = 24;
-export const AQUARIUM_LOOP_S = 24;
+export const AQUARIUM_LOOP_S = 96; // 4x the original 24 s: fish were entirely too fast (Gavin 2026-11-08)
 export const AQUARIUM_FRAME_COUNT = AQUARIUM_FPS * AQUARIUM_LOOP_S;
 
 type RGB = readonly [number, number, number];
@@ -119,9 +119,9 @@ function makeFish(): Fish[] {
       size,
       width,
       x0: between(0, W + width + FISH_GAP),
-      crossings: size === 2 ? 1 : pick([2, 2, 3]),
+      crossings: size === 2 ? 1 : pick([2, 2, 2]), // ~1.7 px/s small, ~0.85 px/s big over the 96 s loop
       y: Math.floor(between(2, size === 1 ? 11 : 9)),
-      bobCycles: pick([4, 5, 6]),
+      bobCycles: pick([16, 20, 24]),
       bobPhase: between(0, Math.PI * 2),
       palette: i % FISH_PALETTES.length,
       variant: Math.floor(random() * 3),
@@ -139,8 +139,8 @@ function makeBubbles(): Bubble[] {
   return Array.from({ length: 10 }, () => ({
     x: 1 + Math.floor(random() * (W - 2)),
     y0: between(0, BUBBLE_TRACK),
-    rises: pick([3, 4, 5, 6, 7]),
-    swayCycles: pick([7, 8, 9, 10]),
+    rises: pick([12, 16, 20, 24, 28]),
+    swayCycles: pick([28, 32, 36, 40]),
     swayPhase: between(0, Math.PI * 2),
     big: random() < 0.18,
   }));
@@ -150,7 +150,7 @@ function makePlants(): Plant[] {
   return [2, 8, 14, 22, 31, 40, 50, 59, 67].map((x) => ({
     x: x + Math.floor(between(-1, 2)),
     height: 3 + Math.floor(random() * 5),
-    swayCycles: pick([3, 4, 5]),
+    swayCycles: pick([12, 16, 20]),
     phase: between(0, Math.PI * 2),
     branch: random() < 0.5 ? -1 : 1,
   }));

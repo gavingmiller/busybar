@@ -11,14 +11,14 @@ const px = (f: Uint8Array, x: number, y: number) => {
 describe("AQUARIUM scene", () => {
   const frames = AQUARIUM.frames();
 
-  it("is a full-display opaque loop of 10–30 s at 24–48 fps", () => {
+  it("is a full-display opaque loop of 10–120 s at 24–48 fps", () => {
     expect(AQUARIUM.id).toBe("aquarium");
     expect(AQUARIUM.name).toBe("Aquarium");
     expect(AQUARIUM.fps).toBe(AQUARIUM_FPS);
     expect(AQUARIUM_FPS).toBeGreaterThanOrEqual(24);
     expect(AQUARIUM_FPS).toBeLessThanOrEqual(48);
     expect(AQUARIUM_LOOP_S).toBeGreaterThanOrEqual(10);
-    expect(AQUARIUM_LOOP_S).toBeLessThanOrEqual(30);
+    expect(AQUARIUM_LOOP_S).toBeLessThanOrEqual(120);
     expect(frames).toHaveLength(AQUARIUM_FRAME_COUNT);
     expect(AQUARIUM_FRAME_COUNT).toBe(AQUARIUM_FPS * AQUARIUM_LOOP_S);
     for (const f of frames) {
@@ -45,6 +45,18 @@ describe("AQUARIUM scene", () => {
     expect(FISH.some((f) => f.dir < 0)).toBe(true);
   });
 
+  it("fish swim lazily: no fish faster than 2.5 px/s, big fish slower than small (Gavin 2026-11-08: they were entirely too fast)", () => {
+    const speed = (f: typeof FISH[number]) => Math.abs(fishX(f, 1) - fishX(f, 0));
+    for (const f of FISH) {
+      expect(speed(f)).toBeLessThanOrEqual(2.5);
+      expect(speed(f)).toBeGreaterThanOrEqual(0.5);
+    }
+    const big = FISH.filter((f) => f.size === 2), small = FISH.filter((f) => f.size === 1);
+    if (big.length && small.length) expect(Math.max(...big.map(speed))).toBeLessThan(Math.min(...small.map(speed)));
+    // Bubbles keep their original pace (2.75 px/s and up) rather than slowing with the fish.
+    for (const b of BUBBLES) expect(Math.abs(bubbleY(b, 1) - bubbleY(b, 0))).toBeGreaterThanOrEqual(2.5);
+  });
+
   it("fish move between frames and bubbles rise", () => {
     for (const f of FISH) {
       const d = fishX(f, 1 / AQUARIUM_FPS) - fishX(f, 0);
@@ -65,8 +77,8 @@ describe("AQUARIUM scene", () => {
     expect(water[2]).toBeGreaterThan(water[0]!); // blue over red
   });
 
-  it("encodes under 6 MB", () => {
+  it("encodes under 12 MB", () => {
     const bytes = encodeAnimFile({ width: FRONT_WIDTH, height: FRONT_HEIGHT, fps: AQUARIUM_FPS, frames });
-    expect(bytes.length).toBeLessThan(6 * 1024 * 1024);
+    expect(bytes.length).toBeLessThan(12 * 1024 * 1024);
   });
 });
