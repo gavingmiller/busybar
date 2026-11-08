@@ -62,10 +62,21 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   2-step saturation ramp, plus a 12-step grayscale ramp.
   - `bun run color-grid` — draws the grid and prints the row/column key.
 
+- **scenes** — pre-rendered full-display loops the bar plays natively
+  (`src/scenes/<name>/`, each exporting a `Scene` from `src/lib/scene.ts`:
+  id, name, fps and `frames()` returning one seamless 72x16 RGBA loop).
+  `runScene` encodes the loop once, uploads it under a content-hashed file
+  name unless the device already holds it, draws it looping, then drops that
+  scene's stale renders. Ported from the community gallery
+  (github.com/maxswinkels/busybar-apps), whose versions redraw from the host
+  over HTTP a few frames a second: Lava Lamp (`lava_lamp`), Matrix Rain
+  (`matrix_rain`) and Aquarium (`aquarium`). Register new ones in
+  `src/scenes/index.ts`; the control server lists them automatically.
+
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
   only) with a web page that turns every app on the bar on and off: Nyan Cat
-  (the draw-API animation above) plus each JS app the bar reports as
-  installed. Pantheon embeds it as its "BUSY Bar" tab, so the toggles live in
+  (the draw-API animation above), every registered scene, plus each JS app
+  the bar reports as installed. Pantheon embeds it as its "BUSY Bar" tab, so the toggles live in
   the hub. One thing shows at a time, so turning anything on first quits the
   running JS app and clears every draw.
   - `bun run server` — run it by hand (`BUSYBAR_CONTROL_PORT`,
@@ -84,8 +95,8 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     first command, or after a firmware update reboots the bar).
   - `POST /api/apps/<id>` with `{ "on": true }` runs `nyan-cat:rainbow` for
     `nyan_cat` (and starts its camera pan, which the server keeps running
-    until anything else is turned on), or `POST /api/apps/launch` for a JS
-    app; `{ "on": false }` quits / clears. A device failure answers 502 and
+    until anything else is turned on), `runScene` for a scene id, or
+    `POST /api/apps/launch` for a JS app; `{ "on": false }` quits / clears. A device failure answers 502 and
     leaves the stored state alone.
 
 ## JS apps (run on the bar itself)
