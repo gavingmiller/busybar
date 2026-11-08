@@ -1,5 +1,5 @@
 import { describe, it, expect, mock } from "bun:test";
-import { drawElements, clearDisplay, clearAllDisplays, drawFrame, uploadAsset } from "./busybar-client.ts";
+import { drawElements, clearDisplay, clearAllDisplays, drawFrame, uploadAsset, listStorage, removeStorageFile } from "./busybar-client.ts";
 
 describe("drawElements", () => {
   it("POSTs the payload to <baseUrl>/api/display/draw", async () => {
@@ -185,5 +185,36 @@ describe("JS apps API", () => {
   it("quitApp throws on other failures", async () => {
     const fetchMock = mock(async () => new Response(JSON.stringify({ error: "nope" }), { status: 503 }));
     await expect(quitApp("http://10.0.4.20", fetchMock as unknown as typeof fetch)).rejects.toThrow(/503/);
+  });
+});
+
+describe("storage", () => {
+
+  it("listStorage GETs the directory listing and returns its entries", async () => {
+    const calls: Array<{ url: string; method?: string }> = [];
+    const fetchMock = mock(async (url: string, init?: RequestInit) => {
+      calls.push({ url, method: init?.method });
+      return new Response(JSON.stringify({ list: [{ type: "file", name: "a.anim", size: 12 }, { type: "dir", name: "x" }] }), { status: 200 });
+    });
+    const entries = await listStorage("http://10.0.4.20", "/ext/user_assets/nyan_cat", fetchMock as unknown as typeof fetch);
+    expect(calls).toEqual([{ url: "http://10.0.4.20/api/storage/list?path=%2Fext%2Fuser_assets%2Fnyan_cat", method: undefined }]);
+    expect(entries).toEqual([{ type: "file", name: "a.anim", size: 12 }, { type: "dir", name: "x" }]);
+  });
+
+  it("listStorage returns an empty list for a directory that does not exist yet (400)", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ error: "Bad Request" }), { status: 400 }));
+    expect(await listStorage("http://10.0.4.20", "/ext/user_assets/nope", fetchMock as unknown as typeof fetch)).toEqual([]);
+  });
+
+  it("removeStorageFile DELETEs /api/storage/remove and throws on failure", async () => {
+    const calls: Array<{ url: string; method?: string }> = [];
+    const fetchMock = mock(async (url: string, init?: RequestInit) => {
+      calls.push({ url, method: init?.method });
+      return new Response(JSON.stringify({ result: "OK" }), { status: 200 });
+    });
+    await removeStorageFile("http://10.0.4.20", "/ext/user_assets/nyan_cat/old.anim", fetchMock as unknown as typeof fetch);
+    expect(calls).toEqual([{ url: "http://10.0.4.20/api/storage/remove?path=%2Fext%2Fuser_assets%2Fnyan_cat%2Fold.anim", method: "DELETE" }]);
+    const failing = mock(async () => new Response("nope", { status: 500 }));
+    await expect(removeStorageFile("http://10.0.4.20", "/x", failing as unknown as typeof fetch)).rejects.toThrow(/500/);
   });
 });

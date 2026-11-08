@@ -138,3 +138,30 @@ export async function quitApp(baseUrl: string, fetchImpl: typeof fetch = fetch):
   if (res.ok || res.status === 409) return;
   throw new Error(`BUSY Bar rejected quit: ${res.status} ${await res.text()}`);
 }
+
+/** One entry of a device storage directory (`GET /api/storage/list`). */
+export interface StorageEntry {
+  type: "file" | "dir";
+  name: string;
+  size?: number;
+}
+
+/** Lists a device storage directory; a directory that doesn't exist yet lists as empty (the device answers 400). */
+export async function listStorage(baseUrl: string, path: string, fetchImpl: typeof fetch = fetch): Promise<StorageEntry[]> {
+  const res = await fetchImpl(`${baseUrl}/api/storage/list?path=${encodeURIComponent(path)}`);
+  if (res.status === 400) return [];
+  if (!res.ok) throw new Error(`BUSY Bar rejected storage listing: ${res.status} ${await res.text()}`);
+  const body = (await res.json()) as { list?: StorageEntry[] };
+  return body.list ?? [];
+}
+
+/** Deletes one file from device storage (`DELETE /api/storage/remove`, confirmed live on fw 1.3.1). */
+export async function removeStorageFile(baseUrl: string, path: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+  const res = await fetchImpl(`${baseUrl}/api/storage/remove?path=${encodeURIComponent(path)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`BUSY Bar rejected storage remove: ${res.status} ${await res.text()}`);
+}
+
+/** Where `uploadAsset(baseUrl, applicationName, fileName)` lands on the device. */
+export function assetStoragePath(applicationName: string, fileName = ""): string {
+  return `/ext/user_assets/${applicationName}${fileName ? `/${fileName}` : ""}`;
+}

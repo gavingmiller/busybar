@@ -8,8 +8,10 @@ import {
   quitApp as quitAppReal,
   type DeviceApp,
 } from "../lib/busybar-client.ts";
-import { runRainbow as runRainbowReal, moveNyanCat, nyanHomeElementX } from "../nyan-cat/index.ts";
+import { runRainbow as runRainbowReal, playNyanCatSection } from "../nyan-cat/index.ts";
 import { startPan as startPanReal, type PanHandle } from "../nyan-cat/pan.ts";
+import { EXCURSIONS, excursionDurationMs } from "../nyan-cat/excursion.ts";
+import { SKY_FPS, SKY_FRAME_COUNT } from "../nyan-cat/sky.ts";
 import { CONTROL_PAGE_HTML } from "./page.ts";
 
 export type AppState = "on" | "off" | "unknown";
@@ -209,8 +211,9 @@ if (import.meta.main) {
     quitApp: quitAppReal,
     startPan: (baseUrl, fetchImpl) =>
       startPanReal({
-        homeX: nyanHomeElementX(),
-        draw: (x) => moveNyanCat(baseUrl, x, fetchImpl),
+        excursions: EXCURSIONS.map((e) => ({ name: e.name, durationMs: excursionDurationMs(e) })),
+        loopMs: (SKY_FRAME_COUNT / SKY_FPS) * 1000,
+        play: (section, loop) => playNyanCatSection(baseUrl, section, loop, fetchImpl),
         onError: (err) => console.error(`nyan pan: ${err instanceof Error ? err.message : String(err)}`),
       }),
     now: () => new Date(),

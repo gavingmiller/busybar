@@ -166,3 +166,63 @@ describe("encodeAnimFile (bicycle1)", () => {
     ).toThrow(/size/);
   });
 });
+
+describe("encodeAnimFile sections", () => {
+  const red = rgbaPixels("#FF0000FF");
+  const blue = rgbaPixels("#0000FFFF");
+
+  it("writes a whole-file \"default\" section first, then one entry per named section, each starting on a keyframe", () => {
+    // The firmware refuses a file without a leading "default" section covering
+    // every frame (Dino Run's files all carry one; a file with only named
+    // sections showed the error screen live, 2026-11-08).
+    const bytes = encodeAnimFile({
+      width: 1,
+      height: 1,
+      fps: 8,
+      sections: [
+        { name: "home", frames: [red, red] },
+        { name: "exc", frames: [red, blue] },
+      ],
+    });
+    const header = readHeader(bytes);
+    expect(header.sectionCount).toBe(3);
+    expect(header.frameCount).toBe(4);
+    const sectionsChunkLength = 12 + "default\0".length + 12 + "home\0".length + 12 + "exc\0".length;
+    expect(header.sectionsChunkLength).toBe(sectionsChunkLength);
+
+    const framesStart = HEADER_LENGTH + sectionsChunkLength;
+    const entry = (off: number, nameLen: number) => {
+      const dv = new DataView(bytes.buffer, off, 12);
+      return { start: dv.getUint32(0, true), end: dv.getUint32(4, true), frameOffs: dv.getUint32(8, true), name: new TextDecoder().decode(bytes.slice(off + 12, off + 12 + nameLen)) };
+    };
+    const def = entry(HEADER_LENGTH, 8);
+    expect(def).toEqual({ start: 0, end: 3, frameOffs: framesStart, name: "default\0" });
+    const home = entry(HEADER_LENGTH + 20, 5);
+    expect(home).toEqual({ start: 0, end: 1, frameOffs: framesStart, name: "home\0" });
+
+    // home: keyframe red, then a repeat.
+    const f0 = readFrame(bytes, framesStart);
+    expect(f0.maskEncoding).toBe(MASK_FULLY_WHITE);
+    const f1 = readFrame(bytes, f0.next);
+    expect(f1.maskEncoding).toBe(MASK_FULLY_BLACK);
+    // exc: the player seeks here, so its first frame is a keyframe even though
+    // it equals the frame before it in the file.
+    const exc = entry(HEADER_LENGTH + 37, 4);
+    expect(exc).toEqual({ start: 2, end: 3, frameOffs: f1.next, name: "exc\0" });
+    const f2 = readFrame(bytes, f1.next);
+    expect(f2.maskEncoding).toBe(MASK_FULLY_WHITE);
+    expect([...f2.pixels]).toEqual([0, 0, 255, 255]);
+    const f3 = readFrame(bytes, f2.next);
+    expect([...f3.pixels]).toEqual([255, 0, 0, 255]);
+    expect(f3.next).toBe(bytes.length);
+  });
+
+  it("`frames` alone is the single \"default\" section, and the two forms are exclusive", () => {
+    const a = encodeAnimFile({ width: 1, height: 1, fps: 8, frames: [red] });
+    const b = encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [{ name: "default", frames: [red] }] });
+    expect([...a]).toEqual([...b]);
+    expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, frames: [red], sections: [{ name: "x", frames: [red] }] })).toThrow();
+    expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [] })).toThrow();
+    expect(() => encodeAnimFile({ width: 1, height: 1, fps: 8, sections: [{ name: "x", frames: [] }] })).toThrow();
+  });
+});

@@ -1,7 +1,9 @@
-import { drawFrame, drawElements, uploadAsset, clearAllDisplays } from "../lib/busybar-client.ts";
+import { drawFrame, drawElements, uploadAsset, clearAllDisplays, listStorage, removeStorageFile, assetStoragePath } from "../lib/busybar-client.ts";
 import { runAnimation, installShutdownHandler, type AnimationHandle } from "../lib/animate.ts";
 import { encodeAnimFile } from "../lib/anim-file.ts";
-import { starLayerFrames, catLayerFrames, skyCatOrigin, SKY_WIDTH, SKY_HEIGHT, SKY_FPS, CAT_LAYER_WIDTH, CAT_LAYER_TRAIL_LENGTH } from "./sky.ts";
+import { starLayerFrames, skyCatOrigin, SKY_WIDTH, SKY_HEIGHT, SKY_FPS, CAT_LAYER_TRAIL_LENGTH } from "./sky.ts";
+import { catPanLayerSections, catPanLayerWidth, PAN_PAD } from "./excursion.ts";
+import { HOME_SECTION } from "./pan.ts";
 import {
   nyanCatPayload,
   sceneAnimationFrames,
@@ -16,47 +18,74 @@ import {
   DRAW_PRIORITY,
 } from "./sprite.ts";
 
-const APPLICATION_NAME = "nyan_cat";
+export const NYAN_APPLICATION_NAME = "nyan_cat";
+const APPLICATION_NAME = NYAN_APPLICATION_NAME;
 const FRAME_INTERVAL_MS = 150;
 const FLYING_STEP_PX = 2;
-const STARS_ASSET_FILENAME = "nyan-stars.anim";
-const CAT_ASSET_FILENAME = "nyan-cat-layer.anim";
-/** The cat layer's element id; the control server pans this element (see pan.ts). */
+/** The cat layer's element id; the control server switches this element's section (see pan.ts). */
 export const NYAN_CAT_ELEMENT_ID = "cat";
 
-/** Element x that puts the cat at its home spot (the layer starts a trail-length to the left of the cat). */
+/** Element x of the cat layer: the cat's home spot, less the trail baked to its left, less the pan padding. The element never moves. */
 export function nyanHomeElementX(): number {
-  return skyCatOrigin().x - (CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP);
+  return skyCatOrigin().x - (CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP) - PAN_PAD;
+}
+
+interface EncodedAssets {
+  stars: Uint8Array;
+  cat: Uint8Array;
+  names: { stars: string; cat: string };
+}
+
+let encodedAssets: EncodedAssets | null = null;
+
+/** First 8 hex digits of the SHA-1 of `bytes`. */
+function contentHash(bytes: Uint8Array): string {
+  return new Bun.CryptoHasher("sha1").update(bytes).digest("hex").slice(0, 8);
 }
 
 /**
- * The cat layer element at element x `x` (home = nyanHomeElementX()).
- *
- * `await_previous_end` matters: an upsert must carry `path` (the device
- * 400s without it), and a plain re-send makes the firmware restart the
- * asset, which at the pan's 9 upserts/s froze the cat's run cycle (4
- * distinct leg frames in 4 s against 8–9 at rest, measured live). With
- * `await_previous_end: true` the running range carries on under the new
- * position (8 in 4 s, i.e. at-rest cadence).
+ * The two layer assets, encoded once per process. Their file names carry a
+ * content hash, so a device that already holds them (a previous run of the
+ * same code) needs no re-upload — the cat layer with its pan sections is
+ * ~8 MB and takes ~20 s over the USB link.
  */
-export function nyanCatLayerElement(x: number): Record<string, unknown> {
+function assets(): EncodedAssets {
+  if (encodedAssets) return encodedAssets;
+  const stars = encodeAnimFile({ width: SKY_WIDTH, height: SKY_HEIGHT, fps: SKY_FPS, frames: starLayerFrames() });
+  const cat = encodeAnimFile({ width: catPanLayerWidth(), height: CAT_HEIGHT, fps: SKY_FPS, sections: catPanLayerSections() });
+  encodedAssets = { stars, cat, names: { stars: `nyan-stars-${contentHash(stars)}.anim`, cat: `nyan-cat-${contentHash(cat)}.anim` } };
+  return encodedAssets;
+}
+
+/** The asset file names this build draws with. */
+export function nyanAssetNames(): { stars: string; cat: string } {
+  return assets().names;
+}
+
+/**
+ * The cat layer element playing `section`. `await_previous_end` queues the
+ * change behind whatever is playing (on the loop boundary when it loops),
+ * which both keeps the run cycle unbroken and is how the pan excursions
+ * splice in seamlessly (excursion.ts).
+ */
+export function nyanCatLayerElement(section: string, loop: boolean, awaitPreviousEnd: boolean): Record<string, unknown> {
   return {
     id: NYAN_CAT_ELEMENT_ID,
     type: "animation",
-    path: CAT_ASSET_FILENAME,
-    section: "default",
-    loop: true,
-    await_previous_end: true,
-    x,
+    path: assets().names.cat,
+    section,
+    loop,
+    ...(awaitPreviousEnd ? { await_previous_end: true } : {}),
+    x: nyanHomeElementX(),
     y: skyCatOrigin().y,
     z_index: 2,
     display: "front",
   };
 }
 
-/** Upserts just the cat layer at a new x; used by the pan to move it without touching the stars. */
-export async function moveNyanCat(baseUrl: string, x: number, fetchImpl: typeof fetch = fetch): Promise<void> {
-  await drawElements(baseUrl, { application_name: APPLICATION_NAME, priority: DRAW_PRIORITY, elements: [nyanCatLayerElement(x)] }, fetchImpl);
+/** Queues `section` of the cat layer to play after the current one ends; the pan's only device call. */
+export async function playNyanCatSection(baseUrl: string, section: string, loop: boolean, fetchImpl: typeof fetch = fetch): Promise<void> {
+  await drawElements(baseUrl, { application_name: APPLICATION_NAME, priority: DRAW_PRIORITY, elements: [nyanCatLayerElement(section, loop, true)] }, fetchImpl);
 }
 // The composited scene samples at the trail's own native cadence (see
 // sceneAnimationFrames) — a similar visual pace to the old ~150ms/frame
@@ -120,13 +149,17 @@ export async function runRainbow(
 
   // Two transparent layers (the firmware composites them since 1.3.1): the
   // star field over the whole display, and the cat + a display-width trail
-  // in front of it, so the cat can be panned without moving the sky.
-  const starsBytes = encodeAnimFile({ width: SKY_WIDTH, height: SKY_HEIGHT, fps: SKY_FPS, frames: starLayerFrames() });
-  await uploadAsset(baseUrl, APPLICATION_NAME, STARS_ASSET_FILENAME, starsBytes, fetchImpl);
-  const catBytes = encodeAnimFile({ width: CAT_LAYER_WIDTH, height: CAT_HEIGHT, fps: SKY_FPS, frames: catLayerFrames() });
-  await uploadAsset(baseUrl, APPLICATION_NAME, CAT_ASSET_FILENAME, catBytes, fetchImpl);
-
-  if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
+  // (with its pan excursions as extra sections) in front of it. Upload only
+  // what the device doesn't already hold, and drop this app's stale builds.
+  const { stars, cat, names } = assets();
+  const present = new Set((await listStorage(baseUrl, assetStoragePath(APPLICATION_NAME), fetchImpl)).filter((e) => e.type === "file").map((e) => e.name));
+  let uploaded = false;
+  for (const [name, bytes] of [[names.stars, stars], [names.cat, cat]] as const) {
+    if (present.has(name)) continue;
+    await uploadAsset(baseUrl, APPLICATION_NAME, name, bytes, fetchImpl);
+    uploaded = true;
+  }
+  if (uploaded && settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
 
   await drawFrame(
     baseUrl,
@@ -134,12 +167,22 @@ export async function runRainbow(
       application_name: APPLICATION_NAME,
       priority: DRAW_PRIORITY,
       elements: [
-        { id: "stars", type: "animation", path: STARS_ASSET_FILENAME, loop: true, x: 0, y: 0, z_index: 1, display: "front" },
-        nyanCatLayerElement(nyanHomeElementX()),
+        { id: "stars", type: "animation", path: names.stars, loop: true, x: 0, y: 0, z_index: 1, display: "front" },
+        nyanCatLayerElement(HOME_SECTION, true, false),
       ],
     },
     fetchImpl
   );
+
+  // Only now drop this app's stale builds: the new draw references the new
+  // files, so nothing on the display can still hold an old one open.
+  // Removing an asset that an element is playing wedges the device's HTTP
+  // server until a USB power cycle (happened live 2026-11-08).
+  for (const name of present) {
+    if (/^nyan-(stars|cat)-[0-9a-f]{8}\.anim$/.test(name) && name !== names.stars && name !== names.cat) {
+      await removeStorageFile(baseUrl, assetStoragePath(APPLICATION_NAME, name), fetchImpl);
+    }
+  }
 }
 
 if (import.meta.main) {

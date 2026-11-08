@@ -1,79 +1,36 @@
 // Camera "pan": every so often the sky seems to pull ahead and the cat falls
-// behind (drifts left), hangs there a moment, then catches up (drifts back
-// to its home spot). The scene itself is a native looping .anim; only the
-// cat layer's x is nudged, by the always-on control server, through
-// ordinary draw upserts (confirmed live: moving an AnimationElement does
-// not restart its playback, and the star layer behind it stays put).
-
-export interface PanStep {
-  /** Cat element x to draw. The first step is the home position (no draw, just the idle wait). */
-  x: number;
-  /** How long to wait after this step before the next one. */
-  waitMs: number;
-}
+// behind, hangs there a moment, then catches up. The motion itself is baked
+// into the cat layer's .anim as extra sections (excursion.ts) and plays at
+// the device's own frame rate; this module only decides WHEN, and tells the
+// device which section to play next.
+//
+// Device semantics (Dino Run's pattern, confirmed live 2026-11-08): an upsert
+// with `await_previous_end` is queued and starts when the running section
+// ends — on the loop boundary for a looping one — and the queue is one deep:
+// a second queued upsert replaces the first. So: queue the one-shot
+// excursion, wait a full loop (it has started by then), queue the home loop
+// to follow it, then wait the excursion out.
 
 export const PAN = {
   /** Idle at home between excursions, ms. */
   idleMs: [5_000, 20_000] as const,
-  /** How far the cat falls behind, px. */
-  driftPx: [8, 24] as const,
-  /** Hold at the far point, ms. */
-  holdMs: [500, 3_000] as const,
-  /** Nominal duration of the drift out and the catch-up, ms (stretched when the 1 px/step floor demands). */
-  driftOutMs: 2_600,
-  catchUpMs: 2_200,
-  /** Shortest gap between draws while moving; the device throttles above ~10 req/s. */
-  stepMs: 120,
-  minStepMs: 110,
-  maxDriftPx: 24,
+  /** Slack past one loop before queuing home behind the excursion. */
+  startMarginMs: 500,
 };
 
-/** Inverse of a quadratic ease-in-out: the time fraction at which the eased progress reaches `y`. */
-const easeInOutInverse = (y: number) => (y < 0.5 ? Math.sqrt(y / 2) : 1 - Math.sqrt((1 - y) / 2));
-const pick = (random: () => number, [min, max]: readonly [number, number]) => min + random() * (max - min);
+export const HOME_SECTION = "home";
 
-/**
- * Steps for a move from `from` to `to`: always one pixel per draw (so the
- * motion is never jumpy), with the ease-in-out expressed in the time between
- * draws — slow at both ends, fastest in the middle, never faster than
- * PAN.minStepMs per pixel. `ms` is the nominal duration; it stretches if the
- * per-pixel floor needs more.
- */
-function moveSteps(from: number, to: number, ms: number, holdAfterMs: number): PanStep[] {
-  const n = Math.abs(to - from);
-  const dir = Math.sign(to - from);
-  const steps: PanStep[] = [];
-  for (let i = 1; i <= n; i++) {
-    const x = from + dir * i;
-    const last = i === n;
-    const wait = last ? holdAfterMs : Math.max(PAN.minStepMs, Math.round((easeInOutInverse((i + 1) / n) - easeInOutInverse(i / n)) * ms));
-    steps.push({ x, waitMs: wait });
-  }
-  return steps;
-}
-
-/**
- * One excursion from `homeX`: idle, drift left by a random distance, hold,
- * catch up to home. `random` returns [0, 1) and is consumed in that order:
- * idle, distance, hold.
- */
-export function planPan(homeX: number, random: () => number = Math.random): PanStep[] {
-  const idle = Math.round(pick(random, PAN.idleMs));
-  const drift = Math.round(pick(random, PAN.driftPx));
-  const hold = Math.round(pick(random, PAN.holdMs));
-  const far = homeX - drift;
-  return [
-    { x: homeX, waitMs: idle },
-    ...moveSteps(homeX, far, PAN.driftOutMs, hold),
-    // Back home; the next plan's own idle wait follows, so just one normal step gap here.
-    ...moveSteps(far, homeX, PAN.catchUpMs, PAN.stepMs),
-  ];
+export interface PanExcursion {
+  name: string;
+  durationMs: number;
 }
 
 export interface PanDeps {
-  homeX: number;
-  /** Draws the cat element at x (an upsert of just that element). */
-  draw: (x: number) => Promise<void>;
+  excursions: readonly PanExcursion[];
+  /** Length of the home loop, ms. */
+  loopMs: number;
+  /** Upserts the cat element to play `section` (looping or one-shot) after the current one ends. */
+  play: (section: string, loop: boolean) => Promise<void>;
   random?: () => number;
   schedule?: (fn: () => void, ms: number) => unknown;
   cancel?: (id: unknown) => void;
@@ -84,31 +41,37 @@ export interface PanHandle {
   stop(): void;
 }
 
-/** Runs excursions back to back until stopped. Each draw is awaited before the next wait starts, so steps never overlap. */
+const pick = (random: () => number, [min, max]: readonly [number, number]) => min + random() * (max - min);
+
+/** Runs idle → excursion → home cycles until stopped. */
 export function startPan(deps: PanDeps): PanHandle {
   const random = deps.random ?? Math.random;
   const schedule = deps.schedule ?? ((fn, ms) => setTimeout(fn, ms));
   const cancel = deps.cancel ?? ((id) => clearTimeout(id as ReturnType<typeof setTimeout>));
   let stopped = false;
   let timer: unknown = null;
-  let plan: PanStep[] = [];
-  let index = 0;
 
-  const next = (): void => {
+  const after = (ms: number, fn: () => void): void => {
     if (stopped) return;
-    if (index >= plan.length) {
-      plan = planPan(deps.homeX, random);
-      index = 0;
-    }
-    const step = plan[index++]!;
-    const go = index === 1 ? Promise.resolve() : deps.draw(step.x).catch((err) => deps.onError?.(err));
-    void go.then(() => {
+    timer = schedule(fn, ms);
+  };
+  const play = (section: string, loop: boolean): Promise<void> =>
+    deps.play(section, loop).catch((err) => deps.onError?.(err));
+
+  const cycle = (): void => {
+    after(Math.round(pick(random, PAN.idleMs)), () => {
       if (stopped) return;
-      timer = schedule(next, step.waitMs);
+      const excursion = deps.excursions[Math.min(deps.excursions.length - 1, Math.floor(random() * deps.excursions.length))]!;
+      void play(excursion.name, false).then(() => {
+        after(deps.loopMs + PAN.startMarginMs, () => {
+          if (stopped) return;
+          void play(HOME_SECTION, true).then(() => after(excursion.durationMs, cycle));
+        });
+      });
     });
   };
 
-  next();
+  cycle();
   return {
     stop() {
       stopped = true;

@@ -11,9 +11,9 @@
 // file in the old layout.
 //
 // File layout: AnimFileHeader (34 bytes) -> Sections chunk -> Frames chunk.
-// All integers little-endian. We only ever emit one "default" section
-// (covering the whole animation) and Bgra8888 color format (full RGBA with
-// alpha). Masks: FullyWhite (keyframe, all pixels, no mask data) or
+// All integers little-endian. Sections are named frame ranges the player can
+// seek to (a single "default" one unless the caller names its own); colors
+// are Bgra8888 (full RGBA with alpha). Masks: FullyWhite (keyframe, all pixels, no mask data) or
 // FullyBlack (frame identical to the previous one, no pixels at all).
 // Pixels: Raw only — RLE/QOI-like and partial bitmap masks are optional
 // compression this project doesn't need for correctness.
@@ -26,12 +26,26 @@ const MASK_ENCODING_FULLY_WHITE = 1;
 const HEADER_LENGTH = 34;
 const FRAME_HEADER_LENGTH = 5;
 
+export interface AnimSection {
+  /** Section name as referenced by an AnimationElement's `section` field. */
+  name: string;
+  /** One entry per display frame, each RGBA bytes, width*height*4 long. */
+  frames: Uint8Array[];
+}
+
 export interface EncodeAnimFileOptions {
   width: number;
   height: number;
   fps: number;
-  /** One entry per display frame, each RGBA bytes, width*height*4 long. */
-  frames: Uint8Array[];
+  /** One entry per display frame, each RGBA bytes, width*height*4 long. Shorthand for a single "default" section. */
+  frames?: Uint8Array[];
+  /**
+   * Named sections the player can seek to (`section` on the element; a
+   * switch with `await_previous_end` happens on the running section's loop
+   * boundary, which is how Dino Run changes speed and how Nyan Cat pans).
+   * Every section starts on a keyframe since the player seeks to it.
+   */
+  sections?: AnimSection[];
 }
 
 interface FileFrame {
@@ -74,20 +88,38 @@ function buildFileFrames(frames: Uint8Array[]): FileFrame[] {
 }
 
 export function encodeAnimFile(options: EncodeAnimFileOptions): Uint8Array {
-  const { width, height, fps, frames } = options;
-  if (frames.length === 0) throw new Error("encodeAnimFile: at least one frame is required");
+  const { width, height, fps } = options;
+  if (options.frames && options.sections) throw new Error("encodeAnimFile: pass either frames or sections, not both");
+  const sections: AnimSection[] = options.sections ?? (options.frames ? [{ name: "default", frames: options.frames }] : []);
+  if (sections.length === 0) throw new Error("encodeAnimFile: at least one section is required");
   const expected = width * height * 4;
-  frames.forEach((f, i) => {
-    if (f.length !== expected) {
-      throw new Error(`encodeAnimFile: frame ${i} has ${f.length} bytes, expected ${expected} for its size ${width}x${height}`);
-    }
-  });
+  for (const section of sections) {
+    if (section.frames.length === 0) throw new Error(`encodeAnimFile: section "${section.name}" has no frames`);
+    section.frames.forEach((f, i) => {
+      if (f.length !== expected) {
+        throw new Error(`encodeAnimFile: frame ${i} of "${section.name}" has ${f.length} bytes, expected ${expected} for its size ${width}x${height}`);
+      }
+    });
+  }
 
-  const fileFrames = buildFileFrames(frames);
+  // Each section is encoded on its own so it opens with a keyframe.
+  const perSection = sections.map((s) => buildFileFrames(s.frames));
+  const fileFrames = perSection.flat();
   const maxPixelLength = Math.max(...fileFrames.map((f) => f.data.length));
 
-  const sectionName = "default\0";
-  const sectionsChunkLength = 4 + 4 + 4 + sectionName.length; // start, end, frame_offs, name
+  // Section entries: the firmware wants a "default" section spanning the
+  // whole file first (every Dino Run asset has one; without it the device
+  // shows its error screen), then the caller's named ranges.
+  const entries: Array<{ name: string; start: number; count: number }> = [];
+  if (sections[0]!.name !== "default") entries.push({ name: "default", start: 0, count: fileFrames.length });
+  let runningStart = 0;
+  for (const [i, s] of sections.entries()) {
+    entries.push({ name: s.name, start: runningStart, count: perSection[i]!.length });
+    runningStart += perSection[i]!.length;
+  }
+  const encoder = new TextEncoder();
+  const entryNames = entries.map((e) => encoder.encode(`${e.name}\0`));
+  const sectionsChunkLength = entryNames.reduce((sum, n) => sum + 4 + 4 + 4 + n.length, 0); // start, end, frame_offs, name
   const framesChunkLength = fileFrames.reduce((sum, f) => sum + FRAME_HEADER_LENGTH + f.data.length, 0);
 
   const totalLength = HEADER_LENGTH + sectionsChunkLength + framesChunkLength;
@@ -106,15 +138,23 @@ export function encodeAnimFile(options: EncodeAnimFileOptions): Uint8Array {
   dv.setUint8(17, 0); // _unused
   dv.setUint32(18, sectionsChunkLength, true);
   dv.setUint32(22, framesChunkLength, true);
-  dv.setUint32(26, 1, true); // section_count
+  dv.setUint32(26, entries.length, true); // section_count
   dv.setUint32(30, fileFrames.length, true); // frame_count
 
-  // Sections chunk: single "default" section spanning every frame.
-  const sectionsOffset = HEADER_LENGTH;
-  dv.setUint32(sectionsOffset + 0, 0, true); // start
-  dv.setUint32(sectionsOffset + 4, fileFrames.length - 1, true); // end
-  dv.setUint32(sectionsOffset + 8, HEADER_LENGTH + sectionsChunkLength, true); // frame_offs
-  new TextEncoder().encodeInto(sectionName, out.subarray(sectionsOffset + 12, sectionsOffset + 12 + sectionName.length));
+  // Sections chunk: start/end are frame indices into the whole file,
+  // frame_offs the absolute byte offset of the section's first frame.
+  const frameOffsets: number[] = [];
+  let acc = HEADER_LENGTH + sectionsChunkLength;
+  for (const f of fileFrames) { frameOffsets.push(acc); acc += FRAME_HEADER_LENGTH + f.data.length; }
+  let sectionsOffset = HEADER_LENGTH;
+  entries.forEach((e, i) => {
+    const name = entryNames[i]!;
+    dv.setUint32(sectionsOffset + 0, e.start, true); // start
+    dv.setUint32(sectionsOffset + 4, e.start + e.count - 1, true); // end
+    dv.setUint32(sectionsOffset + 8, frameOffsets[e.start]!, true); // frame_offs
+    out.set(name, sectionsOffset + 12);
+    sectionsOffset += 12 + name.length;
+  });
 
   // Frames chunk
   let offset = HEADER_LENGTH + sectionsChunkLength;
