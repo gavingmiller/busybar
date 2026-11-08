@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 import {
-  LAVA_LAMP, LAVA_FPS, LAVA_LOOP_S, LAVA_FRAME_COUNT, MOTION_LOOP_S, PALETTES, paletteAt, blobPaletteAt, BLOBS, blobStates, renderFrame,
+  LAVA_LAMP, LAVA_FPS, LAVA_LOOP_S, LAVA_FRAME_COUNT, MOTION_LOOP_S, PALETTES, paletteAt, BLOBS, blobStates, renderFrame,
 } from "./index.ts";
 
 const px = (frame: Uint8Array, x: number, y: number) => {
@@ -20,7 +20,7 @@ describe("LAVA_LAMP scene", () => {
     expect(LAVA_LAMP.fps).toBe(LAVA_FPS);
     expect(LAVA_FPS).toBeGreaterThanOrEqual(24);
     expect(LAVA_FPS).toBeLessThanOrEqual(48);
-    expect(LAVA_LOOP_S).toBeGreaterThanOrEqual(180); // Gavin 2026-11-08: the 60 s tour was too quick
+    expect(LAVA_LOOP_S).toBeGreaterThanOrEqual(180); // Gavin 2026-11-08: a 10 s dwell per theme was too quick; every blob shares ONE colour (per-blob clocks were rejected)
     expect(LAVA_LOOP_S).toBeLessThanOrEqual(400);
     expect(LAVA_LOOP_S % MOTION_LOOP_S).toBe(0); // the blob motion repeats a whole number of times per colour cycle
     expect(frames).toHaveLength(LAVA_FRAME_COUNT);
@@ -77,48 +77,24 @@ describe("LAVA_LAMP scene", () => {
     }
   });
 
-  it("gives every blob its own colour clock: whole tours per loop so the loop closes, at least three distinct speeds, and no blob faster than one theme per 20 s", () => {
-    const speeds = new Set(BLOBS.map((b) => b.hueCycles));
-    expect(speeds.size).toBeGreaterThanOrEqual(3);
-    for (const [k, b] of BLOBS.entries()) {
-      expect(Number.isInteger(b.hueCycles)).toBe(true);
-      expect(b.hueCycles).toBeGreaterThanOrEqual(1);
-      expect(LAVA_LOOP_S / (b.hueCycles * PALETTES.length)).toBeGreaterThanOrEqual(20);
-      expect(blobPaletteAt(k, LAVA_FRAME_COUNT)).toEqual(blobPaletteAt(k, 0));
-      // gradual
-      for (const f of [1, Math.floor(LAVA_FRAME_COUNT / 7), LAVA_FRAME_COUNT - 1]) {
-        const p0 = blobPaletteAt(k, f - 1), p1 = blobPaletteAt(k, f);
-        for (let c = 0; c < 6; c++) expect(Math.abs(p1[c]! - p0[c]!)).toBeLessThanOrEqual(3);
-      }
-    }
-    // Two blobs with different speeds are different colours most of the time.
-    const [a, b] = [0, BLOBS.findIndex((x) => x.hueCycles !== BLOBS[0]!.hueCycles)];
-    let differ = 0;
-    for (let f = 0; f < LAVA_FRAME_COUNT; f += LAVA_FPS) {
-      const pa = blobPaletteAt(a, f), pb = blobPaletteAt(b, f);
-      if (pa.some((v, i) => Math.abs(v - pb[i]!) > 40)) differ++;
-    }
-    expect(differ).toBeGreaterThan(LAVA_LOOP_S * 0.6);
-  });
-
-  it("renders blobs in different colours at the same moment, over dark glass", () => {
-    const hues = (f: Uint8Array) => {
-      const seen = new Set<string>(); let dark = 0;
+  it("renders those colours: orange lava at the start, blue in the ocean segment, green in the toxic one, with dark glass throughout", () => {
+    const seg = LAVA_FRAME_COUNT / PALETTES.length;
+    const dominant = (f: Uint8Array) => {
+      let r = 0, g = 0, b = 0, dark = 0;
       for (let y = 0; y < FRONT_HEIGHT; y++) for (let x = 0; x < FRONT_WIDTH; x++) {
-        const [r, g, b] = px(f, x, y);
-        if (r + g + b < 60) dark++;
-        else if (r + g + b > 350) seen.add(r >= g && r >= b ? "R" : g >= b ? "G" : "B");
+        const [pr, pg, pb] = px(f, x, y);
+        if (pr + pg + pb < 60) dark++;
+        else if (pr + pg + pb > 350) { if (pr >= pg && pr >= pb) r++; else if (pg >= pb) g++; else b++; }
       }
-      return { seen, dark };
+      return { r, g, b, dark };
     };
-    let multi = 0;
-    const samples = [0, 0.2, 0.4, 0.6, 0.8].map((u) => Math.floor(u * LAVA_FRAME_COUNT));
-    for (const i of samples) {
-      const { seen, dark } = hues(frames[i]!);
-      expect(dark).toBeGreaterThan(200);
-      if (seen.size >= 2) multi++;
-    }
-    expect(multi).toBeGreaterThanOrEqual(3);
+    const classic = dominant(frames[0]!);
+    const ocean = dominant(frames[Math.round(3 * seg)]!);
+    const toxic = dominant(frames[Math.round(5 * seg)]!);
+    expect(classic.r).toBeGreaterThan(40); expect(classic.b).toBe(0);
+    expect(ocean.b).toBeGreaterThan(40); expect(ocean.r).toBe(0);
+    expect(toxic.g).toBeGreaterThan(40); expect(toxic.b).toBe(0);
+    for (const d of [classic, ocean, toxic]) expect(d.dark).toBeGreaterThan(200);
   });
 
   it("encodes to a modest .anim asset", () => {

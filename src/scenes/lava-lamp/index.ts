@@ -52,9 +52,6 @@ export interface Blob {
   lobeW: number;
   lobeCycles: number;
   lobePhase: number;
-  /** This blob's own colour clock: whole tours of the palette ring per loop, and where on the ring it starts (0..1). */
-  hueCycles: number;
-  huePhase: number;
 }
 
 /**
@@ -65,12 +62,12 @@ export interface Blob {
  * two or three are in view at a time against the dark glass.
  */
 export const BLOBS: readonly Blob[] = [
-  { anchorX: 7,  wobble: 2.2, wobbleCycles: 1, wobblePhase: 0.3, midY: 8, rise: 16, riseCycles: 1, risePhase: 0.0, radius: 5.6, pulse: 0.16, pulseCycles: 3, pulsePhase: 1.1, squash: 0.18, lobeW: 0.24, lobeCycles: 2, lobePhase: 0.4 , hueCycles: 1, huePhase: 0.0 },
-  { anchorX: 20, wobble: 3.0, wobbleCycles: 2, wobblePhase: 2.1, midY: 8, rise: 17, riseCycles: 2, risePhase: 2.4, radius: 4.6, pulse: 0.14, pulseCycles: 4, pulsePhase: 0.2, squash: 0.22, lobeW: 0.22, lobeCycles: 3, lobePhase: 2.9 , hueCycles: 2, huePhase: 0.5 },
-  { anchorX: 33, wobble: 2.6, wobbleCycles: 1, wobblePhase: 4.0, midY: 8, rise: 16, riseCycles: 1, risePhase: 3.6, radius: 6.0, pulse: 0.16, pulseCycles: 2, pulsePhase: 2.7, squash: 0.16, lobeW: 0.26, lobeCycles: 1, lobePhase: 1.6 , hueCycles: 1, huePhase: 0.33 },
-  { anchorX: 45, wobble: 2.4, wobbleCycles: 2, wobblePhase: 1.2, midY: 8, rise: 17, riseCycles: 3, risePhase: 1.3, radius: 4.4, pulse: 0.18, pulseCycles: 5, pulsePhase: 4.1, squash: 0.24, lobeW: 0.20, lobeCycles: 2, lobePhase: 5.2 , hueCycles: 3, huePhase: 0.17 },
-  { anchorX: 57, wobble: 2.8, wobbleCycles: 1, wobblePhase: 5.3, midY: 8, rise: 16, riseCycles: 2, risePhase: 5.0, radius: 5.2, pulse: 0.15, pulseCycles: 3, pulsePhase: 0.9, squash: 0.2,  lobeW: 0.24, lobeCycles: 3, lobePhase: 3.3 , hueCycles: 2, huePhase: 0.83 },
-  { anchorX: 67, wobble: 2.0, wobbleCycles: 2, wobblePhase: 0.8, midY: 8, rise: 17, riseCycles: 1, risePhase: 1.9, radius: 5.7, pulse: 0.16, pulseCycles: 2, pulsePhase: 3.5, squash: 0.17, lobeW: 0.22, lobeCycles: 1, lobePhase: 0.1 , hueCycles: 1, huePhase: 0.67 },
+  { anchorX: 7,  wobble: 2.2, wobbleCycles: 1, wobblePhase: 0.3, midY: 8, rise: 16, riseCycles: 1, risePhase: 0.0, radius: 5.6, pulse: 0.16, pulseCycles: 3, pulsePhase: 1.1, squash: 0.18, lobeW: 0.24, lobeCycles: 2, lobePhase: 0.4 },
+  { anchorX: 20, wobble: 3.0, wobbleCycles: 2, wobblePhase: 2.1, midY: 8, rise: 17, riseCycles: 2, risePhase: 2.4, radius: 4.6, pulse: 0.14, pulseCycles: 4, pulsePhase: 0.2, squash: 0.22, lobeW: 0.22, lobeCycles: 3, lobePhase: 2.9 },
+  { anchorX: 33, wobble: 2.6, wobbleCycles: 1, wobblePhase: 4.0, midY: 8, rise: 16, riseCycles: 1, risePhase: 3.6, radius: 6.0, pulse: 0.16, pulseCycles: 2, pulsePhase: 2.7, squash: 0.16, lobeW: 0.26, lobeCycles: 1, lobePhase: 1.6 },
+  { anchorX: 45, wobble: 2.4, wobbleCycles: 2, wobblePhase: 1.2, midY: 8, rise: 17, riseCycles: 3, risePhase: 1.3, radius: 4.4, pulse: 0.18, pulseCycles: 5, pulsePhase: 4.1, squash: 0.24, lobeW: 0.20, lobeCycles: 2, lobePhase: 5.2 },
+  { anchorX: 57, wobble: 2.8, wobbleCycles: 1, wobblePhase: 5.3, midY: 8, rise: 16, riseCycles: 2, risePhase: 5.0, radius: 5.2, pulse: 0.15, pulseCycles: 3, pulsePhase: 0.9, squash: 0.2,  lobeW: 0.24, lobeCycles: 3, lobePhase: 3.3 },
+  { anchorX: 67, wobble: 2.0, wobbleCycles: 2, wobblePhase: 0.8, midY: 8, rise: 17, riseCycles: 1, risePhase: 1.9, radius: 5.7, pulse: 0.16, pulseCycles: 2, pulsePhase: 3.5, squash: 0.17, lobeW: 0.22, lobeCycles: 1, lobePhase: 0.1 },
 ];
 
 export interface BlobState {
@@ -123,25 +120,13 @@ const smooth = (t: number) => t * t * (3 - 2 * t);
  * imperceptibly from frame to frame and the ring closes on the loop.
  */
 export function paletteAt(frame: number): number[] {
-  return ringAt(((frame % LAVA_FRAME_COUNT) + LAVA_FRAME_COUNT) % LAVA_FRAME_COUNT / LAVA_FRAME_COUNT);
-}
-
-/** Nine channel values (lava, highlight, background) at ring position `u` (any real; 1 = one full tour). */
-function ringAt(u: number): number[] {
   const n = PALETTES.length;
-  const pos = ((u % 1) + 1) % 1 * n;
-  const i = Math.floor(pos) % n;
-  const t = smooth(pos - Math.floor(pos));
+  const pos = (((frame % LAVA_FRAME_COUNT) + LAVA_FRAME_COUNT) % LAVA_FRAME_COUNT) / LAVA_FRAME_COUNT * n;
+  const i = Math.floor(pos);
+  const t = smooth(pos - i);
   const a = PALETTES[i]!, b = PALETTES[(i + 1) % n]!;
   const blend = (x: string, y: string) => mix(hex(x), hex(y), t).map(Math.round);
   return [...blend(a.lava, b.lava), ...blend(a.highlight, b.highlight), ...blend(a.background, b.background)];
-}
-
-/** Blob `k`'s lava and highlight colours (six channel values) on `frame`, from its own clock. */
-export function blobPaletteAt(k: number, frame: number): number[] {
-  const b = BLOBS[k]!;
-  const u = (((frame % LAVA_FRAME_COUNT) + LAVA_FRAME_COUNT) % LAVA_FRAME_COUNT) / LAVA_FRAME_COUNT;
-  return ringAt(b.hueCycles * u + b.huePhase).slice(0, 6);
 }
 
 // Rendering constants from the original's defaults.
@@ -157,15 +142,13 @@ export function renderFrame(frame: number): Uint8Array {
   const states = blobStates(frame);
   const t = ((frame % MOTION_FRAME_COUNT) / MOTION_FRAME_COUNT) * MOTION_LOOP_S;
   const pal = paletteAt(frame);
-  const BG: [number, number, number] = [pal[6]!, pal[7]!, pal[8]!];
-  const blobPal = states.map((_, k) => blobPaletteAt(k, frame));
+  const LAVA = pal.slice(0, 3), HI = pal.slice(3, 6), BG: [number, number, number] = [pal[6]!, pal[7]!, pal[8]!];
   const edgeK = 0.10 + SOFTNESS * 0.26;
+  const haloC = scale(LAVA, 0.24 * BRIGHTNESS);
   for (let y = 0; y < FRONT_HEIGHT; y++) {
     for (let x = 0; x < FRONT_WIDTH; x++) {
       let field = 0;
       let heat = 0;
-      // Each blob tints the wax in its own colour, weighted by how much of the field it owns here.
-      const lavaMix = [0, 0, 0], hiMix = [0, 0, 0];
       for (let k = 0; k < states.length; k++) {
         const s = states[k]!;
         const dx = (x - s.x) / s.rx;
@@ -177,15 +160,9 @@ export function renderFrame(frame: number): Uint8Array {
         const ldy = (y - s.y - s.lobeDy) / lry;
         c += s.lobeW / (ldx * ldx + ldy * ldy + 0.16);
         field += c;
-        const bp = blobPal[k]!;
-        for (let ch = 0; ch < 3; ch++) { lavaMix[ch]! += c * bp[ch]!; hiMix[ch]! += c * bp[ch + 3]!; }
         // Heat varies per blob on a loop-closing cycle (the original used t*0.35 with a random phase).
         heat += c * (0.72 + 0.28 * Math.sin(s.heatPhase + TAU * Math.round(0.35 * MOTION_LOOP_S / TAU) * (t / MOTION_LOOP_S)));
       }
-      const inv = 1 / Math.max(field, 1e-6);
-      const LAVA = [lavaMix[0]! * inv, lavaMix[1]! * inv, lavaMix[2]! * inv];
-      const HI = [hiMix[0]! * inv, hiMix[1]! * inv, hiMix[2]! * inv];
-      const haloC = scale(LAVA, 0.24 * BRIGHTNESS);
       const f = field * 0.54 * DENSITY;
       const edge = 1 / (1 + Math.exp(-(f - 1) / edgeK));
       // Halo onset raised from the original's 0.28: six periodic blobs keep the field
