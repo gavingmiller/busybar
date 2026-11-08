@@ -28,10 +28,10 @@ describe("excursions", () => {
     expect(EXCURSIONS.some((e) => e.name === HOME_SECTION)).toBe(false);
   });
 
-  it("moves at a lazy pace: no leg averages more than 2.5 px/s (Gavin 2026-11-08: the pan should take longer)", () => {
+  it("moves at a glacial pace: no leg averages more than 0.65 px/s (Gavin 2026-11-08: 4x longer than the ~2 px/s version)", () => {
     for (const e of EXCURSIONS) {
-      expect(e.driftPx / e.outS).toBeLessThanOrEqual(2.5);
-      expect(e.driftPx / e.backS).toBeLessThanOrEqual(2.5);
+      expect(e.driftPx / e.outS).toBeLessThanOrEqual(0.65);
+      expect(e.driftPx / e.backS).toBeLessThanOrEqual(0.65);
     }
   });
 

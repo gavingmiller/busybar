@@ -31,10 +31,10 @@ export interface Excursion {
 const LOOP_S = SKY_FRAME_COUNT / SKY_FPS;
 
 export const EXCURSIONS: readonly Excursion[] = [
-  // Lazy pace, ~2 px/s: the cat drifts, lingers, and ambles back over 2–4 home loops.
-  { name: "exc_s", driftPx: 10, outS: 5.0, holdS: 1.5, backS: 2 * LOOP_S - 6.5 },
-  { name: "exc_m", driftPx: 16, outS: 7.0, holdS: 2.0, backS: 3 * LOOP_S - 9.0 },
-  { name: "exc_l", driftPx: PAN_PAD, outS: 10.0, holdS: 3.0, backS: 4 * LOOP_S - 13.0 },
+  // Glacial pace, ~0.5 px/s: the cat drifts, lingers, and ambles back over 8–16 home loops.
+  { name: "exc_s", driftPx: 10, outS: 20.0, holdS: 6.0, backS: 8 * LOOP_S - 26.0 },
+  { name: "exc_m", driftPx: 16, outS: 28.0, holdS: 8.0, backS: 12 * LOOP_S - 36.0 },
+  { name: "exc_l", driftPx: PAN_PAD, outS: 40.0, holdS: 12.0, backS: 16 * LOOP_S - 52.0 },
 ];
 
 export function excursionFrameCount(e: Excursion): number {
