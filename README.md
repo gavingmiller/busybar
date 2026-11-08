@@ -100,16 +100,19 @@ the bar keeps it in its APPS menu and runs it on its own.
     The raven is traced from the sixth sprite of an itch.io raven sheet
     Gavin picked (the first flying pose), five flap frames at 20x16, with
     the sheet's standing pose for the perch.
-- **js-apps/gavin.dino_auto** — *Dino Run Auto*. The community
-  [Dino Run](https://github.com/alexseminoisok/busybar-dino-run) endless
-  runner playing itself: an autopilot in the game loop simulates the game's
-  own collision model one jump ahead and jumps or ducks when staying put
-  would hit; the title and game-over screens auto-advance, so it loops
-  forever as a stand-alone animation. **Back** still exits. Nothing of the
-  game is vendored: `build.sh` downloads the upstream release package,
-  `patch.py` rewrites `scripts/main.js` and the manifest (new id, sound off
-  by default), and `./build.sh --install` stages and installs the result on
-  the bar over USB. Needs `gh` and Python 3.
+- **js-apps/gavin.dino_run** — *Dino Run*, as a stand-alone animation. The
+  community [Dino Run](https://github.com/alexseminoisok/busybar-dino-run)
+  endless runner with the game taken out: the dino is already running when
+  the app starts, an autopilot simulates the game's own collision model one
+  jump ahead over every obstacle and jumps or ducks on its own, there is no
+  title screen, score or game-over screen, and the speed never changes.
+  The obstacle pool still unlocks level by level with distance run (birds,
+  bigger cacti), so the variety progresses like the game's. A (rare) hit
+  just stumbles for a moment and keeps going. **Back** exits. Nothing of
+  the game is vendored: `build.sh` downloads the upstream release package,
+  `patch.py` rewrites `scripts/main.js` and the manifest, and
+  `./build.sh --install` quits the running app, then stages and installs
+  the result on the bar over USB. Needs `gh` and Python 3.
 
 ### Shared code
 
