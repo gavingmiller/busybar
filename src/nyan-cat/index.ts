@@ -1,6 +1,7 @@
 import { drawFrame, uploadAsset, clearAllDisplays } from "../lib/busybar-client.ts";
 import { runAnimation, installShutdownHandler, type AnimationHandle } from "../lib/animate.ts";
 import { encodeAnimFile } from "../lib/anim-file.ts";
+import { skySceneFrames, SKY_WIDTH, SKY_HEIGHT, SKY_FPS } from "./sky.ts";
 import {
   nyanCatPayload,
   sceneAnimationFrames,
@@ -79,11 +80,12 @@ export async function runRainbow(
   // CAT_FRAMES) safe without a separate manual clear step.
   await clearAllDisplays(baseUrl, fetchImpl);
 
+  // The whole front display: a star field scrolls behind the stationary cat.
   const bytes = encodeAnimFile({
-    width: sceneWidth(trailLength),
-    height: CAT_HEIGHT,
-    fps: RAINBOW_FPS,
-    frames: sceneAnimationFrames(trailLength),
+    width: SKY_WIDTH,
+    height: SKY_HEIGHT,
+    fps: SKY_FPS,
+    frames: skySceneFrames(trailLength),
   });
   await uploadAsset(baseUrl, APPLICATION_NAME, SCENE_ASSET_FILENAME, bytes, fetchImpl);
 
@@ -100,8 +102,8 @@ export async function runRainbow(
           type: "animation",
           path: SCENE_ASSET_FILENAME,
           loop: true,
-          x: originX - trailLength + CAT_TRAIL_OVERLAP,
-          y: originY,
+          x: 0,
+          y: 0,
           display: "front",
         },
       ],

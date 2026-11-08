@@ -7,7 +7,8 @@ import {
   toDeviceColor,
 } from "../lib/display.ts";
 import { Canvas } from "../lib/canvas.ts";
-import { NYAN_COLORS, CAT_FRAMES, TRAIL_FRAMES } from "./sprite-data.ts";
+import { NYAN_COLORS, CAT_FRAMES } from "./sprite-data.ts";
+import { trailGrid, TRAIL_PERIOD } from "./trail.ts";
 
 export type { RectangleElement, DisplayPayload };
 export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor, NYAN_COLORS };
@@ -17,8 +18,9 @@ export { FRONT_DISPLAY_WIDTH, VERTICAL_SAFE_MARGIN, DRAW_PRIORITY, toDeviceColor
 // can't silently desync from these constants.
 export const CAT_WIDTH = CAT_FRAMES[0]![0]!.length;
 export const CAT_HEIGHT = CAT_FRAMES[0]!.length;
-export const TRAIL_ANIM_HEIGHT = TRAIL_FRAMES[0]!.length;
-export const DEFAULT_TRAIL_LENGTH = TRAIL_FRAMES[0]![0]!.length;
+/** The procedural trail (trail.ts) is exactly as tall as the cat. */
+export const TRAIL_ANIM_HEIGHT = CAT_HEIGHT;
+export const DEFAULT_TRAIL_LENGTH = 32;
 /**
  * Frames per second the cat's 4-frame run cycle plays at, conceptually — a
  * light trot, independent of TRAIL_FPS (the two loops don't need to look
@@ -38,6 +40,17 @@ export const CAT_FPS = 6;
  * the 2 desynced bumps — see the comment above TRAIL_FRAMES).
  */
 export const TRAIL_FPS = 16;
+
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
+/**
+ * Frames in one seamless loop of the composited scene: the smallest count
+ * that is a whole number of trail periods AND brings the resampled cat pose
+ * back to frame 0 (pose = floor(i * CAT_FPS / TRAIL_FPS) % CAT_FRAMES.length,
+ * which repeats every CAT_FRAMES.length * TRAIL_FPS / gcd(CAT_FPS, TRAIL_FPS)
+ * frames — 32 today). 96 with today's numbers.
+ */
+export const SCENE_FRAME_COUNT = lcm(TRAIL_PERIOD, (CAT_FRAMES.length * TRAIL_FPS) / gcd(CAT_FPS, TRAIL_FPS));
 
 /**
  * Trail width used by the rectangle-based static render path (nyanCatElements
@@ -83,8 +96,8 @@ export function trailOriginY(originY: number): number {
   return originY + Math.floor((CAT_HEIGHT - TRAIL_ANIM_HEIGHT) / 2);
 }
 
-function paintTrail(canvas: Canvas, x: number, y: number, frameIndex: number): void {
-  canvas.paintGrid(TRAIL_FRAMES[frameIndex]!, NYAN_COLORS, x, y);
+function paintTrail(canvas: Canvas, x: number, y: number, frameIndex: number, length: number): void {
+  canvas.paintGrid(trailGrid(frameIndex % TRAIL_PERIOD, length, TRAIL_ANIM_HEIGHT), NYAN_COLORS, x, y);
 }
 
 function paintCat(canvas: Canvas, x: number, y: number, frameIndex: number): void {
@@ -138,7 +151,7 @@ export function nyanCatElements(
   trailLength: number = STATIC_TRAIL_LENGTH
 ): RectangleElement[] {
   const canvas = new Canvas(sceneWidth(trailLength), CAT_HEIGHT);
-  paintTrail(canvas, 0, trailOriginY(0), 0);
+  paintTrail(canvas, 0, trailOriginY(0), 0, trailLength);
   paintCat(canvas, trailLength - CAT_TRAIL_OVERLAP, 0, 0);
   return canvas.toElements("scene", originX - trailLength + CAT_TRAIL_OVERLAP, originY);
 }
@@ -159,22 +172,13 @@ export function nyanCatElements(
  * this fails loudly instead of producing a subtle seam glitch.
  */
 export function sceneAnimationFrames(trailLength: number = DEFAULT_TRAIL_LENGTH): Uint8Array[] {
-  const trailLoopUnits = TRAIL_FRAMES.length * CAT_FPS;
-  const catLoopUnits = CAT_FRAMES.length * TRAIL_FPS;
-  if (trailLoopUnits % catLoopUnits !== 0) {
-    throw new Error(
-      "sceneAnimationFrames: the trail's loop duration isn't a whole multiple of the cat's — " +
-        "the combined scene wouldn't loop seamlessly. Adjust CAT_FPS/CAT_FRAMES or TRAIL_FPS/TRAIL_FRAMES."
-    );
-  }
-
   const width = sceneWidth(trailLength);
   const catX = trailLength - CAT_TRAIL_OVERLAP;
   const trailY = trailOriginY(0);
-  return TRAIL_FRAMES.map((_, i) => {
+  return Array.from({ length: SCENE_FRAME_COUNT }, (_, i) => {
     const catIndex = Math.floor((i * CAT_FPS) / TRAIL_FPS) % CAT_FRAMES.length;
     const canvas = new Canvas(width, CAT_HEIGHT);
-    paintTrail(canvas, 0, trailY, i);
+    paintTrail(canvas, 0, trailY, i, trailLength);
     paintCat(canvas, catX, 0, catIndex);
     return canvas.toRGBA();
   });

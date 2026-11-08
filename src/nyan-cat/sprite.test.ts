@@ -16,8 +16,10 @@ import {
   CAT_TRAIL_OVERLAP,
   DEFAULT_TRAIL_LENGTH,
   STATIC_TRAIL_LENGTH,
+  SCENE_FRAME_COUNT,
 } from "./sprite.ts";
-import { CAT_FRAMES, TRAIL_FRAMES } from "./sprite-data.ts";
+import { CAT_FRAMES } from "./sprite-data.ts";
+import { trailGrid, TRAIL_PERIOD } from "./trail.ts";
 import { Canvas } from "../lib/canvas.ts";
 
 describe("nyanCatElements", () => {
@@ -76,7 +78,7 @@ describe("nyanCatElements", () => {
     // only ever appears in the cat's own art, never the trail's palette,
     // so it can't get folded into a trail-spanning merged rectangle.
     const black = elements.filter((el) => el.fill_colors[0] === NYAN_COLORS.K && el.x >= 40);
-    const inHeadBand = black.filter((el) => el.y >= 5 && el.y < 12); // originY is 0 here
+    const inHeadBand = black.filter((el) => el.y >= 4 && el.y < 10); // originY is 0 here; the legs are on row 11
     expect(inHeadBand).toHaveLength(1);
     expect(inHeadBand[0]).toMatchObject({ width: 1, height: 1 });
   });
@@ -88,7 +90,7 @@ describe("nyanCatElements", () => {
     // single strongest check that the compositing (position, overlap,
     // paint order) is right.
     const canvas = new Canvas(sceneWidth(STATIC_TRAIL_LENGTH), CAT_HEIGHT);
-    canvas.paintGrid(TRAIL_FRAMES[0]!, NYAN_COLORS, 0, 0);
+    canvas.paintGrid(trailGrid(0, STATIC_TRAIL_LENGTH, CAT_HEIGHT), NYAN_COLORS, 0, 0);
     canvas.paintGrid(CAT_FRAMES[0]!, NYAN_COLORS, STATIC_TRAIL_LENGTH - CAT_TRAIL_OVERLAP, 0);
     const expected = canvas.toElements("scene", 40 - STATIC_TRAIL_LENGTH + CAT_TRAIL_OVERLAP, 0);
     expect(elements).toEqual(expected);
@@ -113,8 +115,9 @@ describe("sceneAnimationFrames", () => {
   const trailLength = DEFAULT_TRAIL_LENGTH;
   const frames = sceneAnimationFrames(trailLength);
 
-  it("returns one RGBA frame per entry in TRAIL_FRAMES (sampled at the trail's native cadence)", () => {
-    expect(frames).toHaveLength(TRAIL_FRAMES.length);
+  it("returns one RGBA frame per step of one seamless scene loop", () => {
+    expect(frames).toHaveLength(SCENE_FRAME_COUNT);
+    expect(SCENE_FRAME_COUNT % TRAIL_PERIOD).toBe(0);
   });
 
   it("plays at a fixed 16fps regardless of frame count, preserving trail scroll speed", () => {
@@ -127,11 +130,11 @@ describe("sceneAnimationFrames", () => {
     }
   });
 
-  it("frame content matches compositing TRAIL_FRAMES[i] then the resampled CAT_FRAMES pose onto one canvas", () => {
+  it("frame content matches compositing trailGrid(i) then the resampled CAT_FRAMES pose onto one canvas", () => {
     frames.forEach((frame, i) => {
       const catIndex = Math.floor((i * CAT_FPS) / TRAIL_FPS) % CAT_FRAMES.length;
       const canvas = new Canvas(sceneWidth(trailLength), CAT_HEIGHT);
-      canvas.paintGrid(TRAIL_FRAMES[i]!, NYAN_COLORS, 0, 0);
+      canvas.paintGrid(trailGrid(i, trailLength, CAT_HEIGHT), NYAN_COLORS, 0, 0);
       canvas.paintGrid(CAT_FRAMES[catIndex]!, NYAN_COLORS, trailLength - CAT_TRAIL_OVERLAP, 0);
       expect(frame).toEqual(canvas.toRGBA());
     });
@@ -146,8 +149,9 @@ describe("sceneAnimationFrames", () => {
     expect(new Set(catIndices).size).toBeGreaterThan(1);
   });
 
-  it("loops seamlessly: the trail's loop duration is a whole multiple of the cat's", () => {
-    expect((TRAIL_FRAMES.length * CAT_FPS) % (CAT_FRAMES.length * TRAIL_FPS)).toBe(0);
+  it("loops seamlessly: the cat pose is back at frame 0 after SCENE_FRAME_COUNT frames", () => {
+    expect(((SCENE_FRAME_COUNT * CAT_FPS) / TRAIL_FPS) % CAT_FRAMES.length).toBe(0);
+    expect(Number.isInteger((SCENE_FRAME_COUNT * CAT_FPS) / TRAIL_FPS)).toBe(true);
   });
 });
 

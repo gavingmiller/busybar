@@ -76,7 +76,8 @@ describe("runRainbow", () => {
 
     expect(payload.elements).toHaveLength(1);
     const [el] = payload.elements;
-    expect(el).toMatchObject({ type: "animation", loop: true, display: "front" });
+    // The scene is the whole front display now (stars behind the cat), so it is anchored at the origin.
+    expect(el).toMatchObject({ type: "animation", loop: true, display: "front", x: 0, y: 0 });
     expect(typeof el!.path).toBe("string");
 
     // The upload must happen before the draw references it.
