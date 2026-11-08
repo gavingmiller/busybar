@@ -13,6 +13,8 @@ import { startPan as startPanReal, type PanHandle } from "../nyan-cat/pan.ts";
 import { EXCURSIONS, excursionDurationMs } from "../nyan-cat/excursion.ts";
 import { SKY_FPS, SKY_FRAME_COUNT } from "../nyan-cat/sky.ts";
 import { CONTROL_PAGE_HTML } from "./page.ts";
+import { runScene } from "../lib/scene.ts";
+import { SCENES } from "../scenes/index.ts";
 
 export type AppState = "on" | "off" | "unknown";
 export type AppKind = "draw" | "js";
@@ -36,6 +38,12 @@ interface StoredState {
   changedAt: string;
 }
 
+export interface SceneApp {
+  id: string;
+  name: string;
+  run: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
+}
+
 export interface ServerDeps {
   /** BUSY Bar device base URL. */
   baseUrl: string;
@@ -49,6 +57,8 @@ export interface ServerDeps {
   quitApp: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
   /** Starts the Nyan Cat camera pan (nyan-cat/pan.ts) against the device; returns a handle to stop it. */
   startPan: (baseUrl: string, fetchImpl: typeof fetch) => PanHandle;
+  /** Pre-rendered full-display loops (lib/scene.ts), listed as draw apps after Nyan Cat. */
+  scenes: SceneApp[];
   now: () => Date;
 }
 
@@ -112,6 +122,7 @@ async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<A
     state === null ? "unknown" : state.active === id ? "on" : "off";
   const apps: AppStatus[] = [
     { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: stateOf(NYAN_ID) },
+    ...deps.scenes.map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
     ...deviceApps.map((a) => ({ id: a.id, name: a.name, kind: "js" as const, state: stateOf(a.id) })),
   ];
   return { apps, changedAt: state?.changedAt ?? null };
@@ -159,8 +170,10 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
       }
 
       try {
+        const scene = deps.scenes.find((s) => s.id === id);
         const known =
           id === NYAN_ID ||
+          scene !== undefined ||
           (await deps.listApps(deps.baseUrl, deps.fetchImpl)).some((a) => a.id === id);
         if (!known) return json({ error: `Unknown app "${id}"` }, 404);
 
@@ -173,11 +186,13 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
           if (id === NYAN_ID) {
             await deps.runRainbow(deps.baseUrl, deps.fetchImpl);
             pan = deps.startPan(deps.baseUrl, deps.fetchImpl);
+          } else if (scene) {
+            await scene.run(deps.baseUrl, deps.fetchImpl);
           } else {
             await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
             await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
           }
-        } else if (id === NYAN_ID) {
+        } else if (id === NYAN_ID || scene) {
           await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
         }
       } catch (err) {
@@ -216,6 +231,7 @@ if (import.meta.main) {
         play: (section, loop) => playNyanCatSection(baseUrl, section, loop, fetchImpl),
         onError: (err) => console.error(`nyan pan: ${err instanceof Error ? err.message : String(err)}`),
       }),
+    scenes: SCENES.map((scene) => ({ id: scene.id, name: scene.name, run: (baseUrl, fetchImpl) => runScene(baseUrl, scene, fetchImpl) })),
     now: () => new Date(),
   });
   Bun.serve({ hostname: "127.0.0.1", port, fetch: handler });

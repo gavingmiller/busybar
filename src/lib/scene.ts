@@ -16,3 +16,58 @@ export interface Scene {
   /** One seamless loop: frame N-1 flows into frame 0. */
   frames(): Uint8Array[];
 }
+
+import { encodeAnimFile } from "./anim-file.ts";
+import { DRAW_PRIORITY } from "./display.ts";
+import { assetStoragePath, clearAllDisplays, drawElements, listStorage, removeStorageFile, uploadAsset } from "./busybar-client.ts";
+
+/** Mirrors the firmware's own upload-then-draw integration test (see nyan-cat/index.ts). */
+export const SCENE_ASSET_SETTLE_MS = 1000;
+export const SCENE_ELEMENT_ID = "scene";
+
+const encoded = new WeakMap<Scene, { bytes: Uint8Array; name: string }>();
+
+/** Encodes `scene` once per process; the file name carries a content hash so unchanged renders are reused on the device. */
+function encodeScene(scene: Scene): { bytes: Uint8Array; name: string } {
+  const hit = encoded.get(scene);
+  if (hit) return hit;
+  const frames = scene.frames();
+  const expected = FRONT_WIDTH * FRONT_HEIGHT * 4;
+  frames.forEach((f, i) => {
+    if (f.length !== expected) throw new Error(`scene "${scene.id}": frame ${i} has ${f.length} bytes, expected ${expected} for 72x16 RGBA`);
+  });
+  const bytes = encodeAnimFile({ width: FRONT_WIDTH, height: FRONT_HEIGHT, fps: scene.fps, frames });
+  const hash = new Bun.CryptoHasher("sha1").update(bytes).digest("hex").slice(0, 8);
+  const out = { bytes, name: `${scene.id}-${hash}.anim` };
+  encoded.set(scene, out);
+  return out;
+}
+
+export function sceneAssetName(scene: Scene): string {
+  return encodeScene(scene).name;
+}
+
+/**
+ * Puts `scene` on the front display, looping natively: clear everything,
+ * upload the render unless the device already holds it, draw it, and only
+ * then drop this scene's stale renders (removing an asset something is still
+ * playing wedges the device's HTTP server until a USB power cycle).
+ */
+export async function runScene(baseUrl: string, scene: Scene, fetchImpl: typeof fetch = fetch, settleMs: number = SCENE_ASSET_SETTLE_MS): Promise<void> {
+  const { bytes, name } = encodeScene(scene);
+  await clearAllDisplays(baseUrl, fetchImpl);
+  const present = (await listStorage(baseUrl, assetStoragePath(scene.id), fetchImpl)).filter((e) => e.type === "file").map((e) => e.name);
+  if (!present.includes(name)) {
+    await uploadAsset(baseUrl, scene.id, name, bytes, fetchImpl);
+    if (settleMs > 0) await new Promise((resolve) => setTimeout(resolve, settleMs));
+  }
+  await drawElements(baseUrl, {
+    application_name: scene.id,
+    priority: DRAW_PRIORITY,
+    elements: [{ id: SCENE_ELEMENT_ID, type: "animation", path: name, loop: true, x: 0, y: 0, z_index: 1, display: "front" } as never],
+  }, fetchImpl);
+  const stale = new RegExp(`^${scene.id}-[0-9a-f]{8}\\.anim$`);
+  for (const file of present) {
+    if (file !== name && stale.test(file)) await removeStorageFile(baseUrl, assetStoragePath(scene.id, file), fetchImpl);
+  }
+}

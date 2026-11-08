@@ -33,6 +33,10 @@ function deps(overrides: Partial<ServerDeps> = {}): ServerDeps {
     launchApp: mock(async () => {}),
     quitApp: mock(async () => {}),
     startPan: mock(() => ({ stop: panStop })),
+    scenes: [
+      { id: "lava_lamp", name: "Lava Lamp", run: mock(async () => {}) },
+      { id: "aquarium", name: "Aquarium", run: mock(async () => {}) },
+    ],
     now: () => new Date("2026-11-08T15:00:00.000Z"),
     ...overrides,
   };
@@ -73,6 +77,8 @@ describe("GET /api/apps", () => {
       changedAt: null,
       apps: [
         { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: "unknown" },
+        { id: "lava_lamp", name: "Lava Lamp", kind: "draw", state: "unknown" },
+        { id: "aquarium", name: "Aquarium", kind: "draw", state: "unknown" },
         { id: "app.busy.clock", name: "Clock", kind: "js", state: "unknown" },
         { id: "community.dino_run", name: "Dino Run", kind: "js", state: "unknown" },
       ],
@@ -101,6 +107,8 @@ describe("POST /api/apps/:id", () => {
     expect(body.changedAt).toBe("2026-11-08T15:00:00.000Z");
     expect(body.apps.map((a: { id: string; state: string }) => [a.id, a.state])).toEqual([
       [NYAN_ID, "on"],
+      ["lava_lamp", "off"],
+      ["aquarium", "off"],
       ["app.busy.clock", "off"],
       ["community.dino_run", "off"],
     ]);
@@ -211,6 +219,51 @@ describe("panning", () => {
     const d = deps({ runRainbow: mock(async () => { throw new Error("508"); }) });
     await createHandler(d)(post(NYAN_ID, { on: true }));
     expect(d.startPan).not.toHaveBeenCalled();
+  });
+});
+
+describe("scenes (pre-rendered draw apps)", () => {
+  it("turning a scene on quits any JS app, stops the Nyan pan, runs that scene, and marks only it on", async () => {
+    panStop = mock(() => {});
+    const d = deps();
+    const handler = createHandler(d);
+    await handler(post(NYAN_ID, { on: true }));
+    const res = await handler(post("lava_lamp", { on: true }));
+    expect(res.status).toBe(200);
+    expect(panStop).toHaveBeenCalledTimes(1);
+    expect(d.quitApp).toHaveBeenCalledTimes(2);
+    expect(d.scenes[0]!.run).toHaveBeenCalledTimes(1);
+    expect(calls(d.scenes[0]!.run)[0]![0]).toBe(BASE_URL);
+    expect(d.scenes[1]!.run).not.toHaveBeenCalled();
+    expect(d.runRainbow).toHaveBeenCalledTimes(1);
+    const body = await res.json();
+    expect(body.apps.map((a: { id: string; state: string }) => [a.id, a.state])).toEqual([
+      [NYAN_ID, "off"],
+      ["lava_lamp", "on"],
+      ["aquarium", "off"],
+      ["app.busy.clock", "off"],
+      ["community.dino_run", "off"],
+    ]);
+    expect(JSON.parse(readFileSync(stateFile, "utf8")).active).toBe("lava_lamp");
+  });
+
+  it("turning a scene off clears the displays and leaves nothing active", async () => {
+    const d = deps();
+    const handler = createHandler(d);
+    await handler(post("aquarium", { on: true }));
+    const res = await handler(post("aquarium", { on: false }));
+    expect(res.status).toBe(200);
+    expect(d.clearAllDisplays).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(readFileSync(stateFile, "utf8")).active).toBeNull();
+  });
+
+  it("a scene that fails to draw responds 502 and leaves the state untouched", async () => {
+    const d = deps();
+    d.scenes[0]!.run = mock(async () => { throw new Error("508 upload failed"); });
+    await createHandler(d)(post(NYAN_ID, { on: true }));
+    const res = await createHandler(d)(post("lava_lamp", { on: true }));
+    expect(res.status).toBe(502);
+    expect(JSON.parse(readFileSync(stateFile, "utf8")).active).toBe(NYAN_ID);
   });
 });
 
