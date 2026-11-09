@@ -4,9 +4,10 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: the KNIGHT from Fog Canyon (Gavin: "give me 5 options
-// for him"). Five hand-drawn takes at 6-8 px wide, shown on the fog colour
-// so the black body reads as it does in the scene.
+// Current subject: the KNIGHT from Fog Canyon. Round 3: the long-horned
+// head with two-row eye hollows (Gavin's picks), cloak lightened in steps,
+// body variations. Shown on the fog colour so the dark body reads as in
+// the scene.
 //   W mask  E eye hollow  K body  N cloak  L nail
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -14,54 +15,55 @@ import type { RunnerArt } from "./art.ts";
 
 // Hollow Knight palette from fog-canyon/art.ts: bone mask, eye hollows, black body, navy cloak, pale nail.
 // Gavin 2026-11-09: the body was too dark; body takes the old cloak navy, the cloak goes a step darker.
-const HK = { W: "#F2F2F4", E: "#0A0A12", K: "#2A3560", N: "#1A2044", L: "#B8BCC8" };
-const HK_LIFT = { ...HK, K: "#34407A" };
+const HK1 = { W: "#F2F2F4", E: "#0A0A12", K: "#2A3560", N: "#3A4890" };
+const HK2 = { ...HK1, N: "#4A5AA8" };
+const HK3 = { ...HK2, K: "#34407A" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 as in Fog Canyon, 6x9",
+    name: "1 cloak one step lighter",
     frames: [
-      [".W..W.", "W....W", "WWWWWW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
-      [".W..W.", "W....W", "WWWWWW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK,
+    colors: HK1,
     eye: [2, 3],
   },
   {
-    name: "2 taller, long horns, 7x10",
+    name: "2 cloak two steps lighter",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKKK..", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKKK..", ".NKK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK,
+    colors: HK2,
     eye: [2, 3],
   },
   {
-    name: "3 nail on his back, 8x10",
+    name: "3 cloak two steps, body one step lighter",
     frames: [
-      ["...W..W.", "..W....W", "L.WWWWWW", ".L.WEWEW", "..LWWWW.", ".NNNKKN.", "..NNKKN.", "..NNKK..", "...NKK..", "...K..K."],
-      ["...W..W.", "..W....W", "L.WWWWWW", ".L.WEWEW", "..LWWWW.", "..NNKKN.", "..NNKKN.", ".NNNKK..", "...NKK..", "....KK.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK,
-    eye: [4, 3],
-  },
-  {
-    name: "4 body lifted a further step, big eyes, 6x10",
-    frames: [
-      [".W..W.", "W....W", "WWWWWW", "WWEWEW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
-      [".W..W.", "W....W", "WWWWWW", "WWEWEW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
-    ],
-    colors: HK_LIFT,
+    colors: HK3,
     eye: [2, 3],
   },
   {
-    name: "5 chibi: big mask, tiny body, 7x9",
+    name: "4 shorter body",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", "WWWWWWW", "WWEWWEW", ".WWWWW.", ".NNKNN.", "..NKN..", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", "WWWWWWW", "WWEWWEW", ".WWWWW.", "..NKN..", ".NNKNN.", "...K..."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKK..", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKK..", "..K.K.."],
     ],
-    colors: HK,
-    eye: [2, 4],
+    colors: HK1,
+    eye: [2, 3],
+  },
+  {
+    name: "5 flared cloak",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKNN", "NNKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKKNN", ".NKK...", "..K.K.."],
+    ],
+    colors: HK1,
+    eye: [2, 3],
   },
 ];
 
