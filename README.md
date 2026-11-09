@@ -74,7 +74,10 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   `src/scenes/index.ts`; the control server lists them automatically.
   `munchers-run` — the Number Munchers characters (ported from that
   project's sprite sheets by `extract-art.py`) and a chicken sprint across
-  a fixed ground, entering and leaving at random.
+  a fixed ground, entering and leaving at random. Each character's art is
+  settled by putting five numbered candidates on the bar at once via the
+  temporary `picks` scene (`munchers-run/picks.ts`, "Character Picks") and
+  letting Gavin choose; the winner moves into `art/<name>.ts`.
 
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
   only) with a web page that turns every app on the bar on and off: each

@@ -1,66 +1,53 @@
-// Squirt, the water blob, hand-drawn at bar scale (Gavin 2026-11-09: the
-// downscaled frames jumped in height and wore a heavy outline). A 12x10 box
-// that never changes size; the blob rests on the bottom row and hops with a
-// gentle squash (8 rows) → rest (9) → stretch (10) → rest (9).
-//   O outline  B body  S shade  W eye white / highlight  K pupil  R mouth
+// Squirt, the water blob, hand-drawn at bar scale. Gavin chose this one from
+// five rounds of a numbered line-up on the bar (2026-11-09): a round 9x6 body
+// in the Number Munchers sheet's palette (navy outline, teal → blue → dark
+// base, dark grin line), eyes and 2 px mouth shifted forward so it reads as
+// heading right, and the sheet's grey ground shadow. Fixed 12x9 box; the hop
+// is rest → squash (wider, shadow spreads) → rest → stretch (taller, airborne
+// over a smaller shadow).
+//   O outline  T teal top  M mid blue  D dark base  G grin line  W highlight / eye white  K pupil  R mouth  X shadow
 import type { RunnerArt } from "../art.ts";
+
+const REST = [
+  "............",
+  "............",
+  "....OOOOO...",
+  "...OWTTTTTO.",
+  "..OTTTWTWTO.",
+  "..OMTTKTKTO.",
+  "..OMMMGRRGO.",
+  "...ODDDDDO..",
+  ".XXXXXXXXXX.",
+];
 
 export const SQUIRT: RunnerArt = {
   name: "Squirt",
   frames: [
-    // rest
+    REST,
     [
       "............",
-      "...OOOOOO...",
-      "..OBWBBBBO..",
-      ".OBBWKBWKBO.",
-      ".OBBBBBBBBO.",
-      ".OBBRRRRBBO.",
-      ".OSBBBRRBSO.",
-      ".OSSSSSSSSO.",
-      "..OSSSSSSO..",
-      "...OOOOOO...",
+      "............",
+      "............",
+      "...OOOOOOO..",
+      ".OOWTTTTTTOO",
+      ".OTTTTWTWTTO",
+      ".OMMTTKTKTMO",
+      ".OMMMMGRRGMO",
+      "XXXXXXXXXXXX",
     ],
-    // squash, landing wide
+    REST,
     [
+      ".....OOO....",
+      "....OWTTO...",
+      "...OTTTTTO..",
+      "...OTTWTWO..",
+      "...OMTKTKO..",
+      "...OMMGRRO..",
+      "....ODDDO...",
       "............",
-      "............",
-      "..OOOOOOOO..",
-      ".OBWBBBBBBO.",
-      "OBBBWKBBWKBO",
-      "OBBBBRRRRBBO",
-      "OSBBBBBRRBSO",
-      "OSSSSSSSSSSO",
-      ".OSSSSSSSSO.",
-      "..OOOOOOOO..",
-    ],
-    // rest
-    [
-      "............",
-      "...OOOOOO...",
-      "..OBWBBBBO..",
-      ".OBBWKBWKBO.",
-      ".OBBBBBBBBO.",
-      ".OBBRRRRBBO.",
-      ".OSBBBRRBSO.",
-      ".OSSSSSSSSO.",
-      "..OSSSSSSO..",
-      "...OOOOOO...",
-    ],
-    // stretch, in the air
-    [
-      "....OOOO....",
-      "...OBWBBO...",
-      "..OBBBBBBO..",
-      "..OBWKBWKO..",
-      "..OBBBBBBO..",
-      "..OBRRRRBO..",
-      "..OSBBRRBO..",
-      "..OSSSSSSO..",
-      "..OSSSSSSO..",
-      "...OOOOOO...",
+      "..XXXXXXXX..",
     ],
   ],
-  colors: { O: "#2A3F7A", B: "#5CB0C0", S: "#4A7AB0", W: "#FFFFFF", K: "#1A1F4A", R: "#D83040" },
-  eye: [8, 3],
+  colors: { O: "#1D235D", T: "#65B1B8", M: "#4D8AB3", D: "#425B9E", G: "#33418A", W: "#FFFFFF", K: "#000000", R: "#B83048", X: "#505058" },
+  eye: [6, 5],
 };
