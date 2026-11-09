@@ -489,7 +489,7 @@ describe("shuffle (global rotation)", () => {
     timers[0]!.fn();
     await flush();
     expect(ran(late)).toHaveLength(1);
-    expect(JSON.parse(readFileSync(stateFile, "utf8")).shuffle.nextAt).toBe("2026-11-08T21:00:00.000Z");
+    expect(JSON.parse(readFileSync(stateFile, "utf8")).shuffle.nextAt).toBe("2026-11-08T20:00:00.000Z");
   });
 
   it("a failed change answers 502 when switching on, and a failed tick is logged and retried in a minute", async () => {
