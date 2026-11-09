@@ -4,8 +4,8 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN, round 4: body bob + long stride settled;
-// bent knees, sprint lean, swinging back arm, six-frame cycle.
+// Current subject: SAMUS ARAN, round 5: legs were "bird like"; thick
+// legs and boots, blocky 16-bit legs, crouched scurry, morph ball, slow walk.
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -29,58 +29,56 @@ const SAMUS_BRIGHT = { R: "#D83030", G: "#60D070", O: "#F0A030", Y: "#F8E060", C
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 bob + long stride",
+    name: "1 thick legs and boots",
     frames: [
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO...OO.", "OO.....OO", "O.......O"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "...OO...."],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO.", "OO.....OO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "........."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", ".OO..OO..", "OO....OO."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OOOO...", "...OOO...", "...OOO..."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OOO.", "..OO..OO.", ".OO...OO."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OOOO...", ".OO..OO..", ".OO...OO."],
     ],
     colors: SAMUS_BRIGHT,
     eye: [5, 1],
   },
   {
-    name: "2 bent knees",
+    name: "2 blocky 16-bit legs",
     frames: [
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "OO....O..", "O......OO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "...OO...."],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".O....OO.", "OO.....O."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "........."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OOO.OOO.", "OOO...OOO", "OO.....OO"],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OOOO...", "..OOOO...", "..OOO...."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOOO..", ".OOO.OOO.", "OOO...OOO"],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OOOO...", ".OOO.OOO.", ".OO...OO."],
     ],
     colors: SAMUS_BRIGHT,
     eye: [5, 1],
   },
   {
-    name: "3 sprint lean, back leg trailing",
+    name: "3 crouched scurry",
     frames: [
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO..OO.", "OO.....OO", ".O......O"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "...OO...."],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOOO..", "..OO..OO.", "OO.....OO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "........."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", ".OO..OO..", "OO....OO."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OOOO...", "...OOO..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OO.OO..", ".OO...OO."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OOOO...", ".OO..OO.."],
     ],
     colors: SAMUS_BRIGHT,
-    eye: [5, 1],
+    eye: [5, 2],
   },
   {
-    name: "4 back arm swinging",
+    name: "4 morph ball rolling",
     frames: [
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", "OOOYYY.CC", "..OYYO...", ".OO...OO.", "OO.....OO", "O.......O"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "...OO...."],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", ".OOYYO...", "..OO.OO..", ".OO...OO.", "OO.....OO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "........."],
+      ["..OOO..", ".OYYYO.", "OYYRYYO", "OYRRRYO", "OYYRYYO", ".OYYYO.", "..OOO.."],
+      ["..OOO..", ".OYYYO.", "OYRYYYO", "OYYRYYO", "OYYYRYO", ".OYYYO.", "..OOO.."],
+      ["..OOO..", ".OYYYO.", "OYYYYYO", "OYRRRYO", "OYYYYYO", ".OYYYO.", "..OOO.."],
+      ["..OOO..", ".OYYYO.", "OYYYRYO", "OYYRYYO", "OYRYYYO", ".OYYYO.", "..OOO.."],
     ],
     colors: SAMUS_BRIGHT,
-    eye: [5, 1],
+    eye: [3, 3],
   },
   {
-    name: "5 six frames, smoother",
+    name: "5 slow walk, thick legs",
     frames: [
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO...OO.", "OO.....OO", "O.......O"],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO.", ".O.....O."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "...OO...."],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO.", "OO.....OO"],
-      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "OO.....O.", "O......OO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "........."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO.OO...", ".OO.OO...", "OO...OO.."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..OO.OO..", ".OO..OO.."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", "..OO.OO..", ".OO...OO."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..OO.OO..", ".OO..OO.."],
     ],
     colors: SAMUS_BRIGHT,
     eye: [5, 1],
