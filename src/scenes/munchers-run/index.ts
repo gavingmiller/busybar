@@ -15,6 +15,10 @@ export const GROUND_Y = 14;
 /** Pixels of travel per run-cycle frame, so legs match pace. */
 export const STRIDE_PX = 3;
 const MAX_ON_SCREEN = 3;
+/** Dance poses per second while a runner is stopped. */
+export const DANCE_FPS = 4;
+/** Share of a dancer's runs that stop for a dance (Gavin 2026-11-09: "occasionally"). */
+const DANCE_CHANCE = 0.4;
 
 type RGB = readonly [number, number, number];
 const GROUND: RGB = [140, 124, 92];
@@ -28,6 +32,8 @@ export interface Run {
   start: number;
   /** px/s. */
   speed: number;
+  /** A mid-run stop: `at` seconds after `start` the runner halts for `duration` seconds and plays `art.dance`. */
+  pause?: { at: number; duration: number };
 }
 
 /** mulberry32: a tiny seeded PRNG so the timetable is the same every build. */
@@ -46,7 +52,8 @@ const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(random() * xs.length)]!;
 const between = (lo: number, hi: number) => lo + random() * (hi - lo);
 
 const artWidth = (art: RunnerArt) => art.frames[0]![0]!.length;
-const runDuration = (r: Run) => (W + artWidth(r.art)) / r.speed;
+/** Seconds the runner is on screen: the crossing plus any dance stop. */
+export const runDuration = (r: Run) => (W + artWidth(r.art)) / r.speed + (r.pause?.duration ?? 0);
 
 function makeRuns(): Run[] {
   const runs: Run[] = [];
@@ -61,6 +68,11 @@ function makeRuns(): Run[] {
     const art = next();
     const speed = Math.round(between(8, 20) * 2) / 2;
     const run: Run = { art, dir: random() < 0.5 ? 1 : -1, start: t, speed };
+    if (art.dance && random() < DANCE_CHANCE) {
+      // Stop somewhere fully on screen, a few px in from either edge.
+      const travelled = between(artWidth(art) + 4, W - 4);
+      run.pause = { at: travelled / speed, duration: Math.round(between(2, 4) * 4) / 4 };
+    }
     if (t + runDuration(run) > MUNCHERS_LOOP_S - 1) break;
     // Never more than MAX_ON_SCREEN at once: wait for the earliest to leave.
     const crowd = runs.filter((r) => r.start + runDuration(r) > t);
@@ -78,16 +90,43 @@ function makeRuns(): Run[] {
 
 export const RUNS: readonly Run[] = makeRuns();
 
+/** Seconds of actual travel by time t: the clock stops while the runner dances. */
+function travelS(r: Run, t: number): number {
+  const tt = t - r.start;
+  if (!r.pause) return tt;
+  const { at, duration } = r.pause;
+  if (tt <= at) return tt;
+  if (tt < at + duration) return at;
+  return tt - duration;
+}
+
 /** Left edge of the runner at time t (seconds into the loop); off-screen before and after its run. */
 export function runnerX(r: Run, t: number): number {
-  const d = r.speed * (t - r.start);
+  const d = r.speed * travelS(r, t);
   return r.dir > 0 ? -artWidth(r.art) + d : W - d;
 }
 
 /** Which run-cycle frame shows at time t: one step per STRIDE_PX travelled. */
 export function runnerFrame(r: Run, t: number): number {
-  const d = Math.max(0, r.speed * (t - r.start));
+  const d = Math.max(0, r.speed * travelS(r, t));
   return Math.floor(d / STRIDE_PX + 1e-9) % r.art.frames.length;
+}
+
+/** True while the runner is stopped for its dance. */
+export function isDancing(r: Run, t: number): boolean {
+  if (!r.pause) return false;
+  const tt = t - r.start;
+  return tt >= r.pause.at && tt < r.pause.at + r.pause.duration;
+}
+
+/** The pixel rows to draw for the run at time t: a dance pose while stopped, else the run cycle. */
+export function runnerRows(r: Run, t: number): string[] {
+  if (isDancing(r, t) && r.art.dance) {
+    const k = Math.floor((t - r.start - r.pause!.at) * DANCE_FPS + 1e-9) % r.art.dance.length;
+    const rows = [...r.art.dance[k]!];
+    return r.dir > 0 ? rows : rows.map((row) => row.split("").reverse().join(""));
+  }
+  return runnerSprite(r.art, r.dir, runnerFrame(r, t));
 }
 
 /** Runs on screen at time t. */
@@ -119,7 +158,7 @@ export function renderFrame(i: number): Uint8Array {
   for (const x of [3, 11, 20, 27, 38, 46, 55, 63, 69]) put(buf, x, GROUND_Y + 1, GROUND_DARK);
 
   for (const r of activeRuns(t)) {
-    const rows = runnerSprite(r.art, r.dir, runnerFrame(r, t));
+    const rows = runnerRows(r, t);
     const x0 = Math.round(runnerX(r, t)), y0 = GROUND_Y - rows.length;
     for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y]!.length; x++) {
       const ch = rows[y]![x]!;

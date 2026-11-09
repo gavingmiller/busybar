@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import {
   MUNCHERS_RUN, MUNCHERS_FPS, MUNCHERS_LOOP_S, MUNCHERS_FRAME_COUNT, GROUND_Y, STRIDE_PX,
-  RUNS, runnerX, runnerFrame, runnerSprite, activeRuns, renderFrame, type Run,
+  RUNS, runnerX, runnerFrame, runnerSprite, runnerRows, isDancing, runDuration, activeRuns, renderFrame, DANCE_FPS, type Run,
 } from "./index.ts";
-import { RUNNER_ART, CHICKEN, EMBER } from "./art.ts";
+import { RUNNER_ART, CHICKEN, EMBER, BONEHEAD } from "./art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 
@@ -12,7 +12,7 @@ const px = (f: Uint8Array, x: number, y: number) => {
   return [f[i], f[i + 1], f[i + 2], f[i + 3]];
 };
 const hex = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), 255];
-const duration = (r: Run) => (FRONT_WIDTH + r.art.frames[0]![0]!.length) / r.speed;
+const duration = runDuration;
 
 describe("MUNCHERS_RUN scene", () => {
   const frames = MUNCHERS_RUN.frames();
@@ -91,7 +91,7 @@ describe("MUNCHERS_RUN scene", () => {
     }
     // Drawn: a run's x advances in its direction; its eye pixel is painted where the facing sprite puts it.
     for (const r of RUNS) {
-      const t = r.start + duration(r) / 2;
+      const t = r.start + 0.5;
       expect(Math.sign(runnerX(r, t + 0.1) - runnerX(r, t))).toBe(r.dir);
     }
     const r = RUNS.find((run) => run.dir > 0 && activeRuns(run.start + duration(run) / 2).length === 1)!;
@@ -155,6 +155,50 @@ describe("MUNCHERS_RUN scene", () => {
       expect(frame.slice(0, 4).join("")).toContain("R");
     }
     expect(CHICKEN.colors.O).toMatch(/^#F/); // the orange, same key the beak uses
+  });
+
+  it("Bonehead stops to dance now and then (Gavin 2026-11-09): some of his runs pause on screen, the dance poses play, then he carries on; nobody else does", () => {
+    const bone = RUNS.filter((r) => r.art === BONEHEAD);
+    const dancing = bone.filter((r) => r.pause);
+    expect(dancing.length).toBeGreaterThanOrEqual(1);
+    expect(dancing.length).toBeLessThan(bone.length); // occasionally, not always
+    for (const r of RUNS) if (r.art !== BONEHEAD) expect(r.pause).toBeUndefined();
+    expect(DANCE_FPS).toBeGreaterThanOrEqual(3);
+    for (const r of dancing) {
+      const { at, duration: d } = r.pause!;
+      expect(d).toBeGreaterThanOrEqual(2);
+      expect(d).toBeLessThanOrEqual(5);
+      expect(runDuration(r)).toBeCloseTo((FRONT_WIDTH + 10) / r.speed + d, 6);
+      const t0 = r.start + at, t1 = t0 + d;
+      // stands still, fully on screen, for the whole pause
+      const x = runnerX(r, t0 + 0.01);
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(FRONT_WIDTH - 10);
+      for (let t = t0 + 0.01; t < t1; t += 0.25) {
+        expect(runnerX(r, t)).toBeCloseTo(x, 6);
+        expect(isDancing(r, t)).toBe(true);
+        expect(BONEHEAD.dance!.map((f) => f.join("/"))).toContain(runnerRows(r, t).join("/"));
+      }
+      // the dance cycles through every pose
+      const poses = new Set<string>();
+      for (let t = t0 + 0.01; t < t1; t += 1 / MUNCHERS_FPS) poses.add(runnerRows(r, t).join("/"));
+      expect(poses.size).toBe(BONEHEAD.dance!.length);
+      // walking before and after, continuing in the same direction from the same spot
+      expect(isDancing(r, t0 - 0.1)).toBe(false);
+      expect(isDancing(r, t1 + 0.1)).toBe(false);
+      expect(Math.sign(runnerX(r, t1 + 0.2) - runnerX(r, t1 + 0.1))).toBe(r.dir);
+      expect(Math.abs(runnerX(r, t1 + 0.01) - x)).toBeLessThan(0.5);
+      expect(BONEHEAD.frames.map((f) => f.join("/"))).toContain(runnerRows(r, t1 + 0.3).join("/"));
+    }
+    // and it shows: a dancing Bonehead is drawn with a dance pose
+    const r = dancing[0]!;
+    const t = r.start + r.pause!.at + 0.3;
+    const i = Math.round(t * MUNCHERS_FPS);
+    const rows = runnerRows(r, i / MUNCHERS_FPS), x0 = Math.round(runnerX(r, i / MUNCHERS_FPS)), y0 = GROUND_Y - rows.length;
+    const frame = renderFrame(i);
+    const others = activeRuns(i / MUNCHERS_FPS).filter((o) => o !== r);
+    const overlapped = others.some((o) => Math.abs(runnerX(o, i / MUNCHERS_FPS) - x0) < 24);
+    if (!overlapped) rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== ".") expect(px(frame, x0 + x, y0 + y)).toEqual(hex(r.art.colors[ch]!)); }));
   });
 
   it("encodes under 25 MB", () => {
