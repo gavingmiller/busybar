@@ -1,7 +1,7 @@
 // Fog Canyon sprites, hand-drawn at bar scale in Hollow Knight's colour
 // language (shapes from the game's wiki and sprite index; nothing copied).
 // Every sprite faces right; the scene mirrors it for leftward travel.
-//   Knight: W bone-white mask  E eye hollow  K black body  N navy cloak
+//   Knight: W bone-white mask  E eye hollow  N cape (one tone)  K stub feet
 //   Jellies: P pale Uoma bell  C pink Uoma core  G Ooma bell  O orange Ooma core
 //   Cores also have a flicker colour (CF / OF) swapped in by the scene.
 
@@ -10,22 +10,29 @@ export interface SpriteArt {
   colors: Readonly<Record<string, string>>;
 }
 
-/** The Knight, 6x9. Rows 0-4 (the mask) are identical in every frame; cloak and legs alternate below. */
+/**
+ * The Knight, 7x9, Gavin's pick from seven rounds of the bar line-up
+ * (2026-11-09): horns rise from the mask's outer edges and curve IN at the
+ * tips, two-row eye hollows, a short single-tone cape, two stub feet. Mask
+ * rows 0-5 are identical in every frame; the cape sways a column and the
+ * feet step through four poses.
+ */
 const MASK = [
-  "W....W",
-  ".W..W.",
-  ".WWWW.",
-  "WWEWEW",
-  ".WWWW.",
+  ".W...W.",
+  "W.....W",
+  "WWWWWWW",
+  ".WEWEW.",
+  ".WEWEW.",
+  ".WWWWW.",
 ];
 export const KNIGHT: SpriteArt = {
   frames: [
-    [...MASK, "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
-    [...MASK, ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
-    [...MASK, "NNKKN.", "NNKKN.", ".NKK..", "K...K."],
-    [...MASK, ".NKKN.", ".NKKN.", ".NKK..", "..KK.."],
+    [...MASK, "..NNN..", ".NNNNN.", "..K.K.."],
+    [...MASK, "..NNN..", ".NNNNN.", ".K...K."],
+    [...MASK, "..NNN..", "NNNNN..", "...KK.."],
+    [...MASK, "..NNN..", ".NNNNN.", ".K..K.."],
   ],
-  colors: { W: "#F2F2F4", E: "#0A0A12", K: "#0C0C14", N: "#2A3560" },
+  colors: { W: "#F2F2F4", E: "#0A0A12", N: "#8094E4", K: "#5262B0" },
 };
 
 /** Uoma: a small translucent bell with a pink core and three short tendrils. 6x5. */
