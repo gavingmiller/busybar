@@ -72,6 +72,9 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   over HTTP a few frames a second: Lava Lamp (`lava_lamp`), Matrix Rain
   (`matrix_rain`) and Aquarium (`aquarium`). Register new ones in
   `src/scenes/index.ts`; the control server lists them automatically.
+  `munchers-run` — the Number Munchers characters (ported from that
+  project's sprite sheets by `extract-art.py`) and a chicken sprint across
+  a fixed ground, entering and leaving at random.
 
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
   only) with a web page that turns every app on the bar on and off: each
