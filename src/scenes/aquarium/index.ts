@@ -173,39 +173,52 @@ function fill(buf: Uint8Array, x: number, y: number, w: number, h: number, c: RG
   for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) put(buf, xx, yy, c);
 }
 
+// Fish silhouettes drawn swimming RIGHT: a tapered head leads, the body is
+// the tallest part, and a forked tail trails. Left-swimmers are the mirror.
+// ('.' water, 'B' base colour, 'A' accent, 'E' eye.) The first cut had the
+// small fish 4 px tall at both ends and 2 px in the middle, so the eye end
+// read as a tail fin and they looked like they swam backwards (Gavin 2026-11-08).
+const SMALL_FISH_RIGHT: readonly string[] = [
+  "A.BBB.",
+  ".ABBBE",
+  ".ABBBB",
+  "A.BBB.",
+];
+const BIG_FISH_RIGHT: readonly string[] = [
+  "A...BBB..",
+  "AA.BBBBB.",
+  ".ABBBBBEB",
+  ".ABBBBBBB",
+  "AA.BBBBB.",
+  "A...BBB..",
+];
+/** Accent marking inside the body per variant, as [col, row] on the right-facing sprite. */
+const SMALL_MARK: ReadonlyArray<readonly [number, number] | null> = [null, [3, 1], [2, 2]];
+
+/** The fish's pixel rows, facing its direction of travel. */
+export function fishSprite(f: Fish): string[] {
+  const base = f.size === 1 ? SMALL_FISH_RIGHT : BIG_FISH_RIGHT;
+  const rows = base.map((r) => r.split(""));
+  if (f.size === 1) {
+    const mark = SMALL_MARK[f.variant % SMALL_MARK.length];
+    if (mark) rows[mark[1]]![mark[0]] = "A";
+  } else {
+    rows[2 + (f.variant % 2)]![4] = "A";
+  }
+  const out = rows.map((r) => r.join(""));
+  return f.dir > 0 ? out : out.map((r) => r.split("").reverse().join(""));
+}
+
 function drawFish(buf: Uint8Array, f: Fish, t: number): void {
   const x = Math.round(fishX(f, t));
   const y = f.y + Math.round(Math.sin(turn(f.bobCycles, t, f.bobPhase)) * 0.65);
   const [base, accent] = FISH_PALETTES[f.palette]!;
-  if (f.size === 1) {
-    // 6x4: 4x3 body, 2 px triangular tail.
-    if (f.dir > 0) {
-      put(buf, x, y + 1, accent); put(buf, x, y + 2, accent);
-      put(buf, x + 1, y, base); fill(buf, x + 1, y + 1, 4, 2, base); put(buf, x + 1, y + 3, base);
-      put(buf, x + 4, y, base); put(buf, x + 4, y + 3, base);
-      put(buf, x + 4, y + 1, EYE);
-      if (f.variant === 1) put(buf, x + 2, y + 1, accent);
-      else if (f.variant === 2) put(buf, x + 3, y + 2, accent);
-    } else {
-      put(buf, x + 5, y + 1, accent); put(buf, x + 5, y + 2, accent);
-      put(buf, x + 4, y, base); fill(buf, x + 1, y + 1, 4, 2, base); put(buf, x + 4, y + 3, base);
-      put(buf, x + 1, y, base); put(buf, x + 1, y + 3, base);
-      put(buf, x + 1, y + 1, EYE);
-      if (f.variant === 1) put(buf, x + 3, y + 1, accent);
-      else if (f.variant === 2) put(buf, x + 2, y + 2, accent);
-    }
-  } else {
-    // 9x6: the rarer big fish.
-    if (f.dir > 0) {
-      put(buf, x, y + 2, accent); put(buf, x, y + 3, accent); put(buf, x + 1, y + 1, accent); put(buf, x + 1, y + 4, accent);
-      fill(buf, x + 2, y + 1, 5, 4, base); fill(buf, x + 3, y, 3, 1, base); fill(buf, x + 3, y + 5, 3, 1, base);
-      put(buf, x + 6, y + 2, EYE);
-      put(buf, x + 4, y + 2 + (f.variant % 2), accent);
-    } else {
-      put(buf, x + 8, y + 2, accent); put(buf, x + 8, y + 3, accent); put(buf, x + 7, y + 1, accent); put(buf, x + 7, y + 4, accent);
-      fill(buf, x + 2, y + 1, 5, 4, base); fill(buf, x + 3, y, 3, 1, base); fill(buf, x + 3, y + 5, 3, 1, base);
-      put(buf, x + 2, y + 2, EYE);
-      put(buf, x + 4, y + 2 + (f.variant % 2), accent);
+  const rows = fishSprite(f);
+  for (let r = 0; r < rows.length; r++) {
+    for (let c = 0; c < rows[r]!.length; c++) {
+      const ch = rows[r]![c];
+      if (ch === ".") continue;
+      put(buf, x + c, y + r, ch === "E" ? EYE : ch === "A" ? accent : base);
     }
   }
 }

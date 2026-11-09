@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { AQUARIUM, AQUARIUM_FPS, AQUARIUM_LOOP_S, AQUARIUM_FRAME_COUNT, FISH, BUBBLES, renderFrame, fishX, bubbleY } from "./index.ts";
+import { AQUARIUM, AQUARIUM_FPS, AQUARIUM_LOOP_S, AQUARIUM_FRAME_COUNT, FISH, BUBBLES, renderFrame, fishX, bubbleY, fishSprite } from "./index.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 
@@ -55,6 +55,34 @@ describe("AQUARIUM scene", () => {
     if (big.length && small.length) expect(Math.max(...big.map(speed))).toBeLessThan(Math.min(...small.map(speed)));
     // Bubbles keep their original pace (2.75 px/s and up) rather than slowing with the fish.
     for (const b of BUBBLES) expect(Math.abs(bubbleY(b, 1) - bubbleY(b, 0))).toBeGreaterThanOrEqual(2.5);
+  });
+
+  it("each fish swims head first: tapered head leading, round body, forked tail trailing (Gavin 2026-11-08: they looked like they were swimming backwards)", () => {
+    const lit = (col: string[]) => col.filter((c) => c !== ".").length;
+    for (const f of FISH) {
+      const rows = fishSprite(f);
+      const w = rows[0]!.length;
+      expect(w).toBe(f.width);
+      const cols = Array.from({ length: w }, (_, x) => rows.map((r) => r[x]!));
+      const lead = f.dir > 0 ? w - 1 : 0, trail = f.dir > 0 ? 0 : w - 1;
+      // One eye, in the leading half.
+      const eyeCols = cols.map((c, x) => (c.includes("E") ? x : -1)).filter((x) => x >= 0);
+      expect(eyeCols).toHaveLength(1);
+      expect(f.dir > 0 ? eyeCols[0]! >= w / 2 : eyeCols[0]! < w / 2).toBe(true);
+      // Trailing column is a fork: lit top and bottom, dark in between.
+      const tail = cols[trail]!;
+      expect(tail[0]).not.toBe(".");
+      expect(tail[tail.length - 1]).not.toBe(".");
+      expect(tail.slice(1, -1).every((c) => c === ".")).toBe(true);
+      // Body is the tallest part; the head tapers to fewer pixels than the body.
+      const tallest = Math.max(...cols.map(lit));
+      expect(tallest).toBe(rows.length);
+      expect(lit(cols[lead]!)).toBeLessThan(tallest);
+      expect(lit(cols[lead]!)).toBeGreaterThan(0);
+      // Facing is a pure mirror of the same silhouette.
+      const flipped = fishSprite({ ...f, dir: f.dir > 0 ? -1 : 1 });
+      expect(flipped).toEqual(rows.map((r) => r.split("").reverse().join("")));
+    }
   });
 
   it("fish move between frames and bubbles rise", () => {
