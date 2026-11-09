@@ -4,8 +4,8 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN, round 9: the narrow-belly torso settled;
-// five eight-frame leg cycles.
+// Current subject: SAMUS ARAN, round 11: the quick-step legs settled;
+// shifted left under the body by 0, 1 or 2 columns, two with a wider stance.
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -31,52 +31,7 @@ const SAMUS_RUN = { ...SAMUS_BRIGHT, N: "#F0A030", D: "#B86020", B: "#D83030", b
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 flat feet, legs upright at contact",
-    frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD..NN..", ".DD..NN.."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD..NN..", "..D..NN.."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DNN...", "....NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NN.D..", "....NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN..DD..", ".NN..DD.."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN..DD..", "..N..DD.."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NDD...", "....DD..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DD.N..", "....DD..."],
-    ],
-    colors: SAMUS_RUN,
-    eye: [5, 2],
-  },
-  {
-    name: "2 three leg rows, torso up one",
-    frames: [
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", ".DD...NN.", "DD.....NN"],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", "..DD..NN.", "...D...NN"],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DDNN..", "....DNN..", ".....NN.."],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NN.D..", "....NN.D.", "....NN..."],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NN.DD..", ".NN...DD.", "NN.....DD"],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NN.DD..", "..NN..DD.", "...N...DD"],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NNDD..", "....NDD..", ".....DD.."],
-      ["...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DD.N..", "....DD.N.", "....DD..."],
-    ],
-    colors: SAMUS_RUN,
-    eye: [5, 1],
-  },
-  {
-    name: "3 far knee lifts high on the pass",
-    frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", ".DD...NN."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", "..DD..NN."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..D.NN...", "....NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NN.D..", "....NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NN.DD..", ".NN...DD."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NN.DD..", "..NN..DD."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..N.DD...", "....DD..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DD.N..", "....DD..."],
-    ],
-    colors: SAMUS_RUN,
-    eye: [5, 2],
-  },
-  {
-    name: "4 short quick steps, feet always down",
+    name: "1 as picked",
     frames: [
       [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", "..DD.NN.."],
       [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", "..DD.NN.."],
@@ -91,16 +46,61 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
     eye: [5, 2],
   },
   {
-    name: "5 wide stride, toe-off behind",
+    name: "2 legs one column left",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD..NN..", "DD....NN."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DD.NN..", "..D...NN."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DNN...", "....NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NN.D..", "....NND.."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN..DD..", "NN....DD."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NN.DD..", "..N...DD."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...NDD...", "....DD..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "...DD.N..", "....DDN.."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD.NN...", ".DD.NN..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD.NN...", ".DD.NN..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DNN....", "..DNN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NND....", "..NND...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN.DD...", ".NN.DD..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN.DD...", ".NN.DD..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NDD....", "..NDD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DDN....", "..DDN...."],
+    ],
+    colors: SAMUS_RUN,
+    eye: [5, 2],
+  },
+  {
+    name: "3 legs two columns left",
+    frames: [
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DNN.....", ".DNN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NND.....", ".NND....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NDD.....", ".NDD....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DDN.....", ".DDN....."],
+    ],
+    colors: SAMUS_RUN,
+    eye: [5, 2],
+  },
+  {
+    name: "4 one column left, wider stance",
+    frames: [
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD..NN..", ".DD..NN.."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DD..NN..", ".DD..NN.."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DDNN...", "..DDNN..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NNDD...", "..NNDD..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN..DD..", ".NN..DD.."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NN..DD..", ".NN..DD.."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..NNDD...", "..NNDD..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "..DDNN...", "..DDNN..."],
+    ],
+    colors: SAMUS_RUN,
+    eye: [5, 2],
+  },
+  {
+    name: "5 two columns left, wider stance",
+    frames: [
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "DD..NN...", "DD..NN..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "DD..NN...", "DD..NN..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DDNN....", ".DDNN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NNDD....", ".NNDD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "NN..DD...", "NN..DD..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "NN..DD...", "NN..DD..."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NNDD....", ".NNDD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DDNN....", ".DDNN...."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
