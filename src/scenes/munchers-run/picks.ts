@@ -4,9 +4,9 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: the KNIGHT from Fog Canyon. Round 3: the long-horned
-// head with two-row eye hollows (Gavin's picks), cloak lightened in steps,
-// body variations. Shown on the fog colour so the dark body reads as in
+// Current subject: the KNIGHT from Fog Canyon. Round 4: settled shape (long
+// horns, two-row eyes, standard body); body and cloak lightened in steps so
+// they read on the LEDs, plus one purple-leaning pair. Shown on the fog colour so the dark body reads as in
 // the scene.
 //   W mask  E eye hollow  K body  N cloak  L nail
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
@@ -15,54 +15,57 @@ import type { RunnerArt } from "./art.ts";
 
 // Hollow Knight palette from fog-canyon/art.ts: bone mask, eye hollows, black body, navy cloak, pale nail.
 // Gavin 2026-11-09: the body was too dark; body takes the old cloak navy, the cloak goes a step darker.
-const HK1 = { W: "#F2F2F4", E: "#0A0A12", K: "#2A3560", N: "#3A4890" };
-const HK2 = { ...HK1, N: "#4A5AA8" };
-const HK3 = { ...HK2, K: "#34407A" };
+const MASK = { W: "#F2F2F4", E: "#0A0A12" };
+const C1 = { ...MASK, K: "#34407A", N: "#4A5AA8" };
+const C2 = { ...MASK, K: "#3E4C8C", N: "#5A6CC0" };
+const C3 = { ...MASK, K: "#4858A0", N: "#6C80D4" };
+const C4 = { ...MASK, K: "#5262B0", N: "#8094E4" };
+const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 cloak one step lighter",
+    name: "1 body #34407A cloak #4A5AA8",
     frames: [
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK1,
+    colors: C1,
     eye: [2, 3],
   },
   {
-    name: "2 cloak two steps lighter",
+    name: "2 body #3E4C8C cloak #5A6CC0",
     frames: [
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK2,
+    colors: C2,
     eye: [2, 3],
   },
   {
-    name: "3 cloak two steps, body one step lighter",
+    name: "3 body #4858A0 cloak #6C80D4",
     frames: [
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK3,
+    colors: C3,
     eye: [2, 3],
   },
   {
-    name: "4 shorter body",
+    name: "4 body #5262B0 cloak #8094E4",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKK..", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKK..", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK1,
+    colors: C4,
     eye: [2, 3],
   },
   {
-    name: "5 flared cloak",
+    name: "5 purple: body #4A3C8C cloak #7A68C8",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKNN", "NNKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKKNN", ".NKK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
     ],
-    colors: HK1,
+    colors: C5,
     eye: [2, 3],
   },
 ];
