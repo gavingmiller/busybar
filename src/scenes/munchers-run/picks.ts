@@ -13,53 +13,53 @@ import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene
 import type { RunnerArt } from "./art.ts";
 
 // Reggie palette, lifted from the sheet: plum outline, pinks for the shell and spiral, cream body.
-const SNAIL = { K: "#3A1A33", P: "#FFA9E1", D: "#A03C80", H: "#D563AD", L: "#FFD8F2", T: "#FCE5A9", U: "#DEC481", E: "#140A14" };
+const SNAIL = { K: "#3A1A33", P: "#FFA9E1", D: "#A03C80", H: "#D563AD", L: "#FFD8F2", T: "#FCE5A9", U: "#DEC481", E: "#140A14", W: "#FFFFFF" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 compact faithful",
+    name: "1 open shell, skinny outlined body",
     frames: [
-      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KPPPPK.KTTK", "KPPDDDPKKTTK", "KPDPPDPKKTTK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", ".KTTTTTTTTTK"],
-      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KPPPPK.KTTK", "KPPDDDPKKTTK", "KPDPPDPKKTTK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", "KTTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..PPPP..KTEK", ".PPPPPP.KTTK", "PPPDDDPPKTTK", "PPDPPDPPKTTK", "PPDPDDPPKTTK", "PPPDPPPPTTTK", ".PPPPPPTTTTK", ".KTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..PPPP..KTEK", ".PPPPPP.KTTK", "PPPDDDPPKTTK", "PPDPPDPPKTTK", "PPDPDDPPKTTK", "PPPDPPPPTTTK", ".PPPPPPTTTTK", "KTTTTTTTTTTK"],
     ],
     colors: SNAIL,
     eye: [10, 2],
   },
   {
-    name: "2 shell highlight, two-tone spiral",
+    name: "2 plus shell highlight",
     frames: [
-      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KLLPPK.KTTK", "KLPDDDPKKTTK", "KPDHHDPKKTTK", "KPDHDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", ".KTTTTTTTTTK"],
-      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KLLPPK.KTTK", "KLPDDDPKKTTK", "KPDHHDPKKTTK", "KPDHDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", "KTTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..PPPP..KTEK", ".PLLPPP.KTTK", "PLPDDDPPKTTK", "PPDPPDPPKTTK", "PPDPDDPPKTTK", "PPPDPPPPTTTK", ".PPPPPPTTTTK", ".KTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..PPPP..KTEK", ".PLLPPP.KTTK", "PLPDDDPPKTTK", "PPDPPDPPKTTK", "PPDPDDPPKTTK", "PPPDPPPPTTTK", ".PPPPPPTTTTK", "KTTTTTTTTTTK"],
     ],
     colors: SNAIL,
     eye: [10, 2],
   },
   {
-    name: "3 head low, gliding",
+    name: "3 taller shell",
     frames: [
-      ["............", "............", "..KKKK...K.K", ".KPPPPK...KK", "KPPDDDPK.KTK", "KPDPPDPKKTEK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", ".KTTTTTTTTTK"],
-      ["............", "............", "..KKKK...K.K", ".KPPPPK...KK", "KPPDDDPK.KTK", "KPDPPDPKKTEK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", "KTTTTTTTTTTK"],
-    ],
-    colors: SNAIL,
-    eye: [10, 5],
-  },
-  {
-    name: "4 no outline",
-    frames: [
-      ["........K..K", "........TTTT", "..PPPP..TTET", ".PPPPPP.TTTT", "PPPDDDPPTTTT", "PPDPPDPPTTTT", "PPDPDDPPTTTT", "PPPDPPPPTTTT", ".PPPPPPTTTTT", ".UTTTTTTTTTU"],
-      ["........K..K", "........TTTT", "..PPPP..TTET", ".PPPPPP.TTTT", "PPPDDDPPTTTT", "PPDPPDPPTTTT", "PPDPDDPPTTTT", "PPPDPPPPTTTT", ".PPPPPPTTTTT", "UTTTTTTTTTTU"],
+      ["........K..K", "..PPPP..KTTK", ".PPPPPP.KTEK", "PPPDDDPPKTTK", "PPDPPPDPKTTK", "PPDPDDDPKTTK", "PPDPPDPPKTTK", "PPPDDPPPTTTK", ".PPPPPPTTTTK", ".KTTTTTTTTTK"],
+      ["........K..K", "..PPPP..KTTK", ".PPPPPP.KTEK", "PPPDDDPPKTTK", "PPDPPPDPKTTK", "PPDPDDDPKTTK", "PPDPPDPPKTTK", "PPPDDPPPTTTK", ".PPPPPPTTTTK", "KTTTTTTTTTTK"],
     ],
     colors: SNAIL,
     eye: [10, 2],
   },
   {
-    name: "5 big shell, small head",
+    name: "4 no outline anywhere, thinner neck",
     frames: [
-      [".........K.K", "..KKKKK..KTK", ".KPPPPPPKKTK", "KPPDDDDPKKEK", "KPDPPPPDKKTK", "KPDPDDPDKKTK", "KPDPPDPDKKTK", "KPPDDDPPKTTK", ".KPPPPPPKTTK", ".KTTTTTTTTTK"],
-      [".........K.K", "..KKKKK..KTK", ".KPPPPPPKKTK", "KPPDDDDPKKEK", "KPDPPPPDKKTK", "KPDPDDPDKKTK", "KPDPPDPDKKTK", "KPPDDDPPKTTK", ".KPPPPPPKTTK", "KTTTTTTTTTTK"],
+      [".........K.K", ".........TT.", "..PPPP...TE.", ".PPPPPP..TT.", "PPPDDDPP.TT.", "PPDPPDPP.TT.", "PPDPDDPP.TT.", "PPPDPPPPTTT.", ".PPPPPPTTTT.", ".UTTTTTTTTU."],
+      [".........K.K", ".........TT.", "..PPPP...TE.", ".PPPPPP..TT.", "PPPDDDPP.TT.", "PPDPPDPP.TT.", "PPDPDDPP.TT.", "PPPDPPPPTTT.", ".PPPPPPTTTT.", "UTTTTTTTTTU."],
     ],
     colors: SNAIL,
-    eye: [10, 3],
+    eye: [10, 2],
+  },
+  {
+    name: "5 two-tone spiral, eye glint",
+    frames: [
+      ["........K..K", "........KTTK", "..PPPP..KWEK", ".PPPPPP.KTTK", "PPPDDHPPKTTK", "PPDHHDPPKTTK", "PPDHDDPPKTTK", "PPPDPPPPTTTK", ".PPPPPPTTTTK", ".KTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..PPPP..KWEK", ".PPPPPP.KTTK", "PPPDDHPPKTTK", "PPDHHDPPKTTK", "PPDHDDPPKTTK", "PPPDPPPPTTTK", ".PPPPPPTTTTK", "KTTTTTTTTTTK"],
+    ],
+    colors: SNAIL,
+    eye: [10, 2],
   },
 ];
 
