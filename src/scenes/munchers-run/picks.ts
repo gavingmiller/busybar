@@ -17,46 +17,52 @@ const SNAIL = { K: "#3A1A33", P: "#FFA9E1", D: "#A03C80", H: "#D563AD", L: "#FFD
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 shell flush with the neck",
-    frames: [
-      [".........K.K", ".........TT.", "...PPPP..TE.", "..PPPPPP.TT.", ".PPPDDDPPTT.", ".PPDPPDPPTT.", ".PPDPDDPPTT.", ".PPPDPPPPTT.", "..PPPPPPTTT.", ".UTTTTTTTTU."],
-      [".........K.K", ".........TT.", "...PPPP..TE.", "..PPPPPP.TT.", ".PPPDDDPPTT.", ".PPDPPDPPTT.", ".PPDPDDPPTT.", ".PPPDPPPPTT.", "..PPPPPPTTT.", "UTTTTTTTTTU."],
-    ],
-    colors: SNAIL,
-    eye: [10, 2],
-  },
-  {
-    name: "2 plus shell highlight",
-    frames: [
-      [".........K.K", ".........TT.", "...PPPP..TE.", "..PLLPPP.TT.", ".PLPDDDPPTT.", ".PPDPPDPPTT.", ".PPDPDDPPTT.", ".PPPDPPPPTT.", "..PPPPPPTTT.", ".UTTTTTTTTU."],
-      [".........K.K", ".........TT.", "...PPPP..TE.", "..PLLPPP.TT.", ".PLPDDDPPTT.", ".PPDPPDPPTT.", ".PPDPDDPPTT.", ".PPPDPPPPTT.", "..PPPPPPTTT.", "UTTTTTTTTTU."],
-    ],
-    colors: SNAIL,
-    eye: [10, 2],
-  },
-  {
-    name: "3 taller shell",
-    frames: [
-      [".........K.K", "...PPPP..TT.", "..PPPPPP.TE.", ".PPPDDDPPTT.", ".PPDPPPDPTT.", ".PPDPDDDPTT.", ".PPDPPDPPTT.", ".PPPDDPPPTT.", "..PPPPPPTTT.", ".UTTTTTTTTU."],
-      [".........K.K", "...PPPP..TT.", "..PPPPPP.TE.", ".PPPDDDPPTT.", ".PPDPPPDPTT.", ".PPDPDDDPTT.", ".PPDPPDPPTT.", ".PPPDDPPPTT.", "..PPPPPPTTT.", "UTTTTTTTTTU."],
-    ],
-    colors: SNAIL,
-    eye: [10, 2],
-  },
-  {
-    name: "4 two-tone spiral",
-    frames: [
-      [".........K.K", ".........TT.", "...PPPP..TE.", "..PPPPPP.TT.", ".PPPDDHPPTT.", ".PPDHHDPPTT.", ".PPDHDDPPTT.", ".PPPDPPPPTT.", "..PPPPPPTTT.", ".UTTTTTTTTU."],
-      [".........K.K", ".........TT.", "...PPPP..TE.", "..PPPPPP.TT.", ".PPPDDHPPTT.", ".PPDHHDPPTT.", ".PPDHDDPPTT.", ".PPPDPPPPTT.", "..PPPPPPTTT.", "UTTTTTTTTTU."],
-    ],
-    colors: SNAIL,
-    eye: [10, 2],
-  },
-  {
-    name: "5 shell tucked over the neck",
+    name: "1 foot ripple",
     frames: [
       [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..TTUTTTTTU."],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..TTTTUTTTU."],
+    ],
+    colors: SNAIL,
+    eye: [10, 2],
+  },
+  {
+    name: "2 head bob",
+    frames: [
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
+      ["............", ".........K.K", "....PPPP.TT.", "...PPPPPPTE.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", ".UTTTTTTTTU."],
+    ],
+    colors: SNAIL,
+    eye: [10, 2],
+  },
+  {
+    name: "3 shell bounce",
+    frames: [
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
+      [".........K.K", "....PPPP.TT.", "...PPPPPPTE.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPP.T.", ".........TT.", "..UTTTTTTTU."],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
       [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", ".UTTTTTTTTU."],
+    ],
+    colors: SNAIL,
+    eye: [10, 2],
+  },
+  {
+    name: "4 inchworm",
+    frames: [
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
+      ["..........KK", "..........TT", "....PPPP..TE", "...PPPPPPTTT", "..PPPDDDPPTT", "..PPDPPDPPTT", "..PPDPDDPPTT", "..PPPDPPPPTT", "...PPPPPPTTT", "..UTTTTTTTTU"],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "...UTTTTTTU."],
+    ],
+    colors: SNAIL,
+    eye: [10, 2],
+  },
+  {
+    name: "5 spinning spiral",
+    frames: [
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPPDDPPT.", "..PPDDPPDPT.", "..PPDPDDDPT.", "..PPPDDPPPT.", "...PPPPPPTT.", "..TTUTTTTTU."],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPPDPPPT.", "..PPDDPDPPT.", "..PPDDPDPPT.", "..PPPDDDPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
+      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDPPPT.", "..PDDDPDPPT.", "..PDPPDDPPT.", "..PPDDPPPPT.", "...PPPPPPTT.", "..TTTTUTTTU."],
     ],
     colors: SNAIL,
     eye: [10, 2],
@@ -74,9 +80,9 @@ export const DIGITS: Record<number, readonly string[]> = {
 
 export const PICK_SLOT_W = 14;
 export const PICKS_FPS = 24;
-/** Pose A 8 frames, pose B 4 frames; four cycles per 2 s loop. */
-const CYCLE = 12;
-export const PICKS_FRAME_COUNT = CYCLE * 4;
+/** Six display frames per pose (4 poses/s); 12 poses per 3 s loop so 1-, 2-, 3-, 4- and 6-frame cycles all close. */
+const POSE_FRAMES = 6;
+export const PICKS_FRAME_COUNT = POSE_FRAMES * 12;
 const DIGIT_RGB: [number, number, number] = [0xf0, 0xb0, 0x40];
 
 const hex = (h: string): [number, number, number] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
@@ -89,7 +95,7 @@ function put(buf: Uint8Array, x: number, y: number, c: [number, number, number])
 export function renderPicksFrame(i: number): Uint8Array {
   const buf = new Uint8Array(W * H * 4);
   for (let p = 3; p < buf.length; p += 4) buf[p] = 255;
-  const k = (((i % PICKS_FRAME_COUNT) + PICKS_FRAME_COUNT) % PICKS_FRAME_COUNT) % CYCLE < 8 ? 0 : 1;
+  const k = Math.floor((((i % PICKS_FRAME_COUNT) + PICKS_FRAME_COUNT) % PICKS_FRAME_COUNT) / POSE_FRAMES);
   PICK_VARIANTS.forEach((v, n) => {
     const x0 = 1 + n * PICK_SLOT_W;
     const glyph = DIGITS[n + 1]!;
