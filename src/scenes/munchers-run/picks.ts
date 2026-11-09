@@ -4,8 +4,8 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN (Gavin: "I want to do samus too"). Five suits
-// at 9x10, two-frame walk, on a black backdrop (her scenes are dark).
+// Current subject: SAMUS ARAN, round 2 (the first five "look like crap"):
+// redrawn from Gavin's references, builds and poses rather than suit colours.
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -20,59 +20,58 @@ const C3 = { ...MASK, K: "#4858A0", N: "#6C80D4" };
 const C4 = { ...MASK, K: "#5262B0", N: "#8094E4" };
 const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
-// Samus Aran (Metroid), hand-drawn 9x10 facing right: helmet and visor, round shoulder pads, torso, arm cannon leading, boots.
-//   O suit  S shoulder pads  G visor  C arm cannon  B boots / zero-suit body  Y hair
-const VARIA   = { O: "#F0A020", S: "#D83030", G: "#40E080", C: "#7A9A7A", B: "#D83030" };
-const POWER   = { O: "#E8C040", S: "#F08030", G: "#40E080", C: "#7A9A7A", B: "#F08030" };
-const GRAVITY = { O: "#9050D0", S: "#E060A0", G: "#40E080", C: "#7A9A7A", B: "#E060A0" };
-const FUSION  = { O: "#3070E0", S: "#F0D040", G: "#40E080", C: "#7A9A7A", B: "#F0D040" };
-const ZERO    = { O: "#F0C8A0", G: "#40B0E0", B: "#3050C0", Y: "#F0D060" };
+// Samus Aran (Metroid), hand-drawn facing right from Gavin's two references (16-bit standing sprite,
+// cross-stitch running pose): red helmet with a lime visor, red chest, big round orange shoulders,
+// yellow belly, orange legs, teal arm cannon leading. No outlines: the bar's black does that job.
+//   R helmet/chest  G visor  O shoulders/limbs  Y belly  C arm cannon
+const SAMUS        = { R: "#B82020", G: "#A8E040", O: "#E87020", Y: "#F0D040", C: "#30A090" };
+const SAMUS_BRIGHT = { R: "#D83030", G: "#60D070", O: "#F0A030", Y: "#F8E060", C: "#40B8A8" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 Varia Suit: orange, red pads, green visor",
+    name: "1 standing build from the 16-bit reference",
     frames: [
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
+      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO..OO..", "..OO..OO.."],
+      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO.OO...", ".OO...OO.."],
     ],
-    colors: VARIA,
-    eye: [5, 1],
-  },
-  {
-    name: "2 Power Suit: yellow, orange pads",
-    frames: [
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
-    ],
-    colors: POWER,
-    eye: [5, 1],
-  },
-  {
-    name: "3 Gravity Suit: purple, pink pads",
-    frames: [
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
-    ],
-    colors: GRAVITY,
-    eye: [5, 1],
-  },
-  {
-    name: "4 Fusion Suit: blue, yellow pads",
-    frames: [
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
-      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
-    ],
-    colors: FUSION,
-    eye: [5, 1],
-  },
-  {
-    name: "5 Zero Suit: slim blue, blonde ponytail",
-    frames: [
-      ["..YOOO...", "..YOGGO..", "..YOOOO..", "..YBBBB..", ".Y.BBBB..", "...BBBB..", "...B.B...", "...B.B...", "...B.B...", "..BB.BB.."],
-      ["..YOOO...", "..YOGGO..", "..YOOOO..", "..YBBBB..", ".Y.BBBB..", "...BBBB..", "..B...B..", "..B...B..", "..B...B..", ".BB...BB."],
-    ],
-    colors: ZERO,
+    colors: SAMUS,
     eye: [4, 1],
+  },
+  {
+    name: "2 running pose from the cross-stitch",
+    frames: [
+      ["....RRR...", "...RRGGR..", "..ORRRRR..", ".OOORRRO..", "OO.OYYYOCC", "...YYYY.CC", "..OYYYO...", ".OO..OO...", "OO....OO..", "O......OO."],
+      ["....RRR...", "...RRGGR..", "..ORRRRR..", ".OOORRRO..", "OO.OYYYOCC", "...YYYY.CC", "..OYYYO...", "..OO.OO...", "..OO..OO..", "..O....O.."],
+    ],
+    colors: SAMUS,
+    eye: [5, 1],
+  },
+  {
+    name: "3 standing, brighter red",
+    frames: [
+      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO..OO..", "..OO..OO.."],
+      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO.OO...", ".OO...OO.."],
+    ],
+    colors: SAMUS_BRIGHT,
+    eye: [4, 1],
+  },
+  {
+    name: "4 wider shoulders, longer cannon",
+    frames: [
+      ["....RRRR....", "...RRGGGR...", "...RRGGGR...", "..ORRRRRRO..", "OOOORRRROOOO", "OOOOYYYYOCCC", ".OO.YYYY.CCC", "....OYYO....", "...OO..OO...", "...OO..OO..."],
+      ["....RRRR....", "...RRGGGR...", "...RRGGGR...", "..ORRRRRRO..", "OOOORRRROOOO", "OOOOYYYYOCCC", ".OO.YYYY.CCC", "....OYYO....", "...OO.OO....", "..OO...OO..."],
+    ],
+    colors: SAMUS,
+    eye: [5, 1],
+  },
+  {
+    name: "5 compact 8x9",
+    frames: [
+      ["..RRRR..", ".RRGGGR.", ".RRGGGR.", "OORRRROO", "OOYYYYCC", ".OYYYY.C", "..OYYO..", ".OO..OO.", ".OO..OO."],
+      ["..RRRR..", ".RRGGGR.", ".RRGGGR.", "OORRRROO", "OOYYYYCC", ".OYYYY.C", "..OYYO..", ".OO.OO..", "OO...OO."],
+    ],
+    colors: SAMUS,
+    eye: [3, 1],
   },
 ];
 
