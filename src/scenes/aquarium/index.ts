@@ -9,7 +9,12 @@
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 
 export const AQUARIUM_FPS = 24;
-export const AQUARIUM_LOOP_S = 96; // 4x the original 24 s: fish were entirely too fast (Gavin 2026-11-08)
+export const AQUARIUM_LOOP_S = 240; // 10x the original 24 s: fish were entirely too fast (Gavin 2026-11-08), and a
+                                   // long loop lets the one large fish stay away most of the time (rare visitor).
+/** Chance, per crossing, that a fish turns around mid-tank and goes back where it came from. */
+export const TURNAROUND_CHANCE = 0.1;
+/** Seconds per loop the large fish spends out of the tank. */
+const LARGE_FISH_REST_S = 170;
 export const AQUARIUM_FRAME_COUNT = AQUARIUM_FPS * AQUARIUM_LOOP_S;
 
 type RGB = readonly [number, number, number];
@@ -57,13 +62,19 @@ const between = (lo: number, hi: number) => lo + random() * (hi - lo);
 const FISH_GAP = 10;
 
 export interface Fish {
+  /** Entry side: 1 comes in from the left and swims right, -1 the reverse. */
   dir: 1 | -1;
-  size: 1 | 2;
+  /** 1 small (4x3), 2 medium (6x4), 3 large (9x6). */
+  size: 1 | 2 | 3;
   width: number;
-  /** Phase along the wrap track at t=0, px. */
-  x0: number;
-  /** Full crossings (track lengths) per loop; speed = crossings * track / loop. */
+  /** Crossing slots per loop (each is a full track at cruise speed, or a turnaround of the same length of time). */
   crossings: number;
+  /** Seconds at the end of each loop spent parked off-screen (the large fish's rarity). */
+  restS: number;
+  /** Timeline offset into the moving window, s. */
+  phaseS: number;
+  /** Per crossing slot: null = straight across; else the fraction of the track swum before turning back. */
+  turns: Array<number | null>;
   y: number;
   bobCycles: number;
   bobPhase: number;
@@ -72,14 +83,36 @@ export interface Fish {
 }
 
 const fishTrack = (f: Fish) => W + f.width + FISH_GAP;
+const fishMoveS = (f: Fish) => AQUARIUM_LOOP_S - f.restS;
+/** Seconds per crossing slot. */
+export const fishSlotS = (f: Fish) => fishMoveS(f) / f.crossings;
+/** Cruise speed on a straight crossing, px/s. */
+export const fishSpeed = (f: Fish) => fishTrack(f) / fishSlotS(f);
 
-/** Left edge of the fish at time t (seconds); in [-(width+gap), W). Closes on the loop. */
-export function fishX(f: Fish, t: number): number {
+/** Where the fish is and which way it faces at time t (seconds). Closes on the loop. */
+function fishState(f: Fish, t: number): { x: number; facing: 1 | -1 } {
+  const L = AQUARIUM_LOOP_S;
+  const tt = ((t % L) + L) % L;
+  // Distance u along the path from the entry side: left edge in [-(width+gap), W).
+  const at = (u: number) => (f.dir > 0 ? -(f.width + FISH_GAP) + u : W - u);
+  const moveS = fishMoveS(f);
+  if (tt >= moveS) return { x: at(0), facing: f.dir }; // parked off-screen
+  const local = (tt + f.phaseS) % moveS;
+  const slot = fishSlotS(f);
+  const k = Math.min(f.crossings - 1, Math.floor(local / slot));
+  const tau = local - k * slot;
   const track = fishTrack(f);
-  const speed = (f.crossings * track) / AQUARIUM_LOOP_S;
-  const u = (((f.x0 + f.dir * speed * t) % track) + track) % track;
-  return u - f.width - FISH_GAP;
+  const turn = f.turns[k] ?? null;
+  if (turn === null) return { x: at((track / slot) * tau), facing: f.dir };
+  // Turnaround: swim in to turn*track, flip, swim back out the same side, all within the slot.
+  const d = turn * track;
+  const p = ((2 * d) / slot) * tau;
+  return p < d ? { x: at(p), facing: f.dir } : { x: at(2 * d - p), facing: f.dir > 0 ? -1 : 1 };
 }
+/** Left edge of the fish at time t (seconds). */
+export const fishX = (f: Fish, t: number): number => fishState(f, t).x;
+/** Which way the fish faces at time t: its direction of travel. */
+export const fishFacing = (f: Fish, t: number): 1 | -1 => fishState(f, t).facing;
 
 export interface Bubble {
   x: number;
@@ -108,29 +141,41 @@ interface Plant {
   branch: 1 | -1;
 }
 
+const FISH_SIZES = {
+  1: { width: 4, yMax: 12 },
+  2: { width: 6, yMax: 11 },
+  3: { width: 9, yMax: 9 },
+} as const;
+
 function makeFish(): Fish[] {
-  const fish: Fish[] = [];
-  for (let i = 0; i < 6; i++) {
-    const size = pick([1, 1, 1, 2] as const);
-    const width = size === 1 ? 6 : 9;
-    const dir = i % 2 === 0 ? 1 : -1;
-    fish.push({
-      dir,
-      size,
-      width,
-      x0: between(0, W + width + FISH_GAP),
-      crossings: size === 2 ? 1 : pick([2, 2, 2]), // ~1.7 px/s small, ~0.85 px/s big over the 96 s loop
-      y: Math.floor(between(2, size === 1 ? 11 : 9)),
-      bobCycles: pick([16, 20, 24]),
+  // A school of small fish, a few medium, and one large fish that visits once a loop.
+  const plan: Array<{ size: 1 | 2 | 3; crossings: number; restS: number }> = [
+    ...Array.from({ length: 5 }, () => ({ size: 1 as const, crossings: pick([5, 6, 6]), restS: 0 })), // 1.8–2.15 px/s
+    ...Array.from({ length: 3 }, () => ({ size: 2 as const, crossings: 4, restS: 0 })), // ~1.5 px/s
+    { size: 3, crossings: 1, restS: LARGE_FISH_REST_S }, // ~1.3 px/s, on screen ~1 minute in 4
+  ];
+  const fish = plan.map((p, i): Fish => {
+    const moveS = AQUARIUM_LOOP_S - p.restS;
+    return {
+      dir: i % 2 === 0 ? 1 : -1,
+      size: p.size,
+      width: FISH_SIZES[p.size].width,
+      crossings: p.crossings,
+      restS: p.restS,
+      phaseS: p.restS ? 0 : between(0, moveS),
+      turns: Array.from({ length: p.crossings }, () => (random() < TURNAROUND_CHANCE ? pick([0.45, 0.5, 0.55]) : null)),
+      y: Math.floor(between(2, FISH_SIZES[p.size].yMax)),
+      bobCycles: pick([40, 50, 60]),
       bobPhase: between(0, Math.PI * 2),
       palette: i % FISH_PALETTES.length,
       variant: Math.floor(random() * 3),
-    });
-  }
-  // Guarantee a populated tank at t=0: spread the first four across the screen.
+    };
+  });
+  // Guarantee a populated tank at t=0: spread the first four across the screen on a straight crossing.
   for (let i = 0; i < 4; i++) {
     const f = fish[i]!;
-    f.x0 = f.width + FISH_GAP + 4 + i * 16;
+    f.turns[0] = null;
+    f.phaseS = (f.width + FISH_GAP + 4 + i * 16) / fishSpeed(f);
   }
   return fish;
 }
@@ -139,8 +184,8 @@ function makeBubbles(): Bubble[] {
   return Array.from({ length: 10 }, () => ({
     x: 1 + Math.floor(random() * (W - 2)),
     y0: between(0, BUBBLE_TRACK),
-    rises: pick([12, 16, 20, 24, 28]),
-    swayCycles: pick([28, 32, 36, 40]),
+    rises: pick([30, 40, 50, 60, 70]),
+    swayCycles: pick([70, 80, 90, 100]),
     swayPhase: between(0, Math.PI * 2),
     big: random() < 0.18,
   }));
@@ -150,7 +195,7 @@ function makePlants(): Plant[] {
   return [2, 8, 14, 22, 31, 40, 50, 59, 67].map((x) => ({
     x: x + Math.floor(between(-1, 2)),
     height: 3 + Math.floor(random() * 5),
-    swayCycles: pick([12, 16, 20]),
+    swayCycles: pick([30, 40, 50]),
     phase: between(0, Math.PI * 2),
     branch: random() < 0.5 ? -1 : 1,
   }));
@@ -179,6 +224,11 @@ function fill(buf: Uint8Array, x: number, y: number, w: number, h: number, c: RG
 // small fish 4 px tall at both ends and 2 px in the middle, so the eye end
 // read as a tail fin and they looked like they swam backwards (Gavin 2026-11-08).
 const SMALL_FISH_RIGHT: readonly string[] = [
+  "A.B.",
+  ".ABE",
+  "A.B.",
+];
+const MEDIUM_FISH_RIGHT: readonly string[] = [
   "A.BBB.",
   ".ABBBE",
   ".ABBBB",
@@ -186,34 +236,35 @@ const SMALL_FISH_RIGHT: readonly string[] = [
 ];
 const BIG_FISH_RIGHT: readonly string[] = [
   "A...BBB..",
-  "AA.BBBBB.",
+  ".A.BBBBB.",
   ".ABBBBBEB",
   ".ABBBBBBB",
-  "AA.BBBBB.",
+  ".A.BBBBB.",
   "A...BBB..",
 ];
-/** Accent marking inside the body per variant, as [col, row] on the right-facing sprite. */
-const SMALL_MARK: ReadonlyArray<readonly [number, number] | null> = [null, [3, 1], [2, 2]];
+/** Accent marking inside the medium body per variant, as [col, row] on the right-facing sprite. */
+const MEDIUM_MARK: ReadonlyArray<readonly [number, number] | null> = [null, [3, 1], [2, 2]];
 
-/** The fish's pixel rows, facing its direction of travel. */
-export function fishSprite(f: Fish): string[] {
-  const base = f.size === 1 ? SMALL_FISH_RIGHT : BIG_FISH_RIGHT;
+/** The fish's pixel rows, facing `facing` (1 = right). */
+export function fishSprite(f: Pick<Fish, "size" | "variant">, facing: 1 | -1): string[] {
+  const base = f.size === 1 ? SMALL_FISH_RIGHT : f.size === 2 ? MEDIUM_FISH_RIGHT : BIG_FISH_RIGHT;
   const rows = base.map((r) => r.split(""));
-  if (f.size === 1) {
-    const mark = SMALL_MARK[f.variant % SMALL_MARK.length];
+  if (f.size === 2) {
+    const mark = MEDIUM_MARK[f.variant % MEDIUM_MARK.length];
     if (mark) rows[mark[1]]![mark[0]] = "A";
-  } else {
+  } else if (f.size === 3) {
     rows[2 + (f.variant % 2)]![4] = "A";
   }
   const out = rows.map((r) => r.join(""));
-  return f.dir > 0 ? out : out.map((r) => r.split("").reverse().join(""));
+  return facing > 0 ? out : out.map((r) => r.split("").reverse().join(""));
 }
 
 function drawFish(buf: Uint8Array, f: Fish, t: number): void {
-  const x = Math.round(fishX(f, t));
+  const { x: fx, facing } = fishState(f, t);
+  const x = Math.round(fx);
   const y = f.y + Math.round(Math.sin(turn(f.bobCycles, t, f.bobPhase)) * 0.65);
   const [base, accent] = FISH_PALETTES[f.palette]!;
-  const rows = fishSprite(f);
+  const rows = fishSprite(f, facing);
   for (let r = 0; r < rows.length; r++) {
     for (let c = 0; c < rows[r]!.length; c++) {
       const ch = rows[r]![c];
