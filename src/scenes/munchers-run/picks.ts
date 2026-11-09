@@ -4,8 +4,9 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN, round 2 (the first five "look like crap"):
-// redrawn from Gavin's references, builds and poses rather than suit colours.
+// Current subject: SAMUS ARAN, round 3: profile RUNNING with the blaster
+// pointed forward (Gavin: 3 and 5 decent, leg movement "pretty crappy");
+// four-frame run cycles: contact, pass, contact, flight.
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -29,49 +30,59 @@ const SAMUS_BRIGHT = { R: "#D83030", G: "#60D070", O: "#F0A030", Y: "#F8E060", C
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 standing build from the 16-bit reference",
+    name: "1 profile run, four frames",
     frames: [
-      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO..OO..", "..OO..OO.."],
-      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO.OO...", ".OO...OO.."],
-    ],
-    colors: SAMUS,
-    eye: [4, 1],
-  },
-  {
-    name: "2 running pose from the cross-stitch",
-    frames: [
-      ["....RRR...", "...RRGGR..", "..ORRRRR..", ".OOORRRO..", "OO.OYYYOCC", "...YYYY.CC", "..OYYYO...", ".OO..OO...", "OO....OO..", "O......OO."],
-      ["....RRR...", "...RRGGR..", "..ORRRRR..", ".OOORRRO..", "OO.OYYYOCC", "...YYYY.CC", "..OYYYO...", "..OO.OO...", "..OO..OO..", "..O....O.."],
-    ],
-    colors: SAMUS,
-    eye: [5, 1],
-  },
-  {
-    name: "3 standing, brighter red",
-    frames: [
-      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO..OO..", "..OO..OO.."],
-      ["...RRRR...", "..RRGGGR..", "..RRGGGR..", ".ORRRRRRO.", "OOORRRROOO", "OOOYYYYOCC", ".O.YYYY.CC", "...OYYO...", "..OO.OO...", ".OO...OO.."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "OO....OO.", "O......OO"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OYYO...", "...OOO...", "...OO...."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO.", ".O.....OO"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OYYO...", ".OO..OO..", "........."],
     ],
     colors: SAMUS_BRIGHT,
-    eye: [4, 1],
-  },
-  {
-    name: "4 wider shoulders, longer cannon",
-    frames: [
-      ["....RRRR....", "...RRGGGR...", "...RRGGGR...", "..ORRRRRRO..", "OOOORRRROOOO", "OOOOYYYYOCCC", ".OO.YYYY.CCC", "....OYYO....", "...OO..OO...", "...OO..OO..."],
-      ["....RRRR....", "...RRGGGR...", "...RRGGGR...", "..ORRRRRRO..", "OOOORRRROOOO", "OOOOYYYYOCCC", ".OO.YYYY.CCC", "....OYYO....", "...OO.OO....", "..OO...OO..."],
-    ],
-    colors: SAMUS,
     eye: [5, 1],
   },
   {
-    name: "5 compact 8x9",
+    name: "2 profile run with a body bob",
     frames: [
-      ["..RRRR..", ".RRGGGR.", ".RRGGGR.", "OORRRROO", "OOYYYYCC", ".OYYYY.C", "..OYYO..", ".OO..OO.", ".OO..OO."],
-      ["..RRRR..", ".RRGGGR.", ".RRGGGR.", "OORRRROO", "OOYYYYCC", ".OYYYY.C", "..OYYO..", ".OO.OO..", "OO...OO."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "OO....OO.", "O......OO"],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "...OO...."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO.", ".O.....OO"],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "........."],
     ],
-    colors: SAMUS,
-    eye: [3, 1],
+    colors: SAMUS_BRIGHT,
+    eye: [5, 1],
+  },
+  {
+    name: "3 longer stride",
+    frames: [
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO...OO.", "OO.....OO", "O.......O"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OYYO...", "...OOO...", "...OO...."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO.", "OO.....OO"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OYYO...", ".OO..OO..", "........."],
+    ],
+    colors: SAMUS_BRIGHT,
+    eye: [5, 1],
+  },
+  {
+    name: "4 wider body, longer cannon",
+    frames: [
+      ["...RRRR....", "..RRRGGG...", "..RRRRGG...", "OOOORRRR...", "OOOOYYYCCCC", ".OOOYYY.CCC", "...OYYO....", "..OO..OO...", ".OO....OO..", ".O......OO."],
+      ["...RRRR....", "..RRRGGG...", "..RRRRGG...", "OOOORRRR...", "OOOOYYYCCCC", ".OOOYYY.CCC", "...OYYO....", "...OYYO....", "....OOO....", "....OO....."],
+      ["...RRRR....", "..RRRGGG...", "..RRRRGG...", "OOOORRRR...", "OOOOYYYCCCC", ".OOOYYY.CCC", "...OYYO....", "...OO.OO...", "..OO...OO..", "..O.....OO."],
+      ["...RRRR....", "..RRRGGG...", "..RRRRGG...", "OOOORRRR...", "OOOOYYYCCCC", ".OOOYYY.CCC", "...OYYO....", "...OYYO....", "..OO..OO...", "..........."],
+    ],
+    colors: SAMUS_BRIGHT,
+    eye: [6, 1],
+  },
+  {
+    name: "5 cannon angled up",
+    frames: [
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG.C", "OOORRRR.C", "OOOYYYCC.", ".OOYYY...", "..OYYO...", ".OO..OO..", "OO....OO.", "O......OO"],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG.C", "OOORRRR.C", "OOOYYYCC.", ".OOYYY...", "..OYYO...", "...OOO...", "...OO...."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG.C", "OOORRRR.C", "OOOYYYCC.", ".OOYYY...", "..OYYO...", "..OO.OO..", ".OO...OO.", ".O.....OO"],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG.C", "OOORRRR.C", "OOOYYYCC.", ".OOYYY...", "..OYYO...", ".OO..OO..", "........."],
+    ],
+    colors: SAMUS_BRIGHT,
+    eye: [5, 1],
   },
 ];
 
