@@ -4,62 +4,62 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: BONEHEAD. Sheet walkRight frames show him in profile:
-// shaded back of skull, one big socket at the front, nose notch, teeth row,
-// a short ribbed body with a swinging arm, two legs.
-//   W bone  S shade  D dark bone (back of skull)  K plum outline  E socket  B bright bone
+// Current subject: REGGIE the snail (Gavin: "it's not great"). The sheet
+// shows a big round pink spiral shell, an upright cream head at the front
+// with one black eye and two antennae, and a cream foot. The bar version is
+// 17 px wide; these are 12 wide so five fit, with the spiral kept legible.
+//   K plum outline  P pink  D dark spiral  H mid spiral  L highlight  T cream  U dark cream  E eye
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
 
-const BONE = { W: "#EBD0C5", S: "#CCA8A3", D: "#A17877", K: "#4A2E44", E: "#120812" };
-const BONE_HI = { ...BONE, B: "#F8ECE6" };
-const BONE_OUTLINE = { ...BONE, K: "#6A4464" };
+// Reggie palette, lifted from the sheet: plum outline, pinks for the shell and spiral, cream body.
+const SNAIL = { K: "#3A1A33", P: "#FFA9E1", D: "#A03C80", H: "#D563AD", L: "#FFD8F2", T: "#FCE5A9", U: "#DEC481", E: "#140A14" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 as picked",
+    name: "1 compact faithful",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
+      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KPPPPK.KTTK", "KPPDDDPKKTTK", "KPDPPDPKKTTK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", ".KTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KPPPPK.KTTK", "KPPDDDPKKTTK", "KPDPPDPKKTTK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", "KTTTTTTTTTTK"],
     ],
-    colors: BONE,
-    eye: [6, 3],
+    colors: SNAIL,
+    eye: [10, 2],
   },
   {
-    name: "2 plus nose hole",
+    name: "2 shell highlight, two-tone spiral",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
+      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KLLPPK.KTTK", "KLPDDDPKKTTK", "KPDHHDPKKTTK", "KPDHDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", ".KTTTTTTTTTK"],
+      ["........K..K", "........KTTK", "..KKKK..KTEK", ".KLLPPK.KTTK", "KLPDDDPKKTTK", "KPDHHDPKKTTK", "KPDHDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", "KTTTTTTTTTTK"],
     ],
-    colors: BONE,
-    eye: [6, 3],
+    colors: SNAIL,
+    eye: [10, 2],
   },
   {
-    name: "3 plus brighter outline",
+    name: "3 head low, gliding",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
+      ["............", "............", "..KKKK...K.K", ".KPPPPK...KK", "KPPDDDPK.KTK", "KPDPPDPKKTEK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", ".KTTTTTTTTTK"],
+      ["............", "............", "..KKKK...K.K", ".KPPPPK...KK", "KPPDDDPK.KTK", "KPDPPDPKKTEK", "KPDPDDPKKTTK", "KPPDPPPKTTTK", ".KPPPPKTTTTK", "KTTTTTTTTTTK"],
     ],
-    colors: BONE_OUTLINE,
-    eye: [6, 3],
+    colors: SNAIL,
+    eye: [10, 5],
   },
   {
-    name: "4 plus head bob on the step",
+    name: "4 no outline",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
-      ["..........", "..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KWK..KSK"],
+      ["........K..K", "........TTTT", "..PPPP..TTET", ".PPPPPP.TTTT", "PPPDDDPPTTTT", "PPDPPDPPTTTT", "PPDPDDPPTTTT", "PPPDPPPPTTTT", ".PPPPPPTTTTT", ".UTTTTTTTTTU"],
+      ["........K..K", "........TTTT", "..PPPP..TTET", ".PPPPPP.TTTT", "PPPDDDPPTTTT", "PPDPPDPPTTTT", "PPDPDDPPTTTT", "PPPDPPPPTTTT", ".PPPPPPTTTTT", "UTTTTTTTTTTU"],
     ],
-    colors: BONE,
-    eye: [6, 3],
+    colors: SNAIL,
+    eye: [10, 2],
   },
   {
-    name: "5 both arms swinging",
+    name: "5 big shell, small head",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", ".WKSWWWKW.", "..KWK..KSK"],
+      [".........K.K", "..KKKKK..KTK", ".KPPPPPPKKTK", "KPPDDDDPKKEK", "KPDPPPPDKKTK", "KPDPDDPDKKTK", "KPDPPDPDKKTK", "KPPDDDPPKTTK", ".KPPPPPPKTTK", ".KTTTTTTTTTK"],
+      [".........K.K", "..KKKKK..KTK", ".KPPPPPPKKTK", "KPPDDDDPKKEK", "KPDPPPPDKKTK", "KPDPDDPDKKTK", "KPDPPDPDKKTK", "KPPDDDPPKTTK", ".KPPPPPPKTTK", "KTTTTTTTTTTK"],
     ],
-    colors: BONE,
-    eye: [6, 3],
+    colors: SNAIL,
+    eye: [10, 3],
   },
 ];
 
