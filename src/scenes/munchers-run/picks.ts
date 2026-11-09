@@ -12,8 +12,9 @@ import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene
 import type { RunnerArt } from "./art.ts";
 
 // Hollow Knight palette from fog-canyon/art.ts: bone mask, eye hollows, black body, navy cloak, pale nail.
-const HK = { W: "#F2F2F4", E: "#0A0A12", K: "#0C0C14", N: "#2A3560", L: "#B8BCC8" };
-const HK_LIFT = { ...HK, K: "#1E1E2A" };
+// Gavin 2026-11-09: the body was too dark; body takes the old cloak navy, the cloak goes a step darker.
+const HK = { W: "#F2F2F4", E: "#0A0A12", K: "#2A3560", N: "#1A2044", L: "#B8BCC8" };
+const HK_LIFT = { ...HK, K: "#34407A" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
@@ -44,7 +45,7 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
     eye: [4, 3],
   },
   {
-    name: "4 lifted body, big eyes, 6x10",
+    name: "4 body lifted a further step, big eyes, 6x10",
     frames: [
       ["W....W", ".W..W.", ".WWWW.", "WWEWEW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
       ["W....W", ".W..W.", ".WWWW.", "WWEWEW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
