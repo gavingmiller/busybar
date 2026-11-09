@@ -114,8 +114,8 @@ export function renderFrame(i: number): Uint8Array {
   const buf = new Uint8Array(W * H * 4);
   for (let p = 3; p < buf.length; p += 4) buf[p] = 255; // black sky
 
-  // Fixed ground: a dashed line with pebbles below, like Dino Run's.
-  for (let x = 0; x < W; x++) if (x % 9 !== 4) put(buf, x, GROUND_Y, GROUND);
+  // Fixed ground: a solid line with pebbles below (Gavin 2026-11-09: no breaks).
+  for (let x = 0; x < W; x++) put(buf, x, GROUND_Y, GROUND);
   for (const x of [3, 11, 20, 27, 38, 46, 55, 63, 69]) put(buf, x, GROUND_Y + 1, GROUND_DARK);
 
   for (const r of activeRuns(t)) {

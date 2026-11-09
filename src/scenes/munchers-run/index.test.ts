@@ -47,9 +47,8 @@ describe("MUNCHERS_RUN scene", () => {
     const groundOf = (f: Uint8Array) => Array.from(f.slice(GROUND_Y * FRONT_WIDTH * 4));
     const first = groundOf(frames[0]!);
     for (let i = 1; i < MUNCHERS_FRAME_COUNT; i += 97) expect(groundOf(frames[i]!)).toEqual(first);
-    const lit = [];
-    for (let x = 0; x < FRONT_WIDTH; x++) if (px(frames[0]!, x, GROUND_Y).slice(0, 3).some((c) => c! > 0)) lit.push(x);
-    expect(lit.length).toBeGreaterThan(FRONT_WIDTH / 2);
+    // Solid, no gaps (Gavin 2026-11-09: "the ground has breaks in it, make it solid").
+    for (let x = 0; x < FRONT_WIDTH; x++) expect(px(frames[0]!, x, GROUND_Y).slice(0, 3).some((c) => c! > 0)).toBe(true);
     // Sky above the ground is black so the runners stand out.
     expect(px(frames[0]!, 0, 0)).toEqual([0, 0, 0, 255]);
   });
