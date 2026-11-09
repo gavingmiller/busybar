@@ -119,15 +119,19 @@ describe("MUNCHERS_RUN scene", () => {
     if (sprite[ey]![ex] !== ".") expect(px(frame, x0 + ex, y0 + ey)).toEqual(hex(r.art.colors[sprite[ey]![ex]!]!));
   });
 
-  it("no runner looks back and forth: the eye keeps its column in every frame, bobbing at most two rows (Gavin 2026-11-09: the snail's eye shifted)", () => {
-    // The chicken is traced from its GIF and its eye shares the outline colour, so it is exempt (its waddle is approved).
+  it("no runner looks back and forth: the eye keeps its column in every frame and stays put relative to the top of the body (Gavin 2026-11-09: the snail's eye shifted)", () => {
+    // Measured from the body's top row, so a whole-body hop (Squirt) or bob (Bonehead) is fine but a
+    // wandering eye is not. The chicken is traced from its GIF and its eye shares the outline colour,
+    // so it is exempt (its waddle is approved).
+    const top = (frame: readonly string[]) => frame.findIndex((r) => /[^.]/.test(r));
     for (const art of RUNNER_ART.filter((a) => a.name !== "Chicken")) {
       const [ex, ey] = art.eye;
       const letter = art.frames[0]![ey]![ex]!;
       expect(letter).not.toBe(".");
+      const rel = ey - top(art.frames[0]!);
       for (const frame of art.frames) {
         let found = false;
-        frame.forEach((r, y) => { for (let x = ex - 1; x <= ex + 1; x++) if (r[x] === letter && Math.abs(y - ey) <= 2) found = true; });
+        frame.forEach((r, y) => { for (let x = ex - 1; x <= ex + 1; x++) if (r[x] === letter && Math.abs(y - top(frame) - rel) <= 2) found = true; });
         expect(found).toBe(true);
       }
     }

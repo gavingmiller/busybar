@@ -6,20 +6,26 @@ import { SQUIRT } from "./squirt.ts";
 describe("SQUIRT art", () => {
   const W = SQUIRT.frames[0]![0]!.length, H = SQUIRT.frames[0]!.length;
 
-  it("hops through rest → squash → rest → stretch in one fixed 12x9 box", () => {
-    expect(SQUIRT.frames).toHaveLength(4);
-    expect([W, H]).toEqual([12, 9]);
+  it("hops big: rest → squash → launch → apex → fall, five distinct poses in one fixed 12x12 box (Gavin 2026-11-09: 'make the jump bigger')", () => {
+    expect(SQUIRT.frames).toHaveLength(5);
+    expect([W, H]).toEqual([12, 12]);
     for (const f of SQUIRT.frames) { expect(f).toHaveLength(H); for (const r of f) expect(r).toHaveLength(W); }
-    expect(SQUIRT.frames[0]).toEqual(SQUIRT.frames[2]);
-    expect(SQUIRT.frames[1]).not.toEqual(SQUIRT.frames[0]);
-    expect(SQUIRT.frames[3]).not.toEqual(SQUIRT.frames[0]);
-    expect(SQUIRT.frames[3]).not.toEqual(SQUIRT.frames[1]);
+    expect(new Set(SQUIRT.frames.map((f) => f.join("/"))).size).toBe(5);
   });
 
-  it("casts a grey shadow on the bottom row and lifts clear of it on the stretch", () => {
+  it("casts a shadow on the bottom row that shrinks as he rises; the apex clears the ground by at least three rows", () => {
+    const shadowW = (f: readonly string[]) => f[H - 1]!.replace(/\./g, "").length;
+    const air = (f: readonly string[]) => { let n = 0; for (let y = H - 2; y >= 0 && f[y] === ".".repeat(W); y--) n++; return n; };
     for (const f of SQUIRT.frames) expect(f[H - 1]!.replace(/\./g, "")).toMatch(/^X+$/);
-    expect(SQUIRT.frames[3]![H - 2]!).toBe(".".repeat(W)); // airborne gap
-    expect(SQUIRT.frames[1]![H - 2]!).not.toBe(".".repeat(W)); // squash sits on the shadow
+    const [rest, squash, launch, apex, fall] = SQUIRT.frames as [string[], string[], string[], string[], string[]];
+    expect(air(rest)).toBe(0);
+    expect(air(squash)).toBe(0);
+    expect(air(launch)).toBeGreaterThanOrEqual(1);
+    expect(air(apex)).toBeGreaterThanOrEqual(3);
+    expect(air(fall)).toBeGreaterThanOrEqual(1);
+    expect(shadowW(squash)).toBeGreaterThan(shadowW(rest));
+    expect(shadowW(rest)).toBeGreaterThan(shadowW(launch));
+    expect(shadowW(launch)).toBeGreaterThan(shadowW(apex));
   });
 
   it("keeps the small mouth and the forward-facing eyes every frame", () => {
