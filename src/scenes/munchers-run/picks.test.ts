@@ -1,12 +1,12 @@
 import { describe, it, expect } from "bun:test";
-import { CHARACTER_PICKS, PICK_VARIANTS, DIGITS, PICK_SLOT_W, renderPicksFrame } from "./picks.ts";
+import { CHARACTER_PICKS, PICK_VARIANTS, DIGITS, PICK_SLOT_W, PICKS_BG, renderPicksFrame } from "./picks.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 
 const px = (f: Uint8Array, x: number, y: number) => {
   const i = (y * FRONT_WIDTH + x) * 4;
   return [f[i], f[i + 1], f[i + 2]];
 };
-const lit = (f: Uint8Array, x: number, y: number) => px(f, x, y).some((c) => c !== 0);
+const lit = (f: Uint8Array, x: number, y: number) => px(f, x, y).some((c, i) => c !== PICKS_BG[i]); // differs from the backdrop
 
 describe("Character picks line-up (temporary comparison scene)", () => {
   it("offers five distinct variants that fit a 12x10 slot, every letter coloured, each resting on its bottom row", () => {

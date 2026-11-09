@@ -4,78 +4,62 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: the RAVENS (js-apps/app.gavin.ravens; Gavin: "a titch
-// smaller, they're pretty fat"). The app's 14x11 flight frames majority-
-// shrunk to five smaller boxes by scratchpad raven-shrink.ts, eye and beak
-// re-placed; the winner is hand-tuned into the app's sprites.ts.
-//   K body  B feather highlight  E eye  Y beak and feet
+// Current subject: the KNIGHT from Fog Canyon (Gavin: "give me 5 options
+// for him"). Five hand-drawn takes at 6-8 px wide, shown on the fog colour
+// so the black body reads as it does in the scene.
+//   W mask  E eye hollow  K body  N cloak  L nail
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
 
-// Ravens palette, from js-apps/app.gavin.ravens/src/sprites.ts.
-const RAVEN = { K: "#3C4650", B: "#8A929A", E: "#FFFFFF", Y: "#E6B428" };
-const RAVEN_LIGHT = { ...RAVEN, K: "#4E5A66" };
+// Hollow Knight palette from fog-canyon/art.ts: bone mask, eye hollows, black body, navy cloak, pale nail.
+const HK = { W: "#F2F2F4", E: "#0A0A12", K: "#0C0C14", N: "#2A3560", L: "#B8BCC8" };
+const HK_LIFT = { ...HK, K: "#1E1E2A" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 10x8 as picked",
+    name: "1 as in Fog Canyon, 6x9",
     frames: [
-      ["..KKK.....", ".KKKKK....", "KKBBKKKEYY", "..BBBKKKKY", "...KBKKKKK", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
-      [".KKK......", ".KKKK.....", ".KBKKKKEYY", "..KBKKKKKY", "...KBKKKKK", "....KKKKK.", "...KKKKK..", "...KKKK.Y."],
-      [".......KK.", "......KEYY", ".....KKKKY", "....KKKKK.", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", "...Y.KKKK."],
-      ["......KKK.", ".....KKEYY", "....KKKKKY", "...KKKKKK.", "...KKKKKK.", "..KKKKKKB.", "..KKKKKKB.", ".....KKKK."],
-      ["..........", "....KK.KK.", "...KKKKEYY", "..KKKKKKKK", "..KKKKKKK.", "...KKKKK..", "...KKKKKY.", ".........."],
+      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
+      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
     ],
-    colors: RAVEN,
-    eye: [7, 2],
+    colors: HK,
+    eye: [2, 3],
   },
   {
-    name: "2 10x7 flatter",
+    name: "2 taller, long horns, 7x10",
     frames: [
-      ["..KKK.....", "KKKKKKKKK.", "..KBKKKEYY", "...BBKKKKY", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
-      [".KKK......", ".KKKKKKK..", "..KKKKKEYY", "...BKKKKKY", "....KKKKKK", "...KKKKKK.", "...KKKK.Y."],
-      [".......KK.", ".....KKEYY", "....KKKKKK", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", "...Y.KKKK."],
-      ["......KKK.", ".....KKEYY", "....KKKKK.", "...KKKKKK.", "..KKKKKKB.", "..KKKKKKB.", ".....KKKK."],
-      ["..........", "...KKKKEYY", "..KKKKKKKY", "..KKKKKKKK", "..KKKKKK..", "...KKKKKY.", ".........."],
+      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKKK..", ".NKK...", ".K..K.."],
+      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKKK..", ".NKK...", "..K.K.."],
     ],
-    colors: RAVEN,
-    eye: [7, 2],
+    colors: HK,
+    eye: [2, 3],
   },
   {
-    name: "3 9x8 narrower",
+    name: "3 nail on his back, 8x10",
     frames: [
-      ["..KKK....", ".KKKKK...", "KKBBKKEYY", "..BBBKKKY", "...KBKKKK", "...KKKKK.", "...KBKKK.", "...YY.Y.."],
-      [".KKK.....", ".KKKK....", ".KKKKKEYY", "..KBKKKKY", "...KKKKKK", "...KBKKK.", "...KBKKK.", "...KKKY.."],
-      ["......KK.", ".....KEYY", "....KKKKY", "...KKKKK.", "...KKKKK.", "..KKKKKB.", "..KKKKKK.", "....KKKK."],
-      [".....KKK.", ".....KEYY", "....KKKKY", "...KKKKK.", "...KKKKK.", "..KKKKKB.", "..KKKKKK.", "....KKKK."],
-      [".........", "....KKKK.", "..KKKKEYY", "..KKKKKKK", "..KKKKKK.", "..KKKKKK.", "...KBKKY.", "......Y.."],
+      ["..W....W", "...W..W.", "L..WWWW.", ".L.WEWEW", "..LWWWW.", ".NNNKKN.", "..NNKKN.", "..NNKK..", "...NKK..", "...K..K."],
+      ["..W....W", "...W..W.", "L..WWWW.", ".L.WEWEW", "..LWWWW.", "..NNKKN.", "..NNKKN.", ".NNNKK..", "...NKK..", "....KK.."],
     ],
-    colors: RAVEN,
-    eye: [6, 2],
+    colors: HK,
+    eye: [4, 3],
   },
   {
-    name: "4 9x7 smallest",
+    name: "4 lifted body, big eyes, 6x10",
     frames: [
-      ["..KKK....", "KKKKKKKK.", ".KKBKKEYY", "..BBBKKKY", "...KKKKK.", "...KKKKK.", "...YY.Y.."],
-      [".KKK.....", ".KKKKKK..", ".KBKKKEYY", "..KBKKKKY", "...KBKKKK", "...KKKKK.", "...KKKY.."],
-      ["......KK.", ".....KEYY", "....KKKKK", "...KKKKK.", "..KKKKKB.", "..KKKKKK.", "....KKKK."],
-      [".....KKK.", "....KKEYY", "...KKKKK.", "...KKKKK.", "..KKKKKB.", "..KKKKKB.", "....KKKK."],
-      [".........", "...KKKEYY", "..KKKKKKY", "..KKKKKKK", "..KKKKKK.", "...KBKKK.", "......Y.."],
+      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
+      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
     ],
-    colors: RAVEN,
-    eye: [6, 2],
+    colors: HK_LIFT,
+    eye: [2, 3],
   },
   {
-    name: "5 10x8 solid, lighter body",
+    name: "5 chibi: big mask, tiny body, 7x9",
     frames: [
-      ["..KKK.....", ".KKKKK....", "KKKKKKKEYY", "..KKKKKKKY", "...KKKKKKK", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
-      [".KKK......", ".KKKK.....", ".KKKKKKEYY", "..KKKKKKKY", "...KKKKKKK", "....KKKKK.", "...KKKKK..", "...KKKK.Y."],
-      [".......KK.", "......KEYY", ".....KKKKY", "....KKKKK.", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", "...Y.KKKK."],
-      ["......KKK.", ".....KKEYY", "....KKKKKY", "...KKKKKK.", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", ".....KKKK."],
-      ["..........", "....KK.KK.", "...KKKKEYY", "..KKKKKKKK", "..KKKKKKK.", "...KKKKK..", "...KKKKKY.", ".........."],
+      ["W.....W", ".W...W.", ".WWWWW.", "WWWWWWW", "WWEWWEW", ".WWWWW.", ".NNKNN.", "..NKN..", "..K.K.."],
+      ["W.....W", ".W...W.", ".WWWWW.", "WWWWWWW", "WWEWWEW", ".WWWWW.", "..NKN..", ".NNKNN.", "...K..."],
     ],
-    colors: RAVEN_LIGHT,
-    eye: [7, 2],
+    colors: HK,
+    eye: [2, 4],
   },
 ];
 
@@ -94,6 +78,8 @@ export const PICKS_FPS = 24;
 const POSE_FRAMES = 4;
 export const PICKS_FRAME_COUNT = POSE_FRAMES * 60;
 const DIGIT_RGB: [number, number, number] = [0xf0, 0xb0, 0x40];
+/** Backdrop behind the line-up: black by default; the scene colour when a character's body is black (Fog Canyon's fog). */
+export const PICKS_BG: [number, number, number] = [12, 40, 34];
 
 const hex = (h: string): [number, number, number] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 function put(buf: Uint8Array, x: number, y: number, c: [number, number, number]): void {
@@ -104,7 +90,7 @@ function put(buf: Uint8Array, x: number, y: number, c: [number, number, number])
 
 export function renderPicksFrame(i: number): Uint8Array {
   const buf = new Uint8Array(W * H * 4);
-  for (let p = 3; p < buf.length; p += 4) buf[p] = 255;
+  for (let p = 0; p < buf.length; p += 4) { buf[p] = PICKS_BG[0]; buf[p + 1] = PICKS_BG[1]; buf[p + 2] = PICKS_BG[2]; buf[p + 3] = 255; }
   const k = Math.floor((((i % PICKS_FRAME_COUNT) + PICKS_FRAME_COUNT) % PICKS_FRAME_COUNT) / POSE_FRAMES);
   PICK_VARIANTS.forEach((v, n) => {
     const x0 = 1 + n * PICK_SLOT_W;
