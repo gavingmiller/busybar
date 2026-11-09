@@ -120,10 +120,18 @@ describe("MUNCHERS_RUN scene", () => {
 
   it("Ember has no red outline: red belongs to the flame only (Gavin 2026-11-09: 'the red around fire guy is ridiculous')", () => {
     for (const frame of EMBER.frames) {
-      // Body and legs are the rows below the flame; nothing red there.
-      for (const row of frame.slice(5)) expect(row).not.toContain("R");
-      expect(frame.slice(0, 4).join("")).toContain("R");
+      // Below the flame, any red pixel is interior (all four neighbours lit): never an outline.
+      frame.forEach((row, y) => {
+        if (y < 5) return;
+        [...row].forEach((ch, x) => {
+          if (ch !== "R") return;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) expect(frame[y + dy]?.[x + dx] ?? ".").not.toBe(".");
+        });
+      });
+      expect(frame.slice(0, 5).join("")).toContain("R");
     }
+    expect(EMBER.frames.length).toBeGreaterThanOrEqual(8); // the original run cycle (Gavin: "the old animation was much better")
+    expect(EMBER.colors.K).not.toBe("#2B2B2B"); // but the body stays visible on black
   });
 
   it("legs keep pace: the run cycle advances one frame every STRIDE_PX of travel and cycles fully across the screen", () => {

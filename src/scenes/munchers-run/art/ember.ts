@@ -1,67 +1,23 @@
-// Ember, hand-drawn at bar scale from number-munchers/public/sprites/ember
-// (walkRight). A small rounded grey body with two glowing eyes and stub
-// legs, flame sweeping up and back from the top of the head. The grey is
-// lifted from the original's #2F2F2E so it reads against the black sky. A red
-// outline was tried for visibility and rejected (Gavin 2026-11-09:
-// "ridiculous"); red belongs to the flame only.
+// Ember: the eight-frame run from number-munchers/public/sprites/ember
+// (walkRight), reduced to bar scale, with the body grey lifted from the
+// original's #2F2F2E so it shows against the black sky. Gavin 2026-11-09:
+// the hand-drawn still body "looked good" but "the old animation was much
+// better", and a red outline tried for visibility was "ridiculous" — so
+// these are the original frames with only the colour changed.
 import type { RunnerArt } from "../art.ts";
 
 export const EMBER: RunnerArt = {
   name: "Ember",
   frames: [
-    [
-      "...RR........",
-      "..RROOR......",
-      ".ROOYYOR.....",
-      "..ROYYOOR....",
-      "...RROOKKKKK.",
-      "....KKKKKKKK.",
-      "....KKHEKEKK.",
-      "....KKKWKWKK.",
-      "....KKKKKKKK.",
-      ".....KK..KK..",
-      ".....KK..KK..",
-    ],
-    [
-      "....RR.......",
-      "R.RROOOR.....",
-      ".ROOYYYOR....",
-      "...RYYOORR...",
-      "...RROOKKKKK.",
-      "....KKKKKKKK.",
-      "....KKHEKEKK.",
-      "....KKKWKWKK.",
-      "....KKKKKKKK.",
-      "......KKKK...",
-      "......KKKK...",
-    ],
-    [
-      "..R.RR.......",
-      "...ROOOR.....",
-      ".RROOYYOR....",
-      "..ROYYOOR....",
-      "...RROOKKKKK.",
-      "....KKKKKKKK.",
-      "....KKHEKEKK.",
-      "....KKKWKWKK.",
-      "....KKKKKKKK.",
-      ".....KK..KK..",
-      ".....KK..KK..",
-    ],
-    [
-      "...RR........",
-      "..RROOR......",
-      ".ROOYYOR.....",
-      "..ROYYOOR....",
-      "...RROOKKKKK.",
-      "....KKKKKKKK.",
-      "....KKHEKEKK.",
-      "....KKKWKWKK.",
-      "....KKKKKKKK.",
-      "....KK....KK.",
-      "....KK....KK.",
-    ],
+    ["...........", "....RRR....", "...ROOOORR.", "....ROYYOO.", ".....OKKKKR", ".....KKOKOK", ".....KKRKRK", "....KKKKKKK", ".....KKKKKK", "..........."],
+    ["...........", "..ROOOORR..", ".ROOYYYYOO.", "..ROOYYYYOR", ".....RKOKOK", ".....KKYKYK", "....KKKKKKK", "....KKKKKKK", "...........", "..........."],
+    ["...........", "...ROOR....", "..ROYOOR...", "...OOYYORO.", ".....RKOKOR", ".....KKYKYK", ".....KKRKRK", "....KKKKKKK", ".....KKKKKK", "..........."],
+    ["...........", "..R........", ".OOR.R.....", "..R.OOOOO..", "....ROYOOO.", ".....OYYYOR", ".....RKOKOK", ".....KKYKYK", ".....KKKKKK", ".....KKKKK."],
+    ["...........", "....ROOOO..", "...OOOYYOO.", "....OYYYYOR", ".....RKKKKK", ".....KKOKOK", ".....KKKKKK", ".....KKKKK.", "......KKKK.", "..........."],
+    ["......RRRR.", "R...ROOOOO.", "...ROOYYYOR", "..OOYYKKKKO", "..RR.KKKOKY", ".....KKKYKY", ".....KKKKKK", "......KKKK.", "...........", "..........."],
+    ["......RR...", ".....OOOO..", "....ROYOOO.", "..R.OOYYYOR", ".OOR.KKOKOK", "..R..KKYKYK", ".....KKKKKK", ".....KKKKK.", "......KKKK.", "..........."],
+    ["...........", "...........", "....RRRR...", "..ROOOOOO..", "...ROOYYOO.", "....ROYYYOR", ".....RKOKOK", ".....KKYKYK", ".....KKKKKK", ".....KKKKK."],
   ],
-  colors: { K: "#5C5C66", H: "#7A7A86", R: "#D8402A", O: "#F08A30", Y: "#F0C040", E: "#FF6A20", W: "#FFFFFF" },
-  eye: [9, 6],
+  colors: { K: "#5C5C66", R: "#D8402A", Y: "#F0B040", O: "#FF8A30" },
+  eye: [9, 5],
 };
