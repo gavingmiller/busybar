@@ -383,7 +383,7 @@ describe("shuffle (global rotation)", () => {
     expect(body.shuffle).toEqual({ on: false });
   });
 
-  it("switching it on with nothing showing deals a card now, marks that animation on, and books the next change two hours out", async () => {
+  it("switching it on with nothing showing deals a card now, marks that animation on, and books the next change an hour out", async () => {
     const d = deps();
     const handler = createHandler(d);
     const res = await handler(shuffle(true));
@@ -392,14 +392,14 @@ describe("shuffle (global rotation)", () => {
     expect(shown).toHaveLength(1);
     expect(ANIMATIONS).toContain(shown[0]);
     const body = await res.json();
-    expect(body.shuffle).toEqual({ on: true, nextChangeAt: "2026-11-08T17:00:00.000Z" });
+    expect(body.shuffle).toEqual({ on: true, nextChangeAt: "2026-11-08T16:00:00.000Z" });
     expect(body.apps.find((a: { id: string }) => a.id === shown[0]).state).toBe("on");
     expect(body.apps.filter((a: { state: string }) => a.state === "on")).toHaveLength(1);
     expect(timers).toHaveLength(1);
     expect(timers[0]!.ms).toBe(SHUFFLE_INTERVAL_MS);
     const stored = JSON.parse(readFileSync(stateFile, "utf8"));
     expect(stored.active).toBe(shown[0]);
-    expect(stored.shuffle.nextAt).toBe("2026-11-08T17:00:00.000Z");
+    expect(stored.shuffle.nextAt).toBe("2026-11-08T16:00:00.000Z");
     expect([stored.active, ...stored.shuffle.deck].sort()).toEqual([...ANIMATIONS].sort());
   });
 
@@ -476,9 +476,9 @@ describe("shuffle (global rotation)", () => {
   });
 
   it("a fresh server resumes a stored round: the timer is re-armed for the remaining time, and a missed change fires straight away", async () => {
-    await createHandler(deps())(shuffle(true)); // nextAt 17:00
+    await createHandler(deps())(shuffle(true)); // nextAt 16:00
     timers = [];
-    createHandler(deps({ now: () => new Date("2026-11-08T16:30:00.000Z") }));
+    createHandler(deps({ now: () => new Date("2026-11-08T15:30:00.000Z") }));
     expect(timers).toHaveLength(1);
     expect(timers[0]!.ms).toBe(30 * 60 * 1000);
     timers = [];

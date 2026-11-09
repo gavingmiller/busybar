@@ -3,7 +3,7 @@
 // state is small and lives in the server's state file so a restart resumes
 // the round where it left off.
 
-export const SHUFFLE_INTERVAL_MS = 2 * 60 * 60 * 1000;
+export const SHUFFLE_INTERVAL_MS = 60 * 60 * 1000;
 
 export interface ShuffleState {
   /** Animations still to be shown this round, in play order. */

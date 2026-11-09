@@ -114,7 +114,7 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     `~/Library/Application Support/busybar/state.json` (`unknown` until the
     first command, or after a firmware update reboots the bar).
   - **Shuffle** is a global switch above the app list: while it is on, a
-    different animation plays every 2 hours — Nyan Cat and every scene —
+    different animation plays every hour — Nyan Cat and every scene —
     dealing each one once per round before any repeats
     (`src/server/shuffle.ts`). The animation currently dealt shows as the
     one that is on. Picking an animation by hand keeps shuffle on (that

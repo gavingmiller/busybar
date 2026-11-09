@@ -15,16 +15,16 @@ describe("shuffleDeck", () => {
 });
 
 describe("advanceShuffle", () => {
-  it("interval is two hours", () => {
-    expect(SHUFFLE_INTERVAL_MS).toBe(2 * 60 * 60 * 1000);
+  it("interval is one hour", () => {
+    expect(SHUFFLE_INTERVAL_MS).toBe(60 * 60 * 1000); // every hour (Gavin 2026-11-09, was two)
   });
 
-  it("starts a round by dealing a shuffled deck, shows the first card and books the next change two hours out", () => {
+  it("starts a round by dealing a shuffled deck, shows the first card and books the next change an hour out", () => {
     const s = advanceShuffle(null, IDS, NOW, seq(0.5));
     expect(IDS).toContain(s.showing);
     expect(s.deck).toHaveLength(IDS.length - 1);
     expect(s.deck).not.toContain(s.showing);
-    expect(s.nextAt).toBe("2026-11-09T00:00:00.000Z");
+    expect(s.nextAt).toBe("2026-11-08T23:00:00.000Z");
   });
 
   it("never repeats an animation until every one has been shown, then deals a fresh round", () => {
@@ -53,9 +53,9 @@ describe("advanceShuffle", () => {
     const fresh = adoptShowing(null, "lava_lamp", IDS, NOW, seq(0.5));
     expect(fresh.showing).toBe("lava_lamp");
     expect([...fresh.deck].sort()).toEqual(IDS.filter((i) => i !== "lava_lamp").sort());
-    expect(fresh.nextAt).toBe("2026-11-09T00:00:00.000Z");
+    expect(fresh.nextAt).toBe("2026-11-08T23:00:00.000Z");
     const mid: ShuffleState = { deck: ["aquarium", "matrix_rain"], showing: "nyan_cat", nextAt: NOW.toISOString() };
     const picked = adoptShowing(mid, "aquarium", IDS, NOW, seq(0.5));
-    expect(picked).toEqual({ deck: ["matrix_rain"], showing: "aquarium", nextAt: "2026-11-09T00:00:00.000Z" });
+    expect(picked).toEqual({ deck: ["matrix_rain"], showing: "aquarium", nextAt: "2026-11-08T23:00:00.000Z" });
   });
 });
