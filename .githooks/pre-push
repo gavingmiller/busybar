@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Refuse to push a red tree. Twice a `bun test | tail && git push` chain shipped past a failing
+# spec because the pipe hid bun's exit status (2026-11-08 aquarium, 2026-11-09 Ember).
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+if ! bun test >/tmp/busybar-pre-push.log 2>&1; then
+  tail -20 /tmp/busybar-pre-push.log
+  echo "pre-push: bun test failed; push refused" >&2
+  exit 1
+fi

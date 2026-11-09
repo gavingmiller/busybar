@@ -88,6 +88,8 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   anything on first quits the running JS app and clears every draw.
   - `bun run server` — run it by hand (`BUSYBAR_CONTROL_PORT`,
     `BUSYBAR_BASE_URL` and `BUSYBAR_STATE_FILE` override the defaults).
+  - `git config core.hooksPath .githooks` once per clone: the versioned
+    pre-push hook runs the whole suite and refuses to push a red tree.
   - `bun run install-launchd` — installs `launchd/com.busybar.server.plist`
     into `~/Library/LaunchAgents` (KeepAlive, starts at login, logs to
     `~/Library/Logs/busybar/server.log`). The repo copy is the source of
