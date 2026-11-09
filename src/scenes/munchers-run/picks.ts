@@ -4,10 +4,11 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: the KNIGHT from Fog Canyon. Round 5: settled head (long
-// horns, two-row eyes) and colours (C4); five body shapes. Shown on the fog colour so the dark body reads as in
-// the scene.
-//   W mask  E eye hollow  K body  N cloak  L nail
+// Current subject: HORNET (Gavin: "now do hornet keeping in mind what we've
+// done so far"): the Knight lessons applied — two-row eye hollows, single-tone
+// short cape, stub feet, bright colours — with her sideways horns, pointed
+// chin, red cape and needle.
+//   W mask  E eye hollow  R cape  K feet  L needle
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
@@ -21,50 +22,53 @@ const C3 = { ...MASK, K: "#4858A0", N: "#6C80D4" };
 const C4 = { ...MASK, K: "#5262B0", N: "#8094E4" };
 const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
+// Hornet: bone mask, eye hollows, red cape (single tone, bright for the LEDs), darker red feet, pale needle.
+const HORNET = { W: "#F2F2F4", E: "#0A0A12", R: "#E04050", K: "#A02838", L: "#D8DCE8" };
+
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 as picked",
+    name: "1 horns out (as in the game), short cape",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".K...K."],
+      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
-    colors: C4,
+    colors: HORNET,
     eye: [2, 3],
   },
   {
-    name: "2 cape a row longer",
+    name: "2 horns curving in, like the Knight",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".NNNNN.", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".NNNNN.", ".K...K."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
-    colors: C4,
+    colors: HORNET,
     eye: [2, 3],
   },
   {
-    name: "3 flared hem",
+    name: "3 needle held out front",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", "NNNNNNN", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".K...K."],
+      ["W.....W.", ".W...W..", ".WWWWW..", ".WEWEW..", ".WEWEW..", "..WWW...", "..RRR.LL", ".RRRRLL.", "..K.K..."],
+      ["W.....W.", ".W...W..", ".WWWWW..", ".WEWEW..", ".WEWEW..", "..WWW...", "..RRR.LL", ".RRRRLL.", ".K...K.."],
     ],
-    colors: C4,
+    colors: HORNET,
     eye: [2, 3],
   },
   {
-    name: "4 feet wide, cape narrow",
+    name: "4 taller: longer cape",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", "..NNN..", ".K...K."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", "..NNN..", "..K.K.."],
+      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".RRRRR.", "..K.K.."],
+      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".RRRRR.", ".K...K."],
     ],
-    colors: C4,
+    colors: HORNET,
     eye: [2, 3],
   },
   {
-    name: "5 lighter centre stripe",
+    name: "5 needle over her shoulder",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NKN..", ".NNKNN.", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NKN..", ".NNKNN.", ".K...K."],
+      ["L.....W", ".LW...W", "..LWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      ["L.....W", ".LW...W", "..LWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
-    colors: C4,
+    colors: HORNET,
     eye: [2, 3],
   },
 ];
