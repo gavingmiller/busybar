@@ -81,6 +81,12 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   flagged `debug`, so the control page and Shuffle skip it, but
   `POST /api/apps/picks {"on":true}` still shows it.
 
+  Scenes can be seasonal: `available(now)` on the scene (see `sleigh`, Santa's
+  Sleigh, December only on the Edmonton calendar) hides it from the control
+  page and from Shuffle out of season, and switching it on then answers 409
+  with "Santa's Sleigh only plays in December". Omit it and the scene is
+  always offered.
+
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
   only) with a web page that turns every app on the bar on and off: each
   Nyan Cat flavour (`src/nyan-cat/flavours.ts` — the classic cat and a

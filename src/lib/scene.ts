@@ -17,6 +17,10 @@ export interface Scene {
   frames(): Uint8Array[];
   /** Debug-only: reachable by id but hidden from the control page and from Shuffle (the Character Picks line-up). */
   debug?: boolean;
+  /** Seasonal: when this returns false for `now`, the scene is hidden from the page and Shuffle and refuses to start. When omitted, always available. */
+  available?: (now: Date) => boolean;
+  /** Finishes the sentence "<name> …" in the refusal, e.g. "only plays in December". */
+  availableNote?: string;
 }
 
 import { encodeAnimFile } from "./anim-file.ts";

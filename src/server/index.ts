@@ -49,6 +49,9 @@ export interface SceneApp {
   run: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
   /** Hidden from the page and from Shuffle; still switchable by id (debug tools like Character Picks). */
   debug?: boolean;
+  /** Seasonal gate (see Scene.available): false hides it from the page and Shuffle and makes switching it on a 409. */
+  available?: (now: Date) => boolean;
+  availableNote?: string;
 }
 
 export interface ServerDeps {
@@ -140,13 +143,18 @@ function writeState(stateFile: string, state: StoredState): void {
   renameSync(tmp, stateFile);
 }
 
+/** A scene the page may list and Shuffle may deal right now: not a debug tool, and in season. */
+function offered(s: SceneApp, now: Date): boolean {
+  return !s.debug && (s.available?.(now) ?? true);
+}
+
 async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<AppsStatus> {
   const deviceApps = await deps.listApps(deps.baseUrl, deps.fetchImpl);
   const stateOf = (id: string): AppState =>
     state === null ? "unknown" : state.active === id ? "on" : "off";
   const apps: AppStatus[] = [
     ...deps.nyans.map((n) => ({ id: n.id, name: n.name, kind: "draw" as const, state: stateOf(n.id) })),
-    ...deps.scenes.filter((s) => !s.debug).map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
+    ...deps.scenes.filter((s) => offered(s, deps.now())).map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
     ...deviceApps.map((a) => ({ id: a.id, name: a.name, kind: "js" as const, state: stateOf(a.id) })),
   ];
   const shuffle = state?.shuffle ? { on: true, nextChangeAt: state.shuffle.nextAt } : { on: false };
@@ -184,7 +192,7 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     await scene.run(deps.baseUrl, deps.fetchImpl);
   };
   /** Animations Shuffle may deal and the page lists: debug scenes excluded. */
-  const animationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.filter((s) => !s.debug).map((s) => s.id)];
+  const animationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.filter((s) => offered(s, deps.now())).map((s) => s.id)];
   /** Everything switchable by id, debug scenes included. */
   const allAnimationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.map((s) => s.id)];
 
@@ -294,6 +302,10 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
           isAnimation ||
           (await deps.listApps(deps.baseUrl, deps.fetchImpl)).some((a) => a.id === id);
         if (!known) return json({ error: `Unknown app "${id}"` }, 404);
+        const seasonal = deps.scenes.find((s) => s.id === id);
+        if (on && seasonal?.available && !seasonal.available(deps.now())) {
+          return json({ error: `${seasonal.name} ${seasonal.availableNote ?? "is not available right now"}` }, 409);
+        }
 
         // Only one thing is on the bar at a time, so turning anything on
         // means stopping whatever is running first: the pan, the JS app (a
@@ -354,7 +366,7 @@ if (import.meta.main) {
         play: (section, loop) => playNyanCatSection(baseUrl, section, loop, fetchImpl, flavourById(id)),
         onError: (err) => console.error(`nyan pan: ${err instanceof Error ? err.message : String(err)}`),
       }),
-    scenes: SCENES.map((scene) => ({ id: scene.id, name: scene.name, debug: scene.debug, run: (baseUrl, fetchImpl) => runScene(baseUrl, scene, fetchImpl) })),
+    scenes: SCENES.map((scene) => ({ id: scene.id, name: scene.name, debug: scene.debug, available: scene.available, availableNote: scene.availableNote, run: (baseUrl, fetchImpl) => runScene(baseUrl, scene, fetchImpl) })),
     now: () => new Date(),
   });
   // Drawing an animation uploads its asset first (up to ~100 s for a cat

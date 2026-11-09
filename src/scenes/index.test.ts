@@ -7,7 +7,7 @@ describe("SCENES registry", () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const s of SCENES) {
       expect(s.id).toMatch(/^[a-z][a-z0-9_]*$/);
-      expect(s.name).toMatch(/^([A-Z][a-z0-9]*)( [A-Z][a-z0-9]*)*$/);
+      expect(s.name).toMatch(/^([A-Z][a-z0-9']*)( [A-Z][a-z0-9']*)*$/); // Title Case; possessives like "Santa's" allowed
       expect(s.fps).toBeGreaterThanOrEqual(24);
       expect(s.fps).toBeLessThanOrEqual(48);
       expect(s.id).not.toBe("nyan_cat");

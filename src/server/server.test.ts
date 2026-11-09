@@ -330,6 +330,43 @@ describe("debug scenes (Character Picks)", () => {
   });
 });
 
+describe("seasonal scenes (Santa's Sleigh in December only)", () => {
+  const DEC = new Date("2026-12-10T15:00:00.000Z"), JUL = new Date("2026-07-10T15:00:00.000Z");
+  const withSleigh = (now: Date) => {
+    const d = deps({ now: () => now });
+    d.scenes.push({ id: "sleigh", name: "Santa's Sleigh", available: (at) => at.getUTCMonth() === 11, availableNote: "only plays in December", run: mock(async () => {}) });
+    return d;
+  };
+
+  it("are hidden from the list outside their season and listed inside it", async () => {
+    const out = await (await createHandler(withSleigh(JUL))(req("/api/apps"))).json();
+    expect(out.apps.map((a: { id: string }) => a.id)).not.toContain("sleigh");
+    const inSeason = await (await createHandler(withSleigh(DEC))(req("/api/apps"))).json();
+    expect(inSeason.apps.map((a: { id: string }) => a.id)).toContain("sleigh");
+  });
+
+  it("refuse to switch on out of season with a clear 409, and run in season", async () => {
+    const d = withSleigh(JUL);
+    const res = await createHandler(d)(post("sleigh", { on: true }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("Santa's Sleigh only plays in December");
+    expect(d.scenes[2]!.run).not.toHaveBeenCalled();
+    const d2 = withSleigh(DEC);
+    const ok = await createHandler(d2)(post("sleigh", { on: true }));
+    expect(ok.status).toBe(200);
+    expect(d2.scenes[2]!.run).toHaveBeenCalledTimes(1);
+  });
+
+  it("stay out of Shuffle's deck out of season", async () => {
+    const d = withSleigh(JUL);
+    const handler = createHandler(d);
+    await handler(req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on: true }) }));
+    for (let i = 0; i < 12; i++) { timers[timers.length - 1]!.fn(); await flush(); }
+    expect(calls(d.scenes[2]!.run)).toHaveLength(0);
+    expect(calls(d.scenes[0]!.run).length + calls(d.scenes[1]!.run).length + calls(d.runRainbow).length).toBeGreaterThanOrEqual(6);
+  });
+});
+
 describe("shuffle (global rotation)", () => {
   const ANIMATIONS = [NYAN_ID, "lava_lamp", "aquarium"];
   const shuffle = (on: boolean) => req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) });
