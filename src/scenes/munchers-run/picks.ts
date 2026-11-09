@@ -23,34 +23,7 @@ const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 one-tone bell, stub feet",
-    frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", ".K...K."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", "..K.K.."],
-    ],
-    colors: C4,
-    eye: [2, 3],
-  },
-  {
-    name: "2 bell with a lighter centre",
-    frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNKNN.", "NNNKNNN", ".K...K."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNKNN.", "NNNKNNN", "..K.K.."],
-    ],
-    colors: C4,
-    eye: [2, 3],
-  },
-  {
-    name: "3 bell with a ragged hem",
-    frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", "N.N.N.N", ".K...K."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", ".N.N.N.", "..K.K.."],
-    ],
-    colors: C4,
-    eye: [2, 3],
-  },
-  {
-    name: "4 short narrow cape",
+    name: "1 as picked",
     frames: [
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "..K.K.."],
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".K...K."],
@@ -59,10 +32,37 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
     eye: [2, 3],
   },
   {
-    name: "5 teardrop cloak",
+    name: "2 cape a row longer",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "NNNNNNN", ".K...K."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "NNNNNNN", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".NNNNN.", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".NNNNN.", ".K...K."],
+    ],
+    colors: C4,
+    eye: [2, 3],
+  },
+  {
+    name: "3 flared hem",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", "NNNNNNN", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".K...K."],
+    ],
+    colors: C4,
+    eye: [2, 3],
+  },
+  {
+    name: "4 feet wide, cape narrow",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", "..NNN..", ".K...K."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", "..NNN..", "..K.K.."],
+    ],
+    colors: C4,
+    eye: [2, 3],
+  },
+  {
+    name: "5 lighter centre stripe",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NKN..", ".NNKNN.", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NKN..", ".NNKNN.", ".K...K."],
     ],
     colors: C4,
     eye: [2, 3],
