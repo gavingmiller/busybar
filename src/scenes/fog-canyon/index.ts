@@ -1,6 +1,7 @@
 // Fog Canyon: Hallownest's green murk. Uomas and Oomas drift and bob in
 // the haze above a mossy floor, their cores flickering pink and orange,
-// bubbles rise through drifting fog streaks and a slow mist band, and the
+// bubbles rise through drifting fog streaks and a slow mist band, a Metroid
+// hunts lower down (Gavin 2026-11-09: one of the Fog Canyon baddies), and the
 // Knight walks through: once left to right (pausing mid-way to look up at
 // the jellies), later once right to left; Hornet dashes through twice too,
 // at other times, so the two are never on screen together; and once a loop,
@@ -12,7 +13,7 @@
 // are hand-drawn in the game's colour language, nothing copied.
 
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
-import { KNIGHT, HORNET, UOMA, OOMA, type SpriteArt } from "./art.ts";
+import { KNIGHT, HORNET, UOMA, OOMA, METROID, type SpriteArt } from "./art.ts";
 import { SAMUS, SAMUS_POSE_RATE } from "../samus/art.ts";
 
 export const FOG_FPS = 24;
@@ -170,7 +171,7 @@ export function samusRows(t: number): string[] {
 
 // ---- jellies ----------------------------------------------------------------
 export interface Jelly {
-  kind: "uoma" | "ooma";
+  kind: "uoma" | "ooma" | "metroid";
   x0: number;
   dir: 1 | -1;
   /** Whole crossings per loop. */
@@ -187,8 +188,17 @@ export const JELLIES: readonly Jelly[] = [
   { kind: "uoma", x0: 60, dir: 1, cycles: 1, yBase: 3, amp: 1, yCycles: 11, phase: 4.0, coreCycles: 72 },
   { kind: "ooma", x0: 25, dir: -1, cycles: 1, yBase: 0, amp: 1, yCycles: 6, phase: 1.0, coreCycles: 40 },
   { kind: "ooma", x0: 55, dir: 1, cycles: 2, yBase: 2, amp: 2, yCycles: 8, phase: 5.2, coreCycles: 36 },
+  // the Metroid: one slow pass per loop, lower than the jellies, bobbing two rows, claws and nuclei pulsing on a half-second clock
+  { kind: "metroid", x0: 30, dir: -1, cycles: 1, yBase: 3, amp: 2, yCycles: 5, phase: 0.8, coreCycles: 0 },
 ];
-const jellyArt = (j: Jelly) => (j.kind === "ooma" ? OOMA : UOMA);
+const jellyArt = (j: Jelly) => (j.kind === "ooma" ? OOMA : j.kind === "metroid" ? METROID : UOMA);
+/** Metroid pose clock: half a second per frame (192 swaps per loop, so it closes). */
+export const METROID_FRAME_S = 0.5;
+/** Which art frame a jelly shows at time t (only the Metroid has more than one). */
+export function jellyFrame(j: Jelly, t: number): number {
+  const n = jellyArt(j).frames.length;
+  return n === 1 ? 0 : Math.floor(mod(t, FOG_LOOP_S) / METROID_FRAME_S + 1e-9) % n;
+}
 
 /** Top-left of a jelly at time t (integer pixels). */
 export function jellyPos(j: Jelly, t: number): { x: number; y: number } {
@@ -241,8 +251,8 @@ export function renderFrame(i: number): Uint8Array {
   // jellies drifting above head height
   for (const j of JELLIES) {
     const art = jellyArt(j), p = jellyPos(j, t);
-    const swap = coreLit(j, t) ? (j.kind === "ooma" ? { O: "OF" } : { C: "CF" }) : {};
-    blit(buf, art.frames[0]!, p.x, p.y, art.colors, swap);
+    const swap = j.kind === "metroid" ? {} : coreLit(j, t) ? (j.kind === "ooma" ? { O: "OF" } : { C: "CF" }) : {};
+    blit(buf, art.frames[jellyFrame(j, t)]!, p.x, p.y, art.colors, swap);
   }
 
   // Samus, Hornet and the Knight, drawn last so nothing crosses them (they are never on screen together)

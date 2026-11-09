@@ -1,11 +1,11 @@
 import { describe, it, expect } from "bun:test";
 import {
   FOG_CANYON, FOG_FPS, FOG_LOOP_S, FOG_FRAME_COUNT, FLOOR_Y, KNIGHT_SPEED, KNIGHT_STRIDE_PX,
-  JELLIES, BUBBLES, renderFrame, knightState, knightRows, jellyPos, bubblePos,
+  JELLIES, BUBBLES, renderFrame, knightState, knightRows, jellyPos, jellyFrame, bubblePos,
   HORNET_SPEED, HORNET_STRIDE_PX, HORNET_CROSSINGS, hornetState, hornetRows,
   SAMUS_SPEED, SAMUS_START_S, samusState, samusRows,
 } from "./index.ts";
-import { KNIGHT, HORNET, UOMA, OOMA } from "./art.ts";
+import { KNIGHT, HORNET, UOMA, OOMA, METROID } from "./art.ts";
 import { SAMUS, SAMUS_POSE_RATE } from "../samus/art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
@@ -130,6 +130,7 @@ describe("FOG_CANYON scene", () => {
       const p0 = jellyPos(j, 0), p1 = jellyPos(j, 3), pEnd = jellyPos(j, FOG_LOOP_S);
       expect(p0.x).not.toBe(p1.x);
       expect(p0).toEqual(pEnd); // closes on the loop
+      if (j.kind === "metroid") continue; // the Metroid hunts lower (its own spec)
       for (let t = 0; t < FOG_LOOP_S; t += 1) { total++; if (jellyPos(j, t).y + (j.kind === "ooma" ? OOMA : UOMA).frames[0]!.length <= 9) high++; }
     }
     expect(high / total).toBeGreaterThanOrEqual(0.75);
@@ -137,6 +138,59 @@ describe("FOG_CANYON scene", () => {
     const coreColours = new Set<string>();
     for (const i of sample) { const f = frames[i]!; for (let p = 0; p < f.length; p += 4) { const r = f[p]!, g = f[p + 1]!, b = f[p + 2]!; if (r > 200 && b > 150 && g < 220) coreColours.add(`${r},${g},${b}`); } }
     expect(coreColours.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("a Metroid drifts through too (Gavin 2026-11-09): green dome, three red nuclei, claws below; two frames alternating every half second; lower than the jellies but clear of the floor", () => {
+    // art
+    expect(METROID.frames).toHaveLength(2);
+    const w = METROID.frames[0]![0]!.length, h = METROID.frames[0]!.length;
+    expect(w).toBeGreaterThanOrEqual(8); expect(w).toBeLessThanOrEqual(10);
+    expect(h).toBeGreaterThanOrEqual(7); expect(h).toBeLessThanOrEqual(9);
+    expect(METROID.frames[0]).not.toEqual(METROID.frames[1]);
+    for (const f of METROID.frames) {
+      for (const r of f) expect(r).toHaveLength(w);
+      const flat = f.join("");
+      expect((flat.match(/[RQ]/g) ?? []).length).toBe(3); // nuclei
+      expect(flat).toContain("G"); // dome
+      expect(f[h - 1]!.replace(/[.K]/g, "")).toBe(""); // bottom row is claws only
+      expect(f[h - 1]).toContain("K");
+      // the dome sits above the claws: top row has no claws
+      expect(f[0]).not.toContain("K");
+    }
+    // the nuclei pulse: one frame uses the lighter red
+    expect(METROID.frames[0]!.join("")).toContain("R");
+    expect(METROID.frames[1]!.join("")).toContain("Q");
+    const dome = hex(METROID.colors.G!), bell = hex(OOMA.colors.G!);
+    expect(dome[1]!).toBeGreaterThan(bell[1]! + 40); // brighter green than the Ooma bell
+    // roster: exactly one Metroid, drifting across the whole loop, lower than the others
+    const ms = JELLIES.filter((j) => j.kind === "metroid");
+    expect(ms).toHaveLength(1);
+    const m = ms[0]!;
+    expect(m.cycles).toBe(1);
+    const others = JELLIES.filter((j) => j.kind !== "metroid");
+    expect(m.yBase).toBeGreaterThanOrEqual(Math.max(...others.map((j) => j.yBase)));
+    let lowest = 0;
+    for (let t = 0; t < FOG_LOOP_S; t += 0.25) { const p = jellyPos(m, t); lowest = Math.max(lowest, p.y + h); expect(p.y + h).toBeLessThanOrEqual(FLOOR_Y); }
+    expect(lowest).toBeGreaterThan(9); // it does dip below the jellies' band
+    // frames alternate every 0.5 s and close on the loop
+    expect(jellyFrame(m, 0)).toBe(0); expect(jellyFrame(m, 0.5)).toBe(1); expect(jellyFrame(m, 1)).toBe(0);
+    expect(jellyFrame(m, FOG_LOOP_S)).toBe(jellyFrame(m, 0));
+    // never drawn over a character: wherever its box meets the Knight, Hornet or Samus, their pixels win
+    let checked = 0;
+    for (let t = 0; t < FOG_LOOP_S; t += 0.5) {
+      const p = jellyPos(m, t);
+      const chars: Array<[string[], number, number, Readonly<Record<string, string>>]> = [];
+      const k = knightState(t); if (k) chars.push([knightRows(t), Math.round(k.x), FLOOR_Y - KNIGHT.frames[0]!.length, KNIGHT.colors]);
+      const ho = hornetState(t); if (ho) chars.push([hornetRows(t), Math.round(ho.x), FLOOR_Y - HORNET.frames[0]!.length, HORNET.colors]);
+      const sa = samusState(t); if (sa) chars.push([samusRows(t), Math.round(sa.x), FLOOR_Y - SAMUS.frames[0]!.length, SAMUS.colors]);
+      for (const [rows, cx, cy, colors] of chars) {
+        const cw = rows[0]!.length, ch = rows.length;
+        if (p.x + w <= cx || cx + cw <= p.x || p.y + h <= cy || cy + ch <= p.y) continue;
+        const f = renderFrame(Math.round(t * FOG_FPS));
+        rows.forEach((row, y) => [...row].forEach((c, x) => { const sx = cx + x; if (c !== "." && sx >= 0 && sx < FRONT_WIDTH) { expect(px(f, sx, cy + y)).toEqual(hex(colors[c]!)); checked++; } }));
+      }
+    }
+    expect(checked).toBeGreaterThan(0); // it does meet them, and they stay intact
   });
 
   it("bubbles rise from the floor to the top and the mossy floor is lit edge to edge", () => {

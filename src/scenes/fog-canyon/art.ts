@@ -85,3 +85,36 @@ export const OOMA: SpriteArt = {
   ]],
   colors: { G: "#5A8A78", O: "#F0A040", OF: "#FFE0A0" },
 };
+
+/**
+ * Metroid: the Metroid-series creature, hand-drawn from Gavin's LED-box photo
+ * (refs/metroid-led-box.png). A bright green translucent dome with a lighter
+ * membrane rim, three red nuclei in a triangle, and two forked claws below.
+ * 9x8. Two frames: the claws clench inward and the nuclei pulse lighter.
+ *   G dome  L membrane highlight  R nucleus  Q nucleus (pulse)  K claw
+ */
+export const METROID: SpriteArt = {
+  frames: [
+    [
+      "...GGG...",
+      ".GGLLLGG.",
+      "GGLGRGLGG",
+      "GGLGGGLGG",
+      "GGRGGGRGG",
+      ".GGGGGGG.",
+      ".KK...KK.",
+      ".K.....K.",
+    ],
+    [
+      "...GGG...",
+      ".GGLLLGG.",
+      "GGLGQGLGG",
+      "GGLGGGLGG",
+      "GGQGGGQGG",
+      ".GGGGGGG.",
+      "..KK.KK..",
+      "..K...K..",
+    ],
+  ],
+  colors: { G: "#58C878", L: "#A0F0B0", R: "#E03040", Q: "#FF7080", K: "#A02830" },
+};
