@@ -327,7 +327,7 @@ describe("FOG_CANYON scene", () => {
     expect(SAMUS_SPEED).toBeGreaterThanOrEqual(14);
     expect(SAMUS_SPEED).toBeLessThanOrEqual(18);
     expect(CHASE.walkSpeed).toBeGreaterThanOrEqual(5);
-    expect(CHASE.walkSpeed).toBeLessThanOrEqual(7);
+    expect(CHASE.walkSpeed).toBeLessThanOrEqual(9); // brisk walk so the whole appearance stays short
     expect(SAMUS_POSE_RATE).toBe(8);
     const step = 1 / FOG_FPS;
     let on = 0, others = 0, entries = 0, wasOn = false, stopS = 0;
@@ -364,8 +364,9 @@ describe("FOG_CANYON scene", () => {
     expect(samusState(SAMUS_SPRINT_S)!.frame).toBe(0);
     // she notices it from about 12 px away
     const notice = samusState(SAMUS_SPRINT_S - step)!;
-    expect(CHASE.markX - (notice.x + SAMUS.frames[0]![0]!.length)).toBeGreaterThanOrEqual(8);
-    expect(CHASE.markX - (notice.x + SAMUS.frames[0]![0]!.length)).toBeLessThanOrEqual(16);
+    // She notices at the quarter mark of the screen, not next to the Metroid (Gavin 2026-11-09: too much time on screen).
+    expect(Math.abs(notice.x - 18)).toBeLessThanOrEqual(2);
+    expect(SAMUS_EXIT_S - CHASE.samusStartS).toBeLessThanOrEqual(8);
     const share = on / (FOG_LOOP_S * FOG_FPS);
     expect(share).toBeGreaterThanOrEqual(0.04);
     expect(share).toBeLessThanOrEqual(0.12);

@@ -36,11 +36,11 @@ export const SAMUS_SPEED = 16;
  * The chase, seconds into the loop. It sits between Hornet's first pass (ends 36.6 s) and the Knight's
  * second (60 s): the Metroid drifts in from the right at `driftSpeed` until its left edge reaches `markX`
  * (a quarter of the way across) and hovers there. Samus enters from the left at `samusStartS` WALKING at
- * `walkSpeed`; when her x reaches `noticeX` (her front about 14 px from it) she stops for `pauseS` on her
+ * `walkSpeed`; when her x reaches `noticeX` (the quarter mark of the screen) she stops for `pauseS` on her
  * contact frame, then sprints at SAMUS_SPEED. The Metroid bolts right at `fleeSpeed` the moment she
  * sprints (Gavin 2026-11-09), slower than her so she gains; both leave by the right edge.
  */
-export const CHASE = { metroidEnterS: 41, driftSpeed: 3, markX: 54, samusStartS: 47, walkSpeed: 6, noticeX: 31, pauseS: 0.6, fleeSpeed: 13 } as const;
+export const CHASE = { metroidEnterS: 41, driftSpeed: 3, markX: 54, samusStartS: 47, walkSpeed: 8, noticeX: 19, pauseS: 0.6, fleeSpeed: 13 } as const;
 /** Seconds into the loop her one appearance starts. */
 export const SAMUS_START_S = CHASE.samusStartS;
 /** Order the moving things are painted, back to front; Samus is the topmost foreground. */
