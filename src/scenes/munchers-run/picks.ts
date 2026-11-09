@@ -4,8 +4,9 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN, round 6: the crouched size settled, torso
-// FIXED (no bob); five leg cycles.
+// Current subject: SAMUS ARAN, round 7: Bandygrass walk-cycle method
+// (contact, down, passing, up; duplicate with legs switched; near leg bright,
+// far leg dark), torso fixed.
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -26,61 +27,79 @@ const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 //   R helmet/chest  G visor  O shoulders/limbs  Y belly  C arm cannon
 const SAMUS        = { R: "#B82020", G: "#A8E040", O: "#E87020", Y: "#F0D040", C: "#30A090" };
 const SAMUS_BRIGHT = { R: "#D83030", G: "#60D070", O: "#F0A030", Y: "#F8E060", C: "#40B8A8" };
+// Run-cycle legs: N near leg (bright), D far leg (darker), B/b boots near/far.
+const SAMUS_RUN = { ...SAMUS_BRIGHT, N: "#F0A030", D: "#B86020", B: "#D83030", b: "#901818" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 as picked",
+    name: "1 eight frames, near and far leg",
     frames: [
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "OO....OO."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "...OOO..."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", ".OO..OO.."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", ".DD...NN."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", "..D...NN."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DNN...", "....NN..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NND...", "....NN..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", ".NN...DD."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", "..N...DD."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NDD...", "....DD..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DDN...", "....DD..."],
     ],
-    colors: SAMUS_BRIGHT,
+    colors: SAMUS_RUN,
     eye: [5, 2],
   },
   {
-    name: "2 heavy three-wide legs",
+    name: "2 eight frames, red boots",
     frames: [
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OOO.OOO.", "OOO...OOO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..OOOO..."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOO.OO.", ".OOO..OOO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", ".OOO.OOO."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", ".bb...BB."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", "..b...BB."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DNN...", "....BB..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NND...", "....BB..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", ".BB...bb."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", "..B...bb."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NDD...", "....bb..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DDN...", "....bb..."],
     ],
-    colors: SAMUS_BRIGHT,
+    colors: SAMUS_RUN,
     eye: [5, 2],
   },
   {
-    name: "3 one leg planted, the other swings",
+    name: "3 three leg rows, longer stride",
     frames: [
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", "..OO..OO."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..OO.OO.."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO..OO.."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..OO.OO.."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", ".DD...NN.", "DD.....NN"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", "..DD..NN.", "...D...NN"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DDNN..", "....DNN..", ".....NN.."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NN.D..", "....NN.D.", "....NN..."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", ".NN...DD.", "NN.....DD"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", "..NN..DD.", "...N...DD"],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NNDD..", "....NDD..", ".....DD.."],
+      ["..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DD.N..", "....DD.N.", "....DD..."],
     ],
-    colors: SAMUS_BRIGHT,
+    colors: SAMUS_RUN,
+    eye: [5, 1],
+  },
+  {
+    name: "4 four frames: contact and passing only",
+    frames: [
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", ".DD...NN."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DNN...", "....NN..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", ".NN...DD."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NDD...", "....DD..."],
+    ],
+    colors: SAMUS_RUN,
     eye: [5, 2],
   },
   {
-    name: "4 long low stride",
+    name: "5 eight frames with the back arm",
     frames: [
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO...OO.", "OO.....OO"],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..OOOO..."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".OO...OO."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...OOO...", "..OO.OO.."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", ".DD...NN."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..DD.NN..", "..D...NN."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DNN...", "....NN..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NND...", "....NN..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", ".OOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", ".NN...DD."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", ".OOYYYCCC", ".OOYYY.CC", "..OYYO...", "..NN.DD..", "..N...DD."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", ".OOYYYCCC", ".OOYYY.CC", "..OYYO...", "...NDD...", "....DD..."],
+      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", ".OOYYYCCC", ".OOYYY.CC", "..OYYO...", "...DDN...", "....DD..."],
     ],
-    colors: SAMUS_BRIGHT,
-    eye: [5, 2],
-  },
-  {
-    name: "5 red boots",
-    frames: [
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", ".OO..OO..", "RR....RR."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", "..RRRR..."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OO.OO..", ".RR...RR."],
-      [".........", "..RRRR...", ".RRRGGG..", ".RRRRGG..", "OOORRRR..", "OOOYYYCCC", ".OOYYY.CC", "..OYYO...", "..OOOO...", ".RR..RR.."],
-    ],
-    colors: SAMUS_BRIGHT,
+    colors: SAMUS_RUN,
     eye: [5, 2],
   },
 ];
@@ -96,9 +115,9 @@ export const DIGITS: Record<number, readonly string[]> = {
 
 export const PICK_SLOT_W = 14;
 export const PICKS_FPS = 24;
-/** Four display frames per pose (6 poses/s); 60 poses per 10 s loop so 1- to 6-frame cycles all close. */
+/** Four display frames per pose (6 poses/s); 24 poses per 4 s loop so 1-, 2-, 3-, 4-, 6- and 8-frame cycles all close. */
 const POSE_FRAMES = 4;
-export const PICKS_FRAME_COUNT = POSE_FRAMES * 60;
+export const PICKS_FRAME_COUNT = POSE_FRAMES * 24;
 const DIGIT_RGB: [number, number, number] = [0xf0, 0xb0, 0x40];
 /** Backdrop behind the line-up: black by default; the scene colour when a character's body is black (Fog Canyon's fog). */
 export const PICKS_BG: [number, number, number] = [0, 0, 0];
