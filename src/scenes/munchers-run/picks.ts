@@ -17,25 +17,7 @@ const BONE_OUTLINE = { ...BONE, K: "#6A4464" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 current body, black sockets",
-    frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", "..KSWWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", "..KSWWWK..", "..KWK..KSK"],
-    ],
-    colors: BONE,
-    eye: [6, 3],
-  },
-  {
-    name: "2 big skull, nose hole",
-    frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", "..KWK..KSK"],
-    ],
-    colors: BONE,
-    eye: [6, 3],
-  },
-  {
-    name: "3 current body, black sockets, swinging arm",
+    name: "1 as picked",
     frames: [
       ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
       ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
@@ -44,21 +26,39 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
     eye: [6, 3],
   },
   {
-    name: "4 big skull, highlight, fewer teeth",
+    name: "2 plus nose hole",
     frames: [
-      ["..KKKKKK..", ".KBWWWWWK.", "KBWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKKWKWKK.", "..KKSWWKK.", "...KSWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KBWWWWWK.", "KBWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKKWKWKK.", "..KKSWWKK.", "...KSWWK..", "..KWK..KSK"],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
     ],
-    colors: BONE_HI,
+    colors: BONE,
     eye: [6, 3],
   },
   {
-    name: "5 big skull, brighter outline",
+    name: "3 plus brighter outline",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", "..KWK..KSK"],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
     ],
     colors: BONE_OUTLINE,
+    eye: [6, 3],
+  },
+  {
+    name: "4 plus head bob on the step",
+    frames: [
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
+      ["..........", "..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KWK..KSK"],
+    ],
+    colors: BONE,
+    eye: [6, 3],
+  },
+  {
+    name: "5 both arms swinging",
+    frames: [
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", ".WKSWWWKW.", "..KWK..KSK"],
+    ],
+    colors: BONE,
     eye: [6, 3],
   },
 ];
