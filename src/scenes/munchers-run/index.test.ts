@@ -3,7 +3,7 @@ import {
   MUNCHERS_RUN, MUNCHERS_FPS, MUNCHERS_LOOP_S, MUNCHERS_FRAME_COUNT, GROUND_Y, STRIDE_PX,
   RUNS, runnerX, runnerFrame, runnerSprite, activeRuns, renderFrame, type Run,
 } from "./index.ts";
-import { RUNNER_ART, CHICKEN } from "./art.ts";
+import { RUNNER_ART, CHICKEN, EMBER } from "./art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 
@@ -115,6 +115,14 @@ describe("MUNCHERS_RUN scene", () => {
         frame.forEach((r, y) => { for (let x = ex - 1; x <= ex + 1; x++) if (r[x] === letter && Math.abs(y - ey) <= 2) found = true; });
         expect(found).toBe(true);
       }
+    }
+  });
+
+  it("Ember has no red outline: red belongs to the flame only (Gavin 2026-11-09: 'the red around fire guy is ridiculous')", () => {
+    for (const frame of EMBER.frames) {
+      // Body and legs are the rows below the flame; nothing red there.
+      for (const row of frame.slice(5)) expect(row).not.toContain("R");
+      expect(frame.slice(0, 4).join("")).toContain("R");
     }
   });
 
