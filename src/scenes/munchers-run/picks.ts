@@ -6,8 +6,8 @@
 //
 // Current subject: HORNET (Gavin: "now do hornet keeping in mind what we've
 // done so far"): the Knight lessons applied — two-row eye hollows, single-tone
-// short cape, stub feet, bright colours — with her sideways horns, pointed
-// chin, red cape and needle.
+// short cape, stub feet, bright colours — with her pointed chin, red cape and
+// needle. Round 2: Gavin picked 1 and thinks her horns are straighter.
 //   W mask  E eye hollow  R cape  K feet  L needle
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -27,46 +27,46 @@ const HORNET = { W: "#F2F2F4", E: "#0A0A12", R: "#E04050", K: "#A02838", L: "#D8
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 horns out (as in the game), short cape",
+    name: "1 straight up from the mask corners",
     frames: [
-      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
     colors: HORNET,
     eye: [2, 3],
   },
   {
-    name: "2 horns curving in, like the Knight",
+    name: "2 straight up, taller",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      [".W...W.", ".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      [".W...W.", ".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+    ],
+    colors: HORNET,
+    eye: [2, 4],
+  },
+  {
+    name: "3 straight, angled slightly out",
+    frames: [
+      ["W.....W", "W.....W", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      ["W.....W", "W.....W", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
     colors: HORNET,
     eye: [2, 3],
   },
   {
-    name: "3 needle held out front",
+    name: "4 straight with a small outward tip",
     frames: [
-      ["W.....W.", ".W...W..", ".WWWWW..", ".WEWEW..", ".WEWEW..", "..WWW...", "..RRR.LL", ".RRRRLL.", "..K.K..."],
-      ["W.....W.", ".W...W..", ".WWWWW..", ".WEWEW..", ".WEWEW..", "..WWW...", "..RRR.LL", ".RRRRLL.", ".K...K.."],
+      ["W.....W", ".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      ["W.....W", ".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
     colors: HORNET,
-    eye: [2, 3],
+    eye: [2, 4],
   },
   {
-    name: "4 taller: longer cape",
+    name: "5 straight up, wide-set",
     frames: [
-      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".RRRRR.", "..K.K.."],
-      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".RRRRR.", ".K...K."],
-    ],
-    colors: HORNET,
-    eye: [2, 3],
-  },
-  {
-    name: "5 needle over her shoulder",
-    frames: [
-      ["L.....W", ".LW...W", "..LWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      ["L.....W", ".LW...W", "..LWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      ["W.....W", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
+      ["W.....W", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
     ],
     colors: HORNET,
     eye: [2, 3],
