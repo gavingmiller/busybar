@@ -4,20 +4,22 @@ import { generateXpm2 } from "@busy-app/busy-lib";
 // second row) of the itch.io raven sheet Gavin picked on 2026-11-08:
 // https://img.itch.zone/aW1nLzE5ODg1MTguZ2lm/original/dF5%2FyQ.gif
 // Each GIF frame of that sprite was sampled on its 4x4 art-pixel grid
-// (20x16), then shrunk to 14x11 by majority sampling (a cell is lit when at
-// least half its source pixels are) because the full-height raven was too
-// big for the bar. The perched pose is the sheet's standing sprite, shrunk
-// the same way to 10x8. The beak (everything right of the eye on its row)
+// (20x16), then shrunk by majority sampling (a cell is lit when at least
+// half its source pixels are): first to 14x11, and on 2026-11-09 to 9x7
+// after Gavin picked that size from a numbered line-up on the bar ("they're
+// pretty fat"); the eye and a two-pixel beak are re-placed at the head end
+// of the eye's row. The perched pose is the sheet's standing sprite, shrunk
+// the same way to 7x6 with a yellow foot row. The beak (everything right of the eye on its row)
 // and the feet (short runs in the bottom rows) are yellow at Gavin's ask.
 // Colours are lifted from the sheet's near-black so the body still reads
 // on an LED matrix over a dark sky.
 
 /** Raven sprite size in flight: every frame shares it so the element never changes shape. */
-export const RAVEN_W = 14;
-export const RAVEN_H = 11;
+export const RAVEN_W = 9;
+export const RAVEN_H = 7;
 /** Perched sprite size. */
-export const PERCHED_W = 10;
-export const PERCHED_H = 8;
+export const PERCHED_W = 7;
+export const PERCHED_H = 6;
 
 /** Palette for both ravens. `.` is transparent. */
 const RAVEN_PALETTE = {
@@ -30,89 +32,67 @@ const RAVEN_PALETTE = {
 
 /** Wings forward, high. Facing right. */
 const FLY0 = [
-  "...kkkk.......",
-  ".kkkkkkk......",
-  "kkbbbkkkkkkk..",
-  "..kkbkkkkkkkkk",
-  "...bbbbkkkkeyy",
-  "....kbbkkkkkk.",
-  ".....kkkkkkk..",
-  ".....kkkkkk...",
-  "....kkbkkkkk..",
-  "....yyy..y.y..",
-  "..............",
+  "..kkk....",
+  "kkkkkkkk.",
+  ".kkbkkeyy",
+  "..bbbkkky",
+  "...kkkkk.",
+  "...kkkkk.",
+  "...yy.y..",
 ];
 
 /** Wings forward, raised. Facing right. */
 const FLY1 = [
-  ".kkkk.........",
-  ".kkkkkk.......",
-  ".kbkkkkkkkk...",
-  "..kbkkkkkkkk..",
-  "...kbkkkkkkeyy",
-  "....kbkkkkkkkk",
-  ".....kbkkkkkk.",
-  ".....kkkkkkk..",
-  "....kkbkkkk...",
-  "....kkkkk..y..",
-  ".........y....",
+  ".kkk.....",
+  ".kkkkkk..",
+  ".kbkkkeyy",
+  "..kbkkkky",
+  "...kbkkkk",
+  "...kkkkk.",
+  "...kkky..",
 ];
 
 /** Wings swept down. Facing right. */
 const FLY2 = [
-  ".........kkk..",
-  "........kkkk..",
-  ".......kkkkeyy",
-  "......kkkkkkkk",
-  ".....kkkkkkk..",
-  "....kkkkkkkk..",
-  "...kkkkkkkbk..",
-  "...kkkkkkkbk..",
-  "...kkkkkkkkk..",
-  "....y.kkkkkk..",
-  ".......kkkk...",
+  "......kk.",
+  ".....keyy",
+  "....kkkkk",
+  "...kkkkk.",
+  "..kkkkkb.",
+  "..kkkkkk.",
+  "....kkkk.",
 ];
 
 /** Wings swept down, low. Facing right. */
 const FLY3 = [
-  "........kkkk..",
-  ".......kkkkkkk",
-  "......kkkkkeyy",
-  ".....kkkkkkk..",
-  "....kkkkkkkk..",
-  "....kkkkkkkk..",
-  "...kkkkkkkbb..",
-  "...kkkkkkkbb..",
-  "...kkkkkkkkb..",
-  "......kkkkkk..",
-  ".......kkkk...",
+  ".....kkk.",
+  "....kkeyy",
+  "...kkkkk.",
+  "...kkkkk.",
+  "..kkkkkb.",
+  "..kkkkkb.",
+  "....kkkk.",
 ];
 
 /** Glide. Facing right. */
 const FLY4 = [
-  "..............",
-  "......kk.kkk..",
-  "....kkkkkkkkk.",
-  "...kkkkkkkkeyy",
-  "...kkkkkkkkkkk",
-  "...kkkkkkkkk..",
-  "...kkkkkkkk...",
-  "....kkbkkkk...",
-  "....kkbkkk.y..",
-  ".........y....",
-  "..............",
+  ".........",
+  "...kkkeyy",
+  "..kkkkkky",
+  "..kkkkkkk",
+  "..kkkkkk.",
+  "...kbkkk.",
+  "......y..",
 ];
 
 /** Standing, wings folded. Facing right. */
 const PERCHED = [
-  ".....kkk..",
-  "....kkkkk.",
-  "....kkkeyy",
-  "...kkkkkkk",
-  "..kkkkkk..",
-  ".kkkkkk...",
-  "kkkkkk....",
-  "....yyy...",
+  "....kk.",
+  "...keyy",
+  "...kkky",
+  "..kkkk.",
+  ".kkkk..",
+  "yyyyy..",
 ];
 
 export const RAVEN_FRAMES: readonly string[] = [FLY0, FLY1, FLY2, FLY3, FLY4].map((grid) =>

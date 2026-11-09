@@ -134,7 +134,8 @@ built/installed with `busy-cli`. Node 24 is required (`.nvmrc` in each app).
 Unlike the Bun apps above, nothing runs on the Mac once an app is installed:
 the bar keeps it in its APPS menu and runs it on its own.
 
-- **js-apps/app.gavin.ravens** — *Ravens*. Huginn and Muninn flap across a
+- **js-apps/app.gavin.ravens** — *Ravens*. Huginn and Muninn (9x7, chosen
+  from a Character Picks size line-up on 2026-11-09; perched 7x6) flap across a
   starry night sky at different speeds and heights, so they cross and overtake
   each other. The sky scrolls in parallax: Dino Run's three clouds (its 9x3
   cloud sprite on the same 144 px loop) drift left at half a pixel a tick,
@@ -146,7 +147,9 @@ the bar keeps it in its APPS menu and runs it on its own.
   - **Back** — exits (clears the display, stops every timer).
   - Build and run from the app folder: `npm install`, `npm run typecheck`,
     `npm run build`, then `npm run app:install` and `npm run app:run` with the
-    bar on USB (`npm run app:stop` / `npm run app:uninstall` to undo). The
+    bar on USB (`npm run app:stop` / `npm run app:uninstall` to undo), or over
+    Wi-Fi the way `gavin.dino_run/build.sh --install` does: `POST /api/apps/quit`,
+    `POST /api/apps/stage` with the tgz, `POST /api/apps/install?install_key=…`. The
     sprites are XPM2 bitmaps built in `src/sprites.ts`; the lines are in
     `src/havamal.ts`. `src/appmeta/icon_front_8x8.png` is the menu icon.
     The raven is traced from the sixth sprite of an itch.io raven sheet
