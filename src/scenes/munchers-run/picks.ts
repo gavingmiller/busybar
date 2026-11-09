@@ -12,53 +12,54 @@ import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene
 import type { RunnerArt } from "./art.ts";
 
 const BONE = { W: "#EBD0C5", S: "#CCA8A3", D: "#A17877", K: "#4A2E44", E: "#120812" };
-const BONE_BRIGHT = { ...BONE, W: "#F6E6DE", S: "#D8B8B0" };
+const BONE_HI = { ...BONE, B: "#F8ECE6" };
+const BONE_OUTLINE = { ...BONE, K: "#6A4464" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 current look",
+    name: "1 current body, black sockets",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWKWWKKWK", "KSWKWWKKWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", "..KSWWWK..", ".KSK..KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWKWWKKWK", "KSWKWWKKWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", "..KSWWWK..", "..KWK..KSK"],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", "..KSWWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWK..", "..KSWWWK..", "..KWK..KSK"],
     ],
     colors: BONE,
     eye: [6, 3],
   },
   {
-    name: "2 big skull, black socket",
+    name: "2 big skull, nose hole",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", "..KSK.KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", ".KWK...KSK"],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWEWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", "..KWK..KSK"],
     ],
     colors: BONE,
     eye: [6, 3],
   },
   {
-    name: "3 front-facing skull",
+    name: "3 current body, black sockets, swinging arm",
     frames: [
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KWEEWWEEWK", "KWEEWWEEWK", "KWWWWKWWWK", ".KWKWKWKWK", "..KKWWWKK.", "..KSWSWSK.", "..KSK.KWK."],
-      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KWEEWWEEWK", "KWEEWWEEWK", "KWWWWKWWWK", ".KWKWKWKWK", "..KKWWWKK.", "..KSWSWSK.", ".KWK...KSK"],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KSWWWKW.", "..KSWWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWEWWEEWK", "KSWEWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", ".WKSWWWK..", "..KSWWWK..", "..KWK..KSK"],
     ],
     colors: BONE,
     eye: [6, 3],
   },
   {
-    name: "4 profile, shaded back, swinging arm",
+    name: "4 big skull, highlight, fewer teeth",
     frames: [
-      ["...KKKKK..", "..KDWWWWK.", ".KDDWWWWWK", ".KDSWWEEWK", ".KDSWWEEWK", ".KDSWWWWKK", "..KKWKWKK.", "...KSWWKW.", "...KSWWK..", "..KSK.KWK."],
-      ["...KKKKK..", "..KDWWWWK.", ".KDDWWWWWK", ".KDSWWEEWK", ".KDSWWEEWK", ".KDSWWWWKK", "..KKWKWKK.", "..WKSWWK..", "...KSWWK..", ".KWK...KSK"],
+      ["..KKKKKK..", ".KBWWWWWK.", "KBWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKKWKWKK.", "..KKSWWKK.", "...KSWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KBWWWWWK.", "KBWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKKWKWKK.", "..KKSWWKK.", "...KSWWK..", "..KWK..KSK"],
     ],
-    colors: BONE,
+    colors: BONE_HI,
     eye: [6, 3],
   },
   {
-    name: "5 no outline, bright bone, grin",
+    name: "5 big skull, brighter outline",
     frames: [
-      ["...WWWWW..", "..WWWWWWW.", ".WWWWWWWWW", ".SWWWWWEEW", ".SWWWWWEEW", ".SSWWWWWWW", "..WEWEWEW.", "...SWWW...", "...SWWW...", "..SS..WW.."],
-      ["...WWWWW..", "..WWWWWWW.", ".WWWWWWWWW", ".SWWWWWEEW", ".SWWWWWEEW", ".SSWWWWWWW", "..WEWEWEW.", "...SWWW...", "...SWWW...", ".SS....WW."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", ".KSK..KWK."],
+      ["..KKKKKK..", ".KWWWWWWK.", "KWWWWWWWWK", "KSWWWWEEWK", "KSWWWWEEWK", "KSSWWWWWKK", ".KKWKWKWK.", "..KKSWWKK.", "...KSWWK..", "..KWK..KSK"],
     ],
-    colors: BONE_BRIGHT,
-    eye: [7, 3],
+    colors: BONE_OUTLINE,
+    eye: [6, 3],
   },
 ];
 
