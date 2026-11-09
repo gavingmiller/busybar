@@ -14,70 +14,10 @@ export interface RunnerArt {
   eye: readonly [number, number];
 }
 
-export const REGGIE: RunnerArt = {
-  name: "Reggie",
-  frames: [
-    [".......KK..KK.", ".........K.K..", "..KKKKKK.KK...", ".KTPPPPTKTTT..", "KKPPQQPPKTTK..", "KTPPPPQPKTTT..", "KPPPPQPPKTTT..", ".KPQQPPKTTTT..", ".KPPPQQKTTTK..", "KKKKKKKTTTUK..", "KUUUUUUUUUK..."],
-    ["........KK..KK", ".........K.K..", "..KKKKKK..KK..", ".KTPPPPTKKTTK.", "KKPPQQPPPKKTK.", "KTPPPPQPPKTTK.", "KPPPPQPPQKTTK.", ".KPQQPPQKTTTK.", ".KPPPQQQKTTUK.", "KKKKKKKTTTUU..", "KUUUUUUUUUK..."],
-    [".........K...K", "..........K.K.", "...KKKKKK.KKK.", "..KTPPPPTKTTTK", ".KPPPQQPPPTTKK", ".KTQPPPPPPTTTK", ".KPQPQPPPQTTTK", "..KPQPPQQKTTTK", "..KPPQQQQTTTU.", "KKKKKKKTTTUU..", "KUUUUUUUUUK..."],
-  ],
-  colors: { K: "#2B1B1E", P: "#F0A0D0", Q: "#C870A8", T: "#F8E0B0", U: "#C8A878" },
-  eye: [12, 0],
-};
 
-export const EMBER: RunnerArt = {
-  name: "Ember",
-  frames: [
-    ["...........", "....RRR....", "...ROOOORR.", "....ROYYOO.", ".....OKKKKR", ".....KKOKOK", ".....KKRKRK", "....KKKKKKK", ".....KKKKKK", "..........."],
-    ["...........", "..ROOOORR..", ".ROOYYYYOO.", "..ROOYYYYOR", ".....RKOKOK", ".....KKYKYK", "....KKKKKKK", "....KKKKKKK", "...........", "..........."],
-    ["...........", "...ROOR....", "..ROYOOR...", "...OOYYORO.", ".....RKOKOR", ".....KKYKYK", ".....KKRKRK", "....KKKKKKK", ".....KKKKKK", "..........."],
-    ["...........", "..R........", ".OOR.R.....", "..R.OOOOO..", "....ROYOOO.", ".....OYYYOR", ".....RKOKOK", ".....KKYKYK", ".....KKKKKK", ".....KKKKK."],
-    ["...........", "....ROOOO..", "...OOOYYOO.", "....OYYYYOR", ".....RKKKKK", ".....KKOKOK", ".....KKKKKK", ".....KKKKK.", "......KKKK.", "..........."],
-    ["......RRRR.", "R...ROOOOO.", "...ROOYYYOR", "..OOYYKKKKO", "..RR.KKKOKY", ".....KKKYKY", ".....KKKKKK", "......KKKK.", "...........", "..........."],
-    ["......RR...", ".....OOOO..", "....ROYOOO.", "..R.OOYYYOR", ".OOR.KKOKOK", "..R..KKYKYK", ".....KKKKKK", ".....KKKKK.", "......KKKK.", "..........."],
-    ["...........", "...........", "....RRRR...", "..ROOOOOO..", "...ROOYYOO.", "....ROYYYOR", ".....RKOKOK", ".....KKYKYK", ".....KKKKKK", ".....KKKKK."],
-  ],
-  colors: { K: "#2B2B2B", R: "#D8402A", Y: "#F0B040", O: "#FF8A30" },
-  eye: [9, 5],
-};
 
-export const BONEHEAD: RunnerArt = {
-  name: "Bonehead",
-  frames: [
-    ["........", "..KKKKKK", ".KSSWWWK", "KSSSWWWK", "KSSKKWWK", "KSSKKWWK", ".KSSWWWK", "..KSWSWK", ".KWSSWWK", ".KSSWSSK", "..KKWSK."],
-    ["..KKKKKK", ".KSSWWWK", "KSSSWWWK", "KSSSKWWK", "KSSKKWWK", ".KSSWWWK", "..KKWSWK", ".KKSSSSK", ".KSSSSSK", "..KWWWWK", ".KWSKKSK"],
-    ["........", "..KKKKKK", ".KSSWWWK", "KSSSWWWK", "KSSKKWWK", "KSSKKWWK", ".KSSWWWK", "..KSWSWK", ".KWSSWWK", ".KSSWSSK", "..KKWWK."],
-    ["..KKKKKK", ".KSSWWWK", "KSSSWWWK", "KSSSKWWK", "KSSKKWWK", ".KSSWWWK", "..KKWSWK", ".KKSSSSK", ".KSSSSSK", "..KSWWWK", ".KSSKKWK"],
-  ],
-  colors: { K: "#3D253B", W: "#E9CEC3", S: "#CCA9A4" },
-  eye: [4, 4],
-};
 
-export const FANGS: RunnerArt = {
-  name: "Fangs",
-  frames: [
-    ["............KK...", "...........KRRK..", "..........KRKRRK.", "..........KRRKRK.", "....K..KK.KRRRDK.", "...KRK.RRKRRRRRD.", "....KRKRRRRRDK...", "....KRRRRRRDD....", ".....RRDKDDDK...."],
-    [".................", "............KKK..", "...........KRRRK.", "..........KRRKRR.", "..........KRRRRR.", "........KKKRRRRD.", ".......KRRKRRDK..", "...KRKRRRRRRDD...", "....KRRDKDRDD...."],
-    [".................", ".................", "..............K..", ".............RRR.", "............KRKRR", "............KRKRR", "........KKKKKRRRR", "KK..KKKRRRRRRRRR.", "KRKRRRRRRRRRDDK.."],
-    [".................", "............KKK..", "...........KRRRK.", "..........KRRKRR.", "..........KRRRRR.", "........KKKRRRRD.", ".......KRRKRRDK..", "...KRKRRRRRRDD...", "....KRRDKDRDD...."],
-  ],
-  colors: { K: "#4E3458", R: "#C54C67", D: "#923C5E" },
-  eye: [12, 2],
-};
 
-export const SQUIRT: RunnerArt = {
-  name: "Squirt",
-  frames: [
-    ["..........", "..........", "..........", "..........", "..KKKKKK..", ".KBLWLLLK.", "KBBLBBBLBK", "KBBBRRBBBK", "KKBBBBBBKK"],
-    ["..........", "....KKK...", "...BWLLK..", "..KLLLLL..", "..KLLLLK..", "..KLRRBK..", "..KBBBBK..", "..KKKKKK..", "..KKKKKK.."],
-    ["...KKKK...", "..KBWLLK..", "..KLLKLL..", "..KLLLLK..", "..KLRRBK..", "...BBBB...", "...KKKK...", "..KKKKKK..", "..KKKKKK.."],
-    ["..........", "...KKKK...", "..KBBBBK..", "..KBWLLL..", ".KBLLLLLK.", ".KBLRRBLK.", "..KBBBBBK.", ".KKKKKKKK.", ".KKKKKKKK."],
-    ["..........", "..........", "..........", "...KKKK...", "..KBLLLK..", "..BLWKLLK.", ".KBLBLLBK.", ".KBBRRBBK.", ".KKBBBBKK."],
-    ["..........", "..........", "..........", "....KKK...", "..KLLLLB..", ".KBLWKLLB.", ".KBLBLLLB.", ".KBLRRBBB.", ".KKBBBBBK."],
-  ],
-  colors: { K: "#1A1F4A", B: "#4A7AB0", L: "#5CB0C0", W: "#FFFFFF", R: "#D83040" },
-  eye: [4, 5],
-};
 
 export const CHICKEN: RunnerArt = {
   name: "Chicken",
@@ -93,5 +33,14 @@ export const CHICKEN: RunnerArt = {
   colors: { W: "#FFFFFF", S: "#D0C8C8", K: "#4A3040", R: "#D83A3A", O: "#F0A030" },
   eye: [6, 5],
 };
+
+// The five Number Munchers characters are hand-drawn at bar scale in art/*.ts
+// (the downscaled sheet versions read as blobs on the bar, Gavin 2026-11-09).
+import { REGGIE } from "./art/reggie.ts";
+import { EMBER } from "./art/ember.ts";
+import { BONEHEAD } from "./art/bonehead.ts";
+import { FANGS } from "./art/fangs.ts";
+import { SQUIRT } from "./art/squirt.ts";
+export { REGGIE, EMBER, BONEHEAD, FANGS, SQUIRT };
 
 export const RUNNER_ART: readonly RunnerArt[] = [REGGIE, EMBER, BONEHEAD, FANGS, SQUIRT, CHICKEN];
