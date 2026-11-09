@@ -22,7 +22,7 @@ describe("Squirt picks line-up (temporary comparison scene)", () => {
         }
         expect(fr[9]!.replace(/\./g, "").length, `${v.name} rests on the bottom row`).toBeGreaterThan(0);
       }
-      const flat = v.frames[0]!.join("");
+      const flat = v.frames[0]!.join("") + JSON.stringify(v.colors);
       for (const ch of ["K", "R", "W"]) expect(flat.includes(ch), `${v.name} has ${ch}`).toBe(true);
       expect(seen.has(flat)).toBe(false);
       seen.add(flat);
