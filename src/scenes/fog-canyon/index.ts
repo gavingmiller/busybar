@@ -20,7 +20,7 @@ export const FLOOR_Y = 13;
 /** The Knight's walking pace, px/s: slow and deliberate. */
 export const KNIGHT_SPEED = 6;
 /** Pixels of travel per walk-cycle frame. */
-export const KNIGHT_STRIDE_PX = 3;
+export const KNIGHT_STRIDE_PX = 1.5; // 4 steps/s at 6 px/s, matching Hornet (Gavin 2026-11-09: feet did not match the pace)
 /** Hornet's pace, px/s: twice the Knight's. */
 export const HORNET_SPEED = 12;
 export const HORNET_STRIDE_PX = 3;

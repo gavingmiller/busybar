@@ -73,7 +73,9 @@ describe("FOG_CANYON scene", () => {
   it("the Knight crosses once each way at a slow walk, on screen 25–45 % of the loop, facing the way he goes, legs stepping per stride", () => {
     expect(KNIGHT_SPEED).toBeGreaterThanOrEqual(5);
     expect(KNIGHT_SPEED).toBeLessThanOrEqual(8);
-    expect(KNIGHT_STRIDE_PX).toBe(3);
+    // Gavin 2026-11-09: his feet did not match his pace; Hornet's cadence (4 steps/s) looked right, so his matches hers.
+    expect(KNIGHT_SPEED / KNIGHT_STRIDE_PX).toBeCloseTo(HORNET_SPEED / HORNET_STRIDE_PX, 6);
+    expect(KNIGHT_SPEED / KNIGHT_STRIDE_PX).toBeGreaterThanOrEqual(3.5);
     let on = 0, right = 0, left = 0, lastDir = 0, flips = 0;
     const step = 1 / FOG_FPS;
     for (let t = 0; t < FOG_LOOP_S; t += step) {
