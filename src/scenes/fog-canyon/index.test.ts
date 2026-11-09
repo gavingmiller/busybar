@@ -3,8 +3,10 @@ import {
   FOG_CANYON, FOG_FPS, FOG_LOOP_S, FOG_FRAME_COUNT, FLOOR_Y, KNIGHT_SPEED, KNIGHT_STRIDE_PX,
   JELLIES, BUBBLES, renderFrame, knightState, knightRows, jellyPos, bubblePos,
   HORNET_SPEED, HORNET_STRIDE_PX, HORNET_CROSSINGS, hornetState, hornetRows,
+  SAMUS_SPEED, SAMUS_START_S, samusState, samusRows,
 } from "./index.ts";
 import { KNIGHT, HORNET, UOMA, OOMA } from "./art.ts";
+import { SAMUS, SAMUS_POSE_RATE } from "../samus/art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 
@@ -220,6 +222,52 @@ describe("FOG_CANYON scene", () => {
     expect(rows).toHaveLength(9);
     rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== ".") expect(px(f, x0 + x, y0 + y)).toEqual(hex(HORNET.colors[ch]!)); }));
     expect(rows[8]!).toContain("K"); // feet on the row above the floor
+  });
+
+  it("Samus runs through rarely: one crossing per loop, left to right, poses at 8/s, never with the Knight or Hornet, on screen 4–7 % of the loop (Gavin 2026-11-09)", () => {
+    expect(SAMUS_SPEED).toBeGreaterThanOrEqual(14);
+    expect(SAMUS_SPEED).toBeLessThanOrEqual(18);
+    expect(SAMUS_POSE_RATE).toBe(8);
+    const step = 1 / FOG_FPS;
+    let on = 0, others = 0, entries = 0, wasOn = false;
+    for (let t = 0; t < FOG_LOOP_S; t += step) {
+      const s = samusState(t);
+      if (!s) { wasOn = false; continue; }
+      if (!wasOn) entries++;
+      wasOn = true;
+      on++;
+      if (knightState(t) || hornetState(t)) others++;
+      expect(s.dir).toBe(1);
+      const n = samusState(t + step);
+      if (n) expect(n.x).toBeGreaterThanOrEqual(s.x);
+      // poses advance on the clock, not the stride
+      expect(s.frame).toBe(Math.floor((t - SAMUS_START_S) * SAMUS_POSE_RATE + 1e-9) % SAMUS.frames.length);
+      expect(samusRows(t)).toEqual([...SAMUS.frames[s.frame]!]);
+    }
+    expect(entries).toBe(1);
+    expect(others).toBe(0);
+    const share = on / (FOG_LOOP_S * FOG_FPS);
+    expect(share).toBeGreaterThanOrEqual(0.04);
+    expect(share).toBeLessThanOrEqual(0.07);
+    // a second of clearance either side of her crossing
+    for (let t = SAMUS_START_S - 1; t < SAMUS_START_S; t += step) expect(knightState(t) ?? hornetState(t)).toBeNull();
+    const end = SAMUS_START_S + (FRONT_WIDTH + 9) / SAMUS_SPEED;
+    for (let t = end; t < end + 1; t += step) expect(knightState(t) ?? hornetState(t)).toBeNull();
+    const framesSeen = new Set<number>();
+    for (let t = SAMUS_START_S; t < end; t += step) { const s = samusState(t); if (s) framesSeen.add(s.frame); }
+    expect(framesSeen.size).toBe(4);
+  });
+
+  it("draws Samus in her own colours with her feet on the row above the floor", () => {
+    const t = SAMUS_START_S + 2.5;
+    const i = Math.round(t * FOG_FPS);
+    const s = samusState(i / FOG_FPS)!;
+    const f = frames[i]!;
+    const rows = samusRows(i / FOG_FPS);
+    const x0 = Math.round(s.x), y0 = FLOOR_Y - rows.length;
+    expect(rows).toHaveLength(10);
+    rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== ".") expect(px(f, x0 + x, y0 + y)).toEqual(hex(SAMUS.colors[ch]!)); }));
+    expect(rows[9]!).toMatch(/[ND]/); // feet on the row above the floor
   });
 
   it("encodes under 25 MB", () => {

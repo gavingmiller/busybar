@@ -3,7 +3,9 @@
 // bubbles rise through drifting fog streaks and a slow mist band, and the
 // Knight walks through: once left to right (pausing mid-way to look up at
 // the jellies), later once right to left; Hornet dashes through twice too,
-// at other times, so the two are never on screen together. Everything is a periodic function
+// at other times, so the two are never on screen together; and once a loop,
+// in a gap when nobody else is about, Samus sprints through left to right
+// (Gavin 2026-11-09: "running through rarely"). Everything is a periodic function
 // of t with an integer number of cycles per 96 s loop, so the pre-rendered
 // loop closes seamlessly. Gavin 2026-11-09: "I like fog canyon, can you get
 // the actual hollow knight walking through there too?" Fan homage: shapes
@@ -11,6 +13,7 @@
 
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import { KNIGHT, HORNET, UOMA, OOMA, type SpriteArt } from "./art.ts";
+import { SAMUS, SAMUS_POSE_RATE } from "../samus/art.ts";
 
 export const FOG_FPS = 24;
 export const FOG_LOOP_S = 96;
@@ -24,6 +27,10 @@ export const KNIGHT_STRIDE_PX = 1.5; // 4 steps/s at 6 px/s, matching Hornet (Ga
 /** Hornet's pace, px/s: twice the Knight's. */
 export const HORNET_SPEED = 12;
 export const HORNET_STRIDE_PX = 3;
+/** Samus's sprint, px/s: about two pixels per pose at SAMUS_POSE_RATE. */
+export const SAMUS_SPEED = 16;
+/** Seconds into the loop her one crossing starts: after Hornet's first (30–36.6 s), before the Knight's second (60 s). */
+export const SAMUS_START_S = 46;
 
 type RGB = readonly [number, number, number];
 const TAU = Math.PI * 2;
@@ -140,6 +147,27 @@ export function hornetRows(t: number): string[] {
   return s.dir > 0 ? rows : rows.map((r) => r.split("").reverse().join(""));
 }
 
+// ---- Samus ------------------------------------------------------------------
+const SAMUS_W = artWidth(SAMUS), SAMUS_H = artHeight(SAMUS);
+const SAMUS_TRAVEL_S = (W + SAMUS_W) / SAMUS_SPEED;
+
+export interface SamusState { x: number; dir: 1; frame: number }
+
+/** Where Samus is at time t (one left-to-right sprint per loop), or null when she is off screen. Poses advance on the clock. */
+export function samusState(t: number): SamusState | null {
+  const tl = t - SAMUS_START_S;
+  if (tl < 0 || tl >= SAMUS_TRAVEL_S) return null;
+  const x = -SAMUS_W + tl * SAMUS_SPEED;
+  const frame = Math.floor(tl * SAMUS_POSE_RATE + 1e-9) % SAMUS.frames.length;
+  return { x, dir: 1, frame };
+}
+
+/** Samus's pixel rows at time t; empty when off screen. */
+export function samusRows(t: number): string[] {
+  const s = samusState(t);
+  return s ? [...SAMUS.frames[s.frame]!] : [];
+}
+
 // ---- jellies ----------------------------------------------------------------
 export interface Jelly {
   kind: "uoma" | "ooma";
@@ -217,7 +245,9 @@ export function renderFrame(i: number): Uint8Array {
     blit(buf, art.frames[0]!, p.x, p.y, art.colors, swap);
   }
 
-  // Hornet and the Knight, drawn last so nothing crosses their masks (they are never on screen together)
+  // Samus, Hornet and the Knight, drawn last so nothing crosses them (they are never on screen together)
+  const sm = samusState(t);
+  if (sm) blit(buf, samusRows(t), Math.round(sm.x), FLOOR_Y - SAMUS_H, SAMUS.colors);
   const h = hornetState(t);
   if (h) blit(buf, hornetRows(t), Math.round(h.x), FLOOR_Y - HORNET_H, HORNET.colors);
   const s = knightState(t);
