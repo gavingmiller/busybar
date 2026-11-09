@@ -12,6 +12,8 @@ export interface RunnerArt {
   colors: Readonly<Record<string, string>>;
   /** [col, row] of an eye in frame 0 (right-facing); pins "faces the way it runs" in the spec. */
   eye: readonly [number, number];
+  /** Bottom rows of the sprite drawn over the ground line (a cast shadow); default 0 = feet on the row above it. */
+  onGround?: number;
   /** Optional poses played in place when the scene stops this runner mid-run (same box as `frames`). */
   dance?: readonly (readonly string[])[];
 }

@@ -159,7 +159,7 @@ export function renderFrame(i: number): Uint8Array {
 
   for (const r of activeRuns(t)) {
     const rows = runnerRows(r, t);
-    const x0 = Math.round(runnerX(r, t)), y0 = GROUND_Y - rows.length;
+    const x0 = Math.round(runnerX(r, t)), y0 = GROUND_Y - rows.length + (r.art.onGround ?? 0);
     for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y]!.length; x++) {
       const ch = rows[y]![x]!;
       if (ch !== ".") put(buf, x0 + x, y0 + y, hex(r.art.colors[ch]!));

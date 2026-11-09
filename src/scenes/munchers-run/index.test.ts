@@ -3,7 +3,7 @@ import {
   MUNCHERS_RUN, MUNCHERS_FPS, MUNCHERS_LOOP_S, MUNCHERS_FRAME_COUNT, GROUND_Y, STRIDE_PX,
   RUNS, runnerX, runnerFrame, runnerSprite, runnerRows, isDancing, runDuration, activeRuns, renderFrame, DANCE_FPS, type Run,
 } from "./index.ts";
-import { RUNNER_ART, CHICKEN, EMBER, BONEHEAD } from "./art.ts";
+import { RUNNER_ART, CHICKEN, EMBER, BONEHEAD, SQUIRT } from "./art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 
@@ -45,8 +45,12 @@ describe("MUNCHERS_RUN scene", () => {
   it("has a fixed ground like Dino Run: the ground rows never change and are not blank", () => {
     expect(GROUND_Y).toBe(14);
     const groundOf = (f: Uint8Array) => Array.from(f.slice(GROUND_Y * FRONT_WIDTH * 4));
-    const first = groundOf(frames[0]!);
-    for (let i = 1; i < MUNCHERS_FRAME_COUNT; i += 97) expect(groundOf(frames[i]!)).toEqual(first);
+    // Only a runner's cast shadow may darken the ground line (Squirt's, Gavin 2026-11-09: it must sit on the floor, not float).
+    const allowed = new Set([[140, 124, 92, 255].join(), hex(SQUIRT.colors.X!).join()]);
+    for (let i = 0; i < MUNCHERS_FRAME_COUNT; i += 97) {
+      const g = groundOf(frames[i]!);
+      for (let x = 0; x < FRONT_WIDTH; x++) expect(allowed.has(g.slice(x * 4, x * 4 + 4).join())).toBe(true);
+    }
     // Solid, no gaps (Gavin 2026-11-09: "the ground has breaks in it, make it solid").
     for (let x = 0; x < FRONT_WIDTH; x++) expect(px(frames[0]!, x, GROUND_Y).slice(0, 3).some((c) => c! > 0)).toBe(true);
     // Sky above the ground is black so the runners stand out.
@@ -155,6 +159,34 @@ describe("MUNCHERS_RUN scene", () => {
       expect(frame.slice(0, 4).join("")).toContain("R");
     }
     expect(CHICKEN.colors.O).toMatch(/^#F/); // the orange, same key the beak uses
+  });
+
+  it("Squirt's shadow lies on the ground line and his body rests on it, so he never floats (Gavin 2026-11-09)", () => {
+    expect(SQUIRT.onGround).toBe(1);
+    // The shadow colour is darker than the ground so it reads as a shadow, not a hole.
+    const [sr, sg, sb] = hex(SQUIRT.colors.X!);
+    expect(sr! + sg! + sb!).toBeLessThan(140 + 124 + 92);
+    expect(sr! + sg! + sb!).toBeGreaterThan(60);
+    const r = RUNS.find((run) => run.art === SQUIRT && activeRuns(run.start + duration(run) / 2).length === 1)!;
+    const t = r.start + duration(r) / 2;
+    const i = Math.round(t * MUNCHERS_FPS);
+    const rows = runnerRows(r, i / MUNCHERS_FPS), x0 = Math.round(runnerX(r, i / MUNCHERS_FPS));
+    const frame = renderFrame(i);
+    // bottom sprite row (the shadow) is painted ON the ground row
+    [...rows[rows.length - 1]!].forEach((ch, x) => { if (ch === "X") expect(px(frame, x0 + x, GROUND_Y)).toEqual(hex(SQUIRT.colors.X!)); });
+    // and the row above the ground carries the body (or the airborne gap), never a shadow
+    expect(px(frame, x0 + 5, GROUND_Y - 1)).not.toEqual(hex(SQUIRT.colors.X!));
+  });
+
+  it("Ember keeps his legs: the lowest body rows mix the lighter greys with the dark body (Gavin 2026-11-09: 'we seem to have lost the legs on flame guy')", () => {
+    const greys = Object.keys(EMBER.colors).filter((k) => /^#(..)\1\1$|^#[0-9A-F]{6}$/.test(EMBER.colors[k]!) && !"RYO".includes(k));
+    expect(greys.length).toBeGreaterThanOrEqual(2);
+    for (const frame of EMBER.frames) {
+      const body = frame.filter((r) => /[KEF]/.test(r));
+      const feet = body.slice(-2).join("");
+      expect(feet).toMatch(/[EF]/); // lighter leg shading survives
+      expect(feet).toContain("K"); // against the dark body
+    }
   });
 
   it("Bonehead stops to dance now and then (Gavin 2026-11-09): some of his runs pause on screen, the dance poses play, then he carries on; nobody else does", () => {
