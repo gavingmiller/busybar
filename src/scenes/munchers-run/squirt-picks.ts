@@ -6,53 +6,54 @@
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
 
-const BASE = { B: "#5CC8E0", S: "#3A80B8", H: "#A6E6F4", L: "#9EDCF0", W: "#FFFFFF", K: "#142040", R: "#E03848" };
+// Palette lifted from the Number Munchers sheet: navy outline, teal → blue → dark-blue body, dark grin line, grey shadow.
+const ORIG = { O: "#1D235D", T: "#65B1B8", M: "#4D8AB3", D: "#425B9E", G: "#33418A", W: "#FFFFFF", K: "#000000", R: "#B83048", X: "#505058" };
 
 export const SQUIRT_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 round, tiny smile",
+    name: "1 faithful, outlined",
     frames: [
-      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBBRRBBB.", ".SBBBBBBBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
-      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBBBRRBBBB", "SBBBBBBBBBBS", ".SSSSSSSSSS."],
+      ["............", "............", "............", "...OOOOO....", "..OWTTTTTTO.", "..OTTWTTWTO.", "..OMTKTTKTO.", "..OMMGRRGMO.", "..ODDDDDDDO.", "...OOOOOOO.."],
+      ["............", "............", "............", "............", "...OOOOOOO..", ".OOWTTTTTTOO", ".OTTWTTTWTTO", ".OMTKTTTKTMO", ".OMMMGRRGMMO", ".ODDDDDDDDDO"],
     ],
-    colors: BASE,
-    eye: [8, 5],
+    colors: ORIG,
+    eye: [5, 6],
   },
   {
-    name: "2 round, curved smile",
+    name: "2 no outline, side fins",
     frames: [
-      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBR..RBB.", ".SBBBBRRBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
-      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBBR..RBBB", "SBBBBBRRBBBS", ".SSSSSSSSSS."],
+      ["............", "............", "............", "....TTTTT...", "...TWTTTTTT.", "..TTTWTTWTT.", "..TMTKTTKTT.", ".MMMMGRRGMMM", "..DDDDDDDDD.", "...DDDDDDD.."],
+      ["............", "............", "............", "............", "...TTTTTTT..", "..TWWTTTWTT.", ".TMTKTTTKTMT", "MMMMMGRRGMMM", ".DDDDDDDDDD.", "..DDDDDDDD.."],
     ],
-    colors: BASE,
-    eye: [8, 5],
+    colors: ORIG,
+    eye: [5, 6],
   },
   {
-    name: "3 round, dot eyes",
+    name: "3 with ground shadow",
     frames: [
-      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBBKBBBKBB.", ".BBBBBRRBBB.", ".SBBBBBBBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
-      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBBKBBBBKBBB", "BBBBBBRRBBBB", "SBBBBBBBBBBS", ".SSSSSSSSSS."],
+      ["............", "............", "............", "....TTTTT...", "...TWTTTTTT.", "..TTTWTTWTT.", "..TMTKTTKTT.", "..MMMGRRGMM.", "...DDDDDDD..", ".XXXXXXXXXXX"],
+      ["............", "............", "............", "............", "...TTTTTTT..", "..TWTTTTTTT.", ".TTTWTTTWTTT", ".MMTKTTTKTMM", "DDDDGRRGDDDD", ".XXXXXXXXXXX"],
     ],
-    colors: BASE,
-    eye: [8, 5],
+    colors: ORIG,
+    eye: [5, 6],
   },
   {
-    name: "4 smaller still, 9x7",
+    name: "4 leaning runner",
     frames: [
-      ["............", "............", "............", ".....BBBB...", "...BBWBBBB..", "..BBWKBBWKB.", "..BBBBRRBBB.", "..SBBBBBBBS.", "..SSSSSSSSS.", "...SSSSSSS.."],
-      ["............", "............", "............", "............", "....BBBBBB..", "..BBBWBBBBBB", ".BBWKBBBWKBB", ".BBBBBRRBBBB", ".SBBBBBBBBBS", "..SSSSSSSSS."],
+      ["............", "............", "............", ".....OOOOO..", "....OWTTTTO.", "...OTTTWTWTO", "...OMTTKTKTO", "..OMMMMGRRGO", "..ODDDDDDDO.", "...OOOOOOO.."],
+      ["............", "............", "............", "............", "....OOOOOOO.", "..OOWTTTWTWO", ".OMMTTTTKTKO", ".OMMMMMGRRGO", ".ODDDDDDDDDO", "..OOOOOOOOO."],
     ],
-    colors: BASE,
-    eye: [9, 5],
+    colors: ORIG,
+    eye: [7, 6],
   },
   {
-    name: "5 round, small open mouth",
+    name: "5 splashy droplets",
     frames: [
-      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBBRRBBB.", ".SBBBBRRBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
-      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBBBRRBBBB", "SBBBBBRRBBBS", ".SSSSSSSSSS."],
+      ["............", "............", "............", "....TTTTT.T.", "...TWTTTTTT.", "T.TTTWTTWTT.", "..TMTKTTKTT.", "..MMMGRRGMM.", "..DDDDDDDDD.", ".T.DDDDDDD.T"],
+      ["............", "............", "............", "............", "...TTTTTTT..", ".TTWTTTTTTT.", ".TTTWTTTWTT.", ".TMTKTTTKTMT", "T.MMMGRRGMMT", "..DDDDDDDDD."],
     ],
-    colors: BASE,
-    eye: [8, 5],
+    colors: ORIG,
+    eye: [5, 6],
   },
 ];
 
