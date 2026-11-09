@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import {
   MUNCHERS_RUN, MUNCHERS_FPS, MUNCHERS_LOOP_S, MUNCHERS_FRAME_COUNT, GROUND_Y, STRIDE_PX,
-  RUNS, runnerX, runnerFrame, runnerSprite, runnerRows, isDancing, runDuration, activeRuns, renderFrame, DANCE_FPS, GRASS, type Run,
+  RUNS, runnerX, runnerFrame, runnerSprite, runnerRows, isDancing, runDuration, activeRuns, renderFrame, shadowSpan, DANCE_FPS, GRASS, SHADOW, type Run,
 } from "./index.ts";
 import { RUNNER_ART, CHICKEN, EMBER, BONEHEAD, SQUIRT } from "./art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
@@ -47,7 +47,8 @@ describe("MUNCHERS_RUN scene", () => {
     const groundOf = (f: Uint8Array) => Array.from(f.slice(GROUND_Y * FRONT_WIDTH * 4));
     // Green grass on the line, brown dirt below it (Gavin 2026-11-09); only a runner's cast shadow
     // may darken the grass (Squirt's: he must sit on the floor, not float).
-    const allowed = new Set([[...GRASS, 255].join(), hex(SQUIRT.colors.X!).join()]);
+    const allowed = new Set([[...GRASS, 255].join(), [...SHADOW, 255].join()]);
+    expect(hex(SQUIRT.colors.X!)).toEqual([...SHADOW, 255]); // Squirt's baked shadow is the same green
     const [gr, gg, gb] = GRASS;
     expect(gg).toBeGreaterThan(gr + 30); expect(gg).toBeGreaterThan(gb + 30); // green
     const [sr, sg, sb] = hex(SQUIRT.colors.X!);
@@ -190,6 +191,37 @@ describe("MUNCHERS_RUN scene", () => {
     [...rows[rows.length - 1]!].forEach((ch, x) => { if (ch === "X") expect(px(frame, x0 + x, GROUND_Y)).toEqual(hex(SQUIRT.colors.X!)); });
     // and the row above the ground carries the body (or the airborne gap), never a shadow
     expect(px(frame, x0 + 5, GROUND_Y - 1)).not.toEqual(hex(SQUIRT.colors.X!));
+  });
+
+  it("every runner casts a shadow on the grass under its feet (Gavin 2026-11-09: 'only water has it'), and it moves with them", () => {
+    for (const art of RUNNER_ART.filter((a) => !a.onGround)) {
+      for (const frame of art.frames) {
+        const [a, b] = shadowSpan(frame);
+        expect(b - a).toBeGreaterThanOrEqual(3); // wide enough to read
+        expect(b - a).toBeLessThanOrEqual(frame[0]!.length); // never wider than the sprite
+      }
+    }
+    const alone = (r: Run, t: number) => activeRuns(t).length === 1;
+    for (const art of RUNNER_ART.filter((a) => !a.onGround)) {
+      const r = RUNS.find((run) => run.art === art && alone(run, run.start + duration(run) / 2))!;
+      const t = r.start + duration(r) / 2;
+      const i = Math.round(t * MUNCHERS_FPS);
+      const frame = renderFrame(i);
+      const rows = runnerRows(r, i / MUNCHERS_FPS), x0 = Math.round(runnerX(r, i / MUNCHERS_FPS));
+      const [a, b] = shadowSpan(rows);
+      for (let x = 0; x < FRONT_WIDTH; x++) {
+        const want = x >= x0 + a && x < x0 + b ? [...SHADOW, 255] : [...GRASS, 255];
+        expect(px(frame, x, GROUND_Y), `${art.name} grass column ${x}`).toEqual(want);
+      }
+      // a moment later the shadow has moved with the runner
+      const j = i + Math.round(MUNCHERS_FPS / 2);
+      const x1 = Math.round(runnerX(r, j / MUNCHERS_FPS));
+      if (alone(r, j / MUNCHERS_FPS) && x1 + a >= 0 && x1 + b <= FRONT_WIDTH) {
+        const [a1, b1] = shadowSpan(runnerRows(r, j / MUNCHERS_FPS));
+        expect(px(renderFrame(j), x1 + a1, GROUND_Y)).toEqual([...SHADOW, 255]);
+        if (x0 + a >= 0 && x0 + a < x1 + a1 - 1) expect(px(renderFrame(j), x0 + a, GROUND_Y)).toEqual([...GRASS, 255]);
+      }
+    }
   });
 
   it("Ember keeps his legs: the lowest body rows mix the lighter greys with the dark body (Gavin 2026-11-09: 'we seem to have lost the legs on flame guy')", () => {

@@ -23,6 +23,8 @@ const DANCE_CHANCE = 0.4;
 type RGB = readonly [number, number, number];
 /** Ground line: green grass (Gavin 2026-11-09), with brown dirt below and a few darker pebbles in it. */
 export const GRASS: RGB = [72, 150, 52];
+/** Cast shadow on the grass: darker green (Gavin 2026-11-09: every runner gets one, not just Squirt). */
+export const SHADOW: RGB = [0x2e, 0x5a, 0x22];
 const DIRT: RGB = [140, 124, 92];
 const DIRT_DARK: RGB = [84, 74, 56];
 
@@ -142,6 +144,14 @@ export function runnerSprite(art: RunnerArt, facing: 1 | -1, k: number): string[
   return facing > 0 ? rows : rows.map((r) => r.split("").reverse().join(""));
 }
 
+/** Columns [a, b) a runner's shadow covers: the lit span of its lowest two non-blank rows (the feet). */
+export function shadowSpan(rows: readonly string[]): [number, number] {
+  const feet = rows.filter((r) => /[^.]/.test(r)).slice(-2);
+  let a = Infinity, b = -Infinity;
+  for (const r of feet) { a = Math.min(a, r.search(/[^.]/)); b = Math.max(b, r.length - [...r].reverse().join("").search(/[^.]/)); }
+  return a === Infinity ? [0, 0] : [a, b];
+}
+
 function put(buf: Uint8Array, x: number, y: number, c: RGB): void {
   if (x < 0 || y < 0 || x >= W || y >= H) return;
   const i = (y * W + x) * 4;
@@ -159,7 +169,15 @@ export function renderFrame(i: number): Uint8Array {
   for (let x = 0; x < W; x++) { put(buf, x, GROUND_Y, GRASS); put(buf, x, GROUND_Y + 1, DIRT); }
   for (const x of [3, 11, 20, 27, 38, 46, 55, 63, 69]) put(buf, x, GROUND_Y + 1, DIRT_DARK);
 
-  for (const r of activeRuns(t)) {
+  const active = activeRuns(t);
+  // Shadows first, so every sprite is drawn over them.
+  for (const r of active) {
+    if (r.art.onGround) continue; // bakes its own (Squirt's shrinks as he hops)
+    const rows = runnerRows(r, t), x0 = Math.round(runnerX(r, t));
+    const [a, b] = shadowSpan(rows);
+    for (let x = a; x < b; x++) put(buf, x0 + x, GROUND_Y, SHADOW);
+  }
+  for (const r of active) {
     const rows = runnerRows(r, t);
     const x0 = Math.round(runnerX(r, t)), y0 = GROUND_Y - rows.length + (r.art.onGround ?? 0);
     for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y]!.length; x++) {
