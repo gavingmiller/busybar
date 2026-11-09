@@ -47,6 +47,8 @@ export interface SceneApp {
   id: string;
   name: string;
   run: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
+  /** Hidden from the page and from Shuffle; still switchable by id (debug tools like Character Picks). */
+  debug?: boolean;
 }
 
 export interface ServerDeps {
@@ -144,7 +146,7 @@ async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<A
     state === null ? "unknown" : state.active === id ? "on" : "off";
   const apps: AppStatus[] = [
     ...deps.nyans.map((n) => ({ id: n.id, name: n.name, kind: "draw" as const, state: stateOf(n.id) })),
-    ...deps.scenes.map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
+    ...deps.scenes.filter((s) => !s.debug).map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
     ...deviceApps.map((a) => ({ id: a.id, name: a.name, kind: "js" as const, state: stateOf(a.id) })),
   ];
   const shuffle = state?.shuffle ? { on: true, nextChangeAt: state.shuffle.nextAt } : { on: false };
@@ -181,7 +183,10 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     if (!scene) throw new Error(`Unknown animation "${id}"`);
     await scene.run(deps.baseUrl, deps.fetchImpl);
   };
-  const animationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.map((s) => s.id)];
+  /** Animations Shuffle may deal and the page lists: debug scenes excluded. */
+  const animationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.filter((s) => !s.debug).map((s) => s.id)];
+  /** Everything switchable by id, debug scenes included. */
+  const allAnimationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.map((s) => s.id)];
 
   // Shuffle: one timer, re-armed after every change; the round itself is in
   // the state file so a restart carries on where it left off.
@@ -284,7 +289,7 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
 
       let state: StoredState;
       try {
-        const isAnimation = animationIds().includes(id);
+        const isAnimation = allAnimationIds().includes(id);
         const known =
           isAnimation ||
           (await deps.listApps(deps.baseUrl, deps.fetchImpl)).some((a) => a.id === id);
@@ -349,7 +354,7 @@ if (import.meta.main) {
         play: (section, loop) => playNyanCatSection(baseUrl, section, loop, fetchImpl, flavourById(id)),
         onError: (err) => console.error(`nyan pan: ${err instanceof Error ? err.message : String(err)}`),
       }),
-    scenes: SCENES.map((scene) => ({ id: scene.id, name: scene.name, run: (baseUrl, fetchImpl) => runScene(baseUrl, scene, fetchImpl) })),
+    scenes: SCENES.map((scene) => ({ id: scene.id, name: scene.name, debug: scene.debug, run: (baseUrl, fetchImpl) => runScene(baseUrl, scene, fetchImpl) })),
     now: () => new Date(),
   });
   // Drawing an animation uploads its asset first (up to ~100 s for a cat

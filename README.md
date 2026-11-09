@@ -76,8 +76,10 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   project's sprite sheets by `extract-art.py`) and a chicken sprint across
   a fixed ground, entering and leaving at random. Each character's art is
   settled by putting five numbered candidates on the bar at once via the
-  temporary `picks` scene (`munchers-run/picks.ts`, "Character Picks") and
-  letting Gavin choose; the winner moves into `art/<name>.ts`.
+  `picks` scene (`munchers-run/picks.ts`, "Character Picks") and letting
+  Gavin choose; the winner moves into `art/<name>.ts`. It is a debug tool:
+  flagged `debug`, so the control page and Shuffle skip it, but
+  `POST /api/apps/picks {"on":true}` still shows it.
 
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
   only) with a web page that turns every app on the bar on and off: each

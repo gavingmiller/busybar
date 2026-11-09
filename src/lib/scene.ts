@@ -15,6 +15,8 @@ export interface Scene {
   fps: number;
   /** One seamless loop: frame N-1 flows into frame 0. */
   frames(): Uint8Array[];
+  /** Debug-only: reachable by id but hidden from the control page and from Shuffle (the Character Picks line-up). */
+  debug?: boolean;
 }
 
 import { encodeAnimFile } from "./anim-file.ts";

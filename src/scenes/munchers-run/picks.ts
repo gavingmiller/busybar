@@ -4,68 +4,77 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: REGGIE the snail (Gavin: "it's not great"). The sheet
-// shows a big round pink spiral shell, an upright cream head at the front
-// with one black eye and two antennae, and a cream foot. The bar version is
-// 17 px wide; these are 12 wide so five fit, with the spiral kept legible.
-//   K plum outline  P pink  D dark spiral  H mid spiral  L highlight  T cream  U dark cream  E eye
+// Current subject: the RAVENS (js-apps/app.gavin.ravens; Gavin: "a titch
+// smaller, they're pretty fat"). The app's 14x11 flight frames majority-
+// shrunk to five smaller boxes by scratchpad raven-shrink.ts, eye and beak
+// re-placed; the winner is hand-tuned into the app's sprites.ts.
+//   K body  B feather highlight  E eye  Y beak and feet
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
 
-// Reggie palette, lifted from the sheet: plum outline, pinks for the shell and spiral, cream body.
-const SNAIL = { K: "#3A1A33", P: "#FFA9E1", D: "#A03C80", H: "#D563AD", L: "#FFD8F2", T: "#FCE5A9", U: "#DEC481", E: "#140A14", W: "#FFFFFF" };
+// Ravens palette, from js-apps/app.gavin.ravens/src/sprites.ts.
+const RAVEN = { K: "#3C4650", B: "#8A929A", E: "#FFFFFF", Y: "#E6B428" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 foot ripple",
+    name: "1 raven 12x9",
     frames: [
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..TTUTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..TTTTUTTTU."],
+      ["...KKK......", ".KKKKKK.....", "KKBBBKKKKKK.", "..KKBKKKKEYY", "...BBBKKKKKY", ".....KKKKKK.", ".....KKKKK..", "....KKKKKKK.", "....YY..Y.Y."],
+      [".KKKK.......", ".KKKKK......", ".KBKKKKKKK..", "..KBKKKKKEYY", "...KBKKKKKKY", ".....KKKKKKK", ".....KKKKKK.", "....KKKKKK..", "....KKKKY.Y."],
+      ["........KKK.", ".......KKEYY", "......KKKKKY", ".....KKKKKKK", "....KKKKKKK.", "...KKKKKKBK.", "...KKKKKKBK.", "...KKKKKKKK.", "....Y.KKKKK."],
+      [".......KKKK.", "......KKKEYY", ".....KKKKKKY", ".....KKKKKK.", "....KKKKKKK.", "...KKKKKKBB.", "...KKKKKKBB.", "...KKKKKKKB.", "......KKKKK."],
+      ["............", ".....KK.KKK.", "....KKKKKEYY", "...KKKKKKKKY", "...KKKKKKKKK", "...KKKKKKK..", "....KKKKKK..", "....KKKKK.Y.", "........Y..."],
     ],
-    colors: SNAIL,
-    eye: [10, 2],
+    colors: RAVEN,
+    eye: [9, 3],
   },
   {
-    name: "2 head bob",
+    name: "2 raven 11x9",
     frames: [
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      ["............", ".........K.K", "....PPPP.TT.", "...PPPPPPTE.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", ".UTTTTTTTTU."],
+      ["...KKK.....", ".KKKKKK....", "KKBBKKKKKK.", "..KKKKKKEYY", "...BBBKKKKY", "....KKKKKK.", "....KKKKK..", "...KKBKKKK.", "....YY...Y."],
+      [".KKK.......", ".KKKKK.....", ".KBKKKKKK..", "..KBKKKKEYY", "...KKKKKKKY", "....KBKKKKK", "....KKKKKK.", "...KKBKKK..", "....KKKK.Y."],
+      [".......KKK.", ".......KEYY", "......KKKKY", ".....KKKKKK", "....KKKKKK.", "...KKKKKBK.", "...KKKKKBK.", "...KKKKKKK.", ".....KKKKK."],
+      [".......KKK.", "......KKEYY", ".....KKKKKY", "....KKKKKK.", "...KKKKKKK.", "...KKKKKBB.", "...KKKKKBB.", "...KKKKKKB.", ".....KKKKK."],
+      ["...........", ".....KKKKK.", "...KKKKKEYY", "...KKKKKKKY", "...KKKKKKKK", "...KKKKKK..", "...KKBKKK..", "...KKBKK.Y.", "..........."],
     ],
-    colors: SNAIL,
-    eye: [10, 2],
+    colors: RAVEN,
+    eye: [8, 3],
   },
   {
-    name: "3 shell bounce",
+    name: "3 raven 12x8",
     frames: [
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      [".........K.K", "....PPPP.TT.", "...PPPPPPTE.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPP.T.", ".........TT.", "..UTTTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", ".UTTTTTTTTU."],
+      ["...KKK......", ".KKKKKK.....", "KKBBBKKKKEYY", "...BBBKKKKKY", "....KBKKKKKK", ".....KKKKKK.", "....KKKKKKK.", "....YY..Y.Y."],
+      [".KKKK.......", ".KKKKK......", ".KBKKKKKKEYY", "...KBKKKKKKY", "....KBKKKKKK", ".....KKKKKK.", "....KKKKKK..", "....KKKKY.Y."],
+      ["........KKK.", ".......KKEYY", "......KKKKKY", ".....KKKKKK.", "....KKKKKKK.", "...KKKKKKBK.", "...KKKKKKKK.", "....Y.KKKKK."],
+      [".......KKKK.", "......KKKEYY", ".....KKKKKKY", "....KKKKKKK.", "....KKKKKKK.", "...KKKKKKBB.", "...KKKKKKKB.", "......KKKKK."],
+      ["............", ".....KK.KKK.", "...KKKKKKEYY", "...KKKKKKKKK", "...KKKKKKKK.", "...KKKKKKK..", "....KKKKK.Y.", "........Y..."],
     ],
-    colors: SNAIL,
-    eye: [10, 2],
+    colors: RAVEN,
+    eye: [9, 2],
   },
   {
-    name: "4 inchworm",
+    name: "4 raven 11x8",
     frames: [
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      ["..........KK", "..........TT", "....PPPP..TE", "...PPPPPPTTT", "..PPPDDDPPTT", "..PPDPPDPPTT", "..PPDPDDPPTT", "..PPPDPPPPTT", "...PPPPPPTTT", "..UTTTTTTTTU"],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "...UTTTTTTU."],
+      ["...KKK.....", ".KKKKKK....", "KKBBKKKKEYY", "...BBBKKKKY", "...KBBKKKKK", "....KKKKKK.", "...KKBKKKK.", "....YY...Y."],
+      [".KKK.......", ".KKKKK.....", ".KBKKKKKEYY", "...KKKKKKKY", "...KBKKKKKK", "....KBKKKK.", "...KKBKKK..", "....KKKK.Y."],
+      [".......KKK.", ".......KEYY", ".....KKKKKY", "....KKKKKK.", "...KKKKKKK.", "...KKKKKBK.", "...KKKKKKK.", ".....KKKKK."],
+      [".......KKK.", "......KKEYY", "....KKKKKKY", "...KKKKKKK.", "...KKKKKKK.", "...KKKKKBB.", "...KKKKKKB.", ".....KKKKK."],
+      ["...........", ".....KKKKK.", "...KKKKKEYY", "...KKKKKKKK", "...KKKKKKK.", "...KKKKKK..", "...KKBKK.Y.", "..........."],
     ],
-    colors: SNAIL,
-    eye: [10, 2],
+    colors: RAVEN,
+    eye: [8, 2],
   },
   {
-    name: "5 spinning spiral",
+    name: "5 raven 10x8",
     frames: [
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDDPPT.", "..PPDPPDPPT.", "..PPDPDDPPT.", "..PPPDPPPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPPDDPPT.", "..PPDDPPDPT.", "..PPDPDDDPT.", "..PPPDDPPPT.", "...PPPPPPTT.", "..TTUTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPPDPPPT.", "..PPDDPDPPT.", "..PPDDPDPPT.", "..PPPDDDPPT.", "...PPPPPPTT.", "..UTTTTTTTU."],
-      [".........K.K", ".........TT.", "....PPPP.TE.", "...PPPPPPTT.", "..PPPDDPPPT.", "..PDDDPDPPT.", "..PDPPDDPPT.", "..PPDDPPPPT.", "...PPPPPPTT.", "..TTTTUTTTU."],
+      ["..KKK.....", ".KKKKK....", "KKBBKKKEYY", "..BBBKKKKY", "...KBKKKKK", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
+      [".KKK......", ".KKKK.....", ".KBKKKKEYY", "..KBKKKKKY", "...KBKKKKK", "....KKKKK.", "...KKKKK..", "...KKKK.Y."],
+      [".......KK.", "......KEYY", ".....KKKKY", "....KKKKK.", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", "...Y.KKKK."],
+      ["......KKK.", ".....KKEYY", "....KKKKKY", "...KKKKKK.", "...KKKKKK.", "..KKKKKKB.", "..KKKKKKB.", ".....KKKK."],
+      ["..........", "....KK.KK.", "...KKKKEYY", "..KKKKKKKK", "..KKKKKKK.", "...KKKKK..", "...KKKKKY.", ".........."],
     ],
-    colors: SNAIL,
-    eye: [10, 2],
+    colors: RAVEN,
+    eye: [7, 2],
   },
 ];
 
@@ -80,9 +89,9 @@ export const DIGITS: Record<number, readonly string[]> = {
 
 export const PICK_SLOT_W = 14;
 export const PICKS_FPS = 24;
-/** Six display frames per pose (4 poses/s); 12 poses per 3 s loop so 1-, 2-, 3-, 4- and 6-frame cycles all close. */
-const POSE_FRAMES = 6;
-export const PICKS_FRAME_COUNT = POSE_FRAMES * 12;
+/** Four display frames per pose (6 poses/s); 60 poses per 10 s loop so 1- to 6-frame cycles all close. */
+const POSE_FRAMES = 4;
+export const PICKS_FRAME_COUNT = POSE_FRAMES * 60;
 const DIGIT_RGB: [number, number, number] = [0xf0, 0xb0, 0x40];
 
 const hex = (h: string): [number, number, number] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
@@ -114,5 +123,6 @@ export const CHARACTER_PICKS: Scene = {
   id: "picks",
   name: "Character Picks",
   fps: PICKS_FPS,
+  debug: true,
   frames: () => Array.from({ length: PICKS_FRAME_COUNT }, (_, i) => renderPicksFrame(i)),
 };

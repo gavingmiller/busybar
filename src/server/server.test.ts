@@ -297,6 +297,39 @@ describe("scenes (pre-rendered draw apps)", () => {
   });
 });
 
+describe("debug scenes (Character Picks)", () => {
+  const withPicks = () => {
+    const d = deps();
+    d.scenes.push({ id: "picks", name: "Character Picks", debug: true, run: mock(async () => {}) });
+    return d;
+  };
+
+  it("are hidden from the app list Pantheon shows", async () => {
+    const body = await (await createHandler(withPicks())(req("/api/apps"))).json();
+    expect(body.apps.map((a: { id: string }) => a.id)).not.toContain("picks");
+    expect(body.apps.map((a: { id: string }) => a.id)).toContain("aquarium");
+  });
+
+  it("can still be switched on by id, and then the list stays without them", async () => {
+    const d = withPicks();
+    const handler = createHandler(d);
+    const res = await handler(post("picks", { on: true }));
+    expect(res.status).toBe(200);
+    expect(d.scenes[2]!.run).toHaveBeenCalledTimes(1);
+    const body = await res.json();
+    expect(body.apps.map((a: { id: string }) => a.id)).not.toContain("picks");
+  });
+
+  it("never come up in Shuffle", async () => {
+    const d = withPicks();
+    const handler = createHandler(d);
+    await handler(req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on: true }) }));
+    for (let i = 0; i < 12; i++) { timers[timers.length - 1]!.fn(); await new Promise((r) => setTimeout(r, 0)); }
+    expect(calls(d.scenes[2]!.run)).toHaveLength(0);
+    expect(calls(d.scenes[0]!.run).length + calls(d.scenes[1]!.run).length + calls(d.runRainbow).length).toBeGreaterThanOrEqual(6);
+  });
+});
+
 describe("shuffle (global rotation)", () => {
   const ANIMATIONS = [NYAN_ID, "lava_lamp", "aquarium"];
   const shuffle = (on: boolean) => req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) });

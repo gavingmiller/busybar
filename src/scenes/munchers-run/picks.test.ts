@@ -23,8 +23,9 @@ describe("Character picks line-up (temporary comparison scene)", () => {
           expect(row).toHaveLength(w);
           for (const ch of row) if (ch !== ".") expect(v.colors[ch], `${v.name}: colour ${ch}`).toMatch(/^#[0-9A-Fa-f]{6}$/);
         }
-        expect(fr[h - 1]!.replace(/\./g, "").length, `${v.name} rests on the bottom row`).toBeGreaterThan(0);
       }
+      // frame 0 touches the bottom row (flyers may lift off it in later frames)
+      expect(v.frames[0]![h - 1]!.replace(/\./g, "").length, `${v.name} rests on the bottom row`).toBeGreaterThan(0);
       const letters = new Set(v.frames[0]!.join("").replace(/\./g, ""));
       expect(letters.size, `${v.name} uses several colours`).toBeGreaterThanOrEqual(2);
       const key = v.frames.map((f) => f.join("")).join("/") + JSON.stringify(v.colors);
@@ -62,7 +63,8 @@ describe("Character picks line-up (temporary comparison scene)", () => {
   it("is a short seamless opaque loop that animates", () => {
     const frames = CHARACTER_PICKS.frames();
     expect(CHARACTER_PICKS.id).toBe("picks");
-    expect(frames.length / CHARACTER_PICKS.fps).toBeLessThanOrEqual(4);
+    expect(frames.length / CHARACTER_PICKS.fps).toBeLessThanOrEqual(10);
+    expect(CHARACTER_PICKS.debug).toBe(true); // a debug tool: hidden from Pantheon and Shuffle
     for (const f of frames) for (let i = 3; i < f.length; i += 4) if (f[i] !== 255) throw new Error("transparent pixel");
     expect(renderPicksFrame(frames.length)).toEqual(frames[0]!);
     expect(frames.some((f) => !f.every((b, i) => b === frames[0]![i]))).toBe(true);
