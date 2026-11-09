@@ -2,6 +2,7 @@
 // language (shapes from the game's wiki and sprite index; nothing copied).
 // Every sprite faces right; the scene mirrors it for leftward travel.
 //   Knight: W bone-white mask  E eye hollow  N cape (one tone)  K stub feet
+//   Hornet: W mask  E eye hollow  R red cape (one tone)  K dark-red feet
 //   Jellies: P pale Uoma bell  C pink Uoma core  G Ooma bell  O orange Ooma core
 //   Cores also have a flicker colour (CF / OF) swapped in by the scene.
 
@@ -33,6 +34,30 @@ export const KNIGHT: SpriteArt = {
     [...MASK, "..NNN..", ".NNNNN.", ".K..K.."],
   ],
   colors: { W: "#F2F2F4", E: "#0A0A12", N: "#8094E4", K: "#5262B0" },
+};
+
+/**
+ * Hornet, 7x9, Gavin's pick from three rounds of the bar line-up
+ * (2026-11-09): straight horns rising from the mask corners, two-row eye
+ * hollows, a pointed chin, a short single-tone red cape, dark-red stub feet.
+ * Mask rows 0-5 fixed; the cape sways a column and the feet step.
+ */
+const HORNET_MASK = [
+  ".W...W.",
+  ".W...W.",
+  ".WWWWW.",
+  ".WEWEW.",
+  ".WEWEW.",
+  "..WWW..",
+];
+export const HORNET: SpriteArt = {
+  frames: [
+    [...HORNET_MASK, "..RRR..", ".RRRRR.", "..K.K.."],
+    [...HORNET_MASK, "..RRR..", ".RRRRR.", ".K...K."],
+    [...HORNET_MASK, "..RRR..", "RRRRR..", "...KK.."],
+    [...HORNET_MASK, "..RRR..", ".RRRRR.", ".K..K.."],
+  ],
+  colors: { W: "#F2F2F4", E: "#0A0A12", R: "#E04050", K: "#A02838" },
 };
 
 /** Uoma: a small translucent bell with a pink core and three short tendrils. 6x5. */

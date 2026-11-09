@@ -2,14 +2,15 @@
 // the haze above a mossy floor, their cores flickering pink and orange,
 // bubbles rise through drifting fog streaks and a slow mist band, and the
 // Knight walks through: once left to right (pausing mid-way to look up at
-// the jellies), later once right to left. Everything is a periodic function
+// the jellies), later once right to left; Hornet dashes through twice too,
+// at other times, so the two are never on screen together. Everything is a periodic function
 // of t with an integer number of cycles per 96 s loop, so the pre-rendered
 // loop closes seamlessly. Gavin 2026-11-09: "I like fog canyon, can you get
 // the actual hollow knight walking through there too?" Fan homage: shapes
 // are hand-drawn in the game's colour language, nothing copied.
 
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
-import { KNIGHT, UOMA, OOMA, type SpriteArt } from "./art.ts";
+import { KNIGHT, HORNET, UOMA, OOMA, type SpriteArt } from "./art.ts";
 
 export const FOG_FPS = 24;
 export const FOG_LOOP_S = 96;
@@ -20,6 +21,9 @@ export const FLOOR_Y = 13;
 export const KNIGHT_SPEED = 6;
 /** Pixels of travel per walk-cycle frame. */
 export const KNIGHT_STRIDE_PX = 3;
+/** Hornet's pace, px/s: twice the Knight's. */
+export const HORNET_SPEED = 12;
+export const HORNET_STRIDE_PX = 3;
 
 type RGB = readonly [number, number, number];
 const TAU = Math.PI * 2;
@@ -103,6 +107,39 @@ export function knightRows(t: number): string[] {
   return s.dir > 0 ? rows : rows.map((r) => r.split("").reverse().join(""));
 }
 
+// ---- Hornet -----------------------------------------------------------------
+interface HornetCrossing { dir: 1 | -1; start: number }
+const HORNET_W = artWidth(HORNET), HORNET_H = artHeight(HORNET);
+const HORNET_TRAVEL_S = (W + HORNET_W) / HORNET_SPEED;
+/** Quick crossings in the gaps between the Knight's (8–23.2 s and 60–73.2 s). */
+export const HORNET_CROSSINGS: readonly HornetCrossing[] = [
+  { dir: 1, start: 30 },
+  { dir: -1, start: 82 },
+];
+
+export interface HornetState { x: number; dir: 1 | -1; frame: number }
+
+/** Where Hornet is at time t, or null when she is off screen. */
+export function hornetState(t: number): HornetState | null {
+  for (const c of HORNET_CROSSINGS) {
+    const tl = t - c.start;
+    if (tl < 0 || tl >= HORNET_TRAVEL_S) continue;
+    const d = tl * HORNET_SPEED;
+    const x = c.dir > 0 ? -HORNET_W + d : W - d;
+    const frame = Math.floor(d / HORNET_STRIDE_PX + 1e-9) % HORNET.frames.length;
+    return { x, dir: c.dir, frame };
+  }
+  return null;
+}
+
+/** Hornet's pixel rows at time t, mirrored when walking left; empty when off screen. */
+export function hornetRows(t: number): string[] {
+  const s = hornetState(t);
+  if (!s) return [];
+  const rows = [...HORNET.frames[s.frame]!];
+  return s.dir > 0 ? rows : rows.map((r) => r.split("").reverse().join(""));
+}
+
 // ---- jellies ----------------------------------------------------------------
 export interface Jelly {
   kind: "uoma" | "ooma";
@@ -180,7 +217,9 @@ export function renderFrame(i: number): Uint8Array {
     blit(buf, art.frames[0]!, p.x, p.y, art.colors, swap);
   }
 
-  // the Knight, drawn last so nothing crosses his mask
+  // Hornet and the Knight, drawn last so nothing crosses their masks (they are never on screen together)
+  const h = hornetState(t);
+  if (h) blit(buf, hornetRows(t), Math.round(h.x), FLOOR_Y - HORNET_H, HORNET.colors);
   const s = knightState(t);
   if (s) blit(buf, knightRows(t), Math.round(s.x), FLOOR_Y - KNIGHT_H, KNIGHT.colors);
   return buf;

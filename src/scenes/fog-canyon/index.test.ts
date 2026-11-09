@@ -2,8 +2,9 @@ import { describe, it, expect } from "bun:test";
 import {
   FOG_CANYON, FOG_FPS, FOG_LOOP_S, FOG_FRAME_COUNT, FLOOR_Y, KNIGHT_SPEED, KNIGHT_STRIDE_PX,
   JELLIES, BUBBLES, renderFrame, knightState, knightRows, jellyPos, bubblePos,
+  HORNET_SPEED, HORNET_STRIDE_PX, HORNET_CROSSINGS, hornetState, hornetRows,
 } from "./index.ts";
-import { KNIGHT, UOMA, OOMA } from "./art.ts";
+import { KNIGHT, HORNET, UOMA, OOMA } from "./art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
 import { encodeAnimFile } from "../../lib/anim-file.ts";
 
@@ -150,6 +151,73 @@ describe("FOG_CANYON scene", () => {
     // fog has a drifting texture: a sky pixel's colour is not constant over the loop
     const seen = new Set<string>(); for (const i of sample) seen.add(px(frames[i]!, 20, 2).join());
     expect(seen.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("Hornet is Gavin's line-up pick (2026-11-09): 7x9, straight horns from the mask corners, two-row eye hollows, pointed chin, one-tone red cape, stub feet", () => {
+    expect(HORNET.frames).toHaveLength(4);
+    for (const f of HORNET.frames) {
+      expect(f).toHaveLength(9);
+      for (const r of f) expect(r).toHaveLength(7);
+      expect(f[0]).toBe(".W...W."); // straight horns: rows 0 and 1 identical
+      expect(f[1]).toBe(".W...W.");
+      expect(f[2]).toBe(".WWWWW.");
+      expect(f[3]).toBe(".WEWEW."); // two-row eye hollows
+      expect(f[4]).toBe(".WEWEW.");
+      expect(f[5]).toBe("..WWW.."); // pointed chin
+      expect(f[6]).toMatch(/^\.*R{3,5}\.*$/); // single-tone cape
+      expect(f[7]).toMatch(/^\.*R{3,5}\.*$/);
+      expect(f[8].replace(/\./g, "")).toMatch(/^K{2}$/); // two stub feet
+    }
+    expect(new Set(HORNET.frames.map((f) => f.join("/"))).size).toBe(4);
+    expect(HORNET.colors).toEqual({ W: "#F2F2F4", E: "#0A0A12", R: "#E04050", K: "#A02838" });
+  });
+
+  it("Hornet crosses once each way at a quick pace, never while the Knight is on screen, on screen 10–20 % of the loop", () => {
+    expect(HORNET_SPEED).toBeGreaterThanOrEqual(10);
+    expect(HORNET_SPEED).toBeLessThanOrEqual(14);
+    expect(HORNET_STRIDE_PX).toBe(3);
+    expect(HORNET_CROSSINGS.map((c) => c.dir).sort()).toEqual([-1, 1]);
+    const step = 1 / FOG_FPS;
+    let on = 0, both = 0;
+    const seen = { right: false, left: false };
+    for (let t = 0; t < FOG_LOOP_S; t += step) {
+      const h = hornetState(t);
+      if (!h) continue;
+      on++;
+      if (knightState(t)) both++;
+      if (h.dir > 0) seen.right = true; else seen.left = true;
+      // moves the way she faces
+      const n = hornetState(t + step);
+      if (n && n.dir === h.dir) expect(Math.sign(n.x - h.x) === h.dir || n.x === h.x).toBe(true);
+      // mirrored rows when walking left
+      const rows = hornetRows(t);
+      const base = HORNET.frames[h.frame]!;
+      expect(rows).toEqual(h.dir > 0 ? [...base] : base.map((r) => r.split("").reverse().join("")));
+    }
+    expect(both).toBe(0);
+    expect(seen).toEqual({ right: true, left: true });
+    const share = on / (FOG_LOOP_S * FOG_FPS);
+    expect(share).toBeGreaterThanOrEqual(0.10);
+    expect(share).toBeLessThanOrEqual(0.20);
+    // legs step once per stride and cycle through all four frames
+    const c = HORNET_CROSSINGS[0]!;
+    expect(hornetState(c.start + HORNET_STRIDE_PX / HORNET_SPEED + 1e-6)!.frame).toBe(1);
+    const framesSeen = new Set<number>();
+    for (let t = c.start; t < c.start + (FRONT_WIDTH + 7) / HORNET_SPEED; t += step) { const h = hornetState(t); if (h) framesSeen.add(h.frame); }
+    expect(framesSeen.size).toBe(4);
+  });
+
+  it("draws Hornet in her own colours with her feet on the floor", () => {
+    const c = HORNET_CROSSINGS[0]!;
+    const t = c.start + 3;
+    const i = Math.round(t * FOG_FPS);
+    const h = hornetState(i / FOG_FPS)!;
+    const f = frames[i]!;
+    const rows = hornetRows(i / FOG_FPS);
+    const x0 = Math.round(h.x), y0 = FLOOR_Y - rows.length;
+    expect(rows).toHaveLength(9);
+    rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== ".") expect(px(f, x0 + x, y0 + y)).toEqual(hex(HORNET.colors[ch]!)); }));
+    expect(rows[8]!).toContain("K"); // feet on the row above the floor
   });
 
   it("encodes under 25 MB", () => {
