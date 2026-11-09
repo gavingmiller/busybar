@@ -9,5 +9,6 @@ import { CHARACTER_PICKS } from "./munchers-run/picks.ts";
 import { LONGSHIP } from "./longship/index.ts";
 import { FIREFLIES } from "./fireflies/index.ts";
 import { SLEIGH } from "./sleigh/index.ts";
+import { FOG_CANYON } from "./fog-canyon/index.ts";
 
-export const SCENES: readonly Scene[] = [LAVA_LAMP, MATRIX_RAIN, AQUARIUM, MUNCHERS_RUN, LONGSHIP, FIREFLIES, SLEIGH, CHARACTER_PICKS];
+export const SCENES: readonly Scene[] = [LAVA_LAMP, MATRIX_RAIN, AQUARIUM, MUNCHERS_RUN, LONGSHIP, FIREFLIES, FOG_CANYON, SLEIGH, CHARACTER_PICKS];
