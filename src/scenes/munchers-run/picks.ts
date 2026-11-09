@@ -8,6 +8,7 @@
 // for him"). Five hand-drawn takes at 6-8 px wide, shown on the fog colour
 // so the black body reads as it does in the scene.
 //   W mask  E eye hollow  K body  N cloak  L nail
+// Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
 
@@ -20,8 +21,8 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
     name: "1 as in Fog Canyon, 6x9",
     frames: [
-      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
-      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
+      [".W..W.", "W....W", "WWWWWW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
+      [".W..W.", "W....W", "WWWWWW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
     ],
     colors: HK,
     eye: [2, 3],
@@ -29,8 +30,8 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
     name: "2 taller, long horns, 7x10",
     frames: [
-      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKKK..", ".NKK...", ".K..K.."],
-      ["W.....W", ".W...W.", ".WWWWW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKKK..", ".NKK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKKK..", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKKK..", ".NKK...", "..K.K.."],
     ],
     colors: HK,
     eye: [2, 3],
@@ -38,8 +39,8 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
     name: "3 nail on his back, 8x10",
     frames: [
-      ["..W....W", "...W..W.", "L..WWWW.", ".L.WEWEW", "..LWWWW.", ".NNNKKN.", "..NNKKN.", "..NNKK..", "...NKK..", "...K..K."],
-      ["..W....W", "...W..W.", "L..WWWW.", ".L.WEWEW", "..LWWWW.", "..NNKKN.", "..NNKKN.", ".NNNKK..", "...NKK..", "....KK.."],
+      ["...W..W.", "..W....W", "L.WWWWWW", ".L.WEWEW", "..LWWWW.", ".NNNKKN.", "..NNKKN.", "..NNKK..", "...NKK..", "...K..K."],
+      ["...W..W.", "..W....W", "L.WWWWWW", ".L.WEWEW", "..LWWWW.", "..NNKKN.", "..NNKKN.", ".NNNKK..", "...NKK..", "....KK.."],
     ],
     colors: HK,
     eye: [4, 3],
@@ -47,8 +48,8 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
     name: "4 body lifted a further step, big eyes, 6x10",
     frames: [
-      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
-      ["W....W", ".W..W.", ".WWWW.", "WWEWEW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
+      [".W..W.", "W....W", "WWWWWW", "WWEWEW", "WWEWEW", ".WWWW.", "NNKKN.", ".NKKN.", ".NKK..", ".K..K."],
+      [".W..W.", "W....W", "WWWWWW", "WWEWEW", "WWEWEW", ".WWWW.", ".NKKN.", ".NKKN.", "NNKK..", "..KK.."],
     ],
     colors: HK_LIFT,
     eye: [2, 3],
@@ -56,8 +57,8 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
     name: "5 chibi: big mask, tiny body, 7x9",
     frames: [
-      ["W.....W", ".W...W.", ".WWWWW.", "WWWWWWW", "WWEWWEW", ".WWWWW.", ".NNKNN.", "..NKN..", "..K.K.."],
-      ["W.....W", ".W...W.", ".WWWWW.", "WWWWWWW", "WWEWWEW", ".WWWWW.", "..NKN..", ".NNKNN.", "...K..."],
+      [".W...W.", "W.....W", "WWWWWWW", "WWWWWWW", "WWEWWEW", ".WWWWW.", ".NNKNN.", "..NKN..", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", "WWWWWWW", "WWEWWEW", ".WWWWW.", "..NKN..", ".NNKNN.", "...K..."],
     ],
     colors: HK,
     eye: [2, 4],
