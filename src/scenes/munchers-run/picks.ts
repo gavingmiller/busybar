@@ -23,46 +23,46 @@ const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 standard",
+    name: "1 one-tone bell, stub feet",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", ".K...K."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", "..K.K.."],
     ],
     colors: C4,
     eye: [2, 3],
   },
   {
-    name: "2 shorter body",
+    name: "2 bell with a lighter centre",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKK..", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKK..", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNKNN.", "NNNKNNN", ".K...K."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNKNN.", "NNNKNNN", "..K.K.."],
     ],
     colors: C4,
     eye: [2, 3],
   },
   {
-    name: "3 flared cloak",
+    name: "3 bell with a ragged hem",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKNN", "NNKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKKNN", ".NKK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", "N.N.N.N", ".K...K."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NNNNN.", "NNNNNNN", ".N.N.N.", "..K.K.."],
     ],
     colors: C4,
     eye: [2, 3],
   },
   {
-    name: "4 long cloak to the ground",
+    name: "4 short narrow cape",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKKKN.", ".NNNNN."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKKKN.", "NNNNN.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", ".K...K."],
     ],
     colors: C4,
     eye: [2, 3],
   },
   {
-    name: "5 slim body",
+    name: "5 teardrop cloak",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "..NKN..", "..NK...", "..K.K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "..NKN..", ".NK....", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "NNNNNNN", ".K...K."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..NNN..", ".NNNNN.", "NNNNNNN", "..K.K.."],
     ],
     colors: C4,
     eye: [2, 3],
