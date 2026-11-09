@@ -14,6 +14,14 @@ const hex = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5),
 const lit = (f: Uint8Array, x: number, y: number) => px(f, x, y).slice(0, 3).some((c) => c! > 0);
 
 describe("SLEIGH scene", () => {
+  it("drops no presents: the only green and gold pixels are trees and sleigh runners (Gavin 2026-11-09)", () => {
+    const f = SLEIGH.frames();
+    for (let i = 0; i < f.length; i += 7) for (let p = 0; p < f[i]!.length; p += 4) {
+      const [r, g, b] = [f[i]![p]!, f[i]![p + 1]!, f[i]![p + 2]!];
+      expect(r === 0x30 && g === 0xc0 && b === 0x60).toBe(false); // present green
+    }
+  });
+
   const frames = SLEIGH.frames();
 
   it("is a full-display opaque 24 fps loop of 45–90 s", () => {

@@ -2,7 +2,7 @@
 // night over snow, a few times per loop with empty sky between crossings.
 // Snow falls, dark fir trees scroll slower behind the team (parallax), the
 // lead reindeer's nose glows red AT THE FRONT (Gavin 2026-11-09: the mock-up
-// had it on his butt), and now and then a present tumbles from the sleigh.
+// had it on his butt). No presents drop (Gavin 2026-11-09).
 // Seasonal: only offered in December on the Edmonton calendar.
 
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -149,14 +149,6 @@ export function renderFrame(i: number): Uint8Array {
     }
     put(buf, tx + SLEIGH_X - 1, DEER_Y + 2, hex(REIN));
     blit(buf, SLEIGH_ART, tx + SLEIGH_X, SLEIGH_Y, COLORS);
-    // A present tumbles out once per crossing and lies in the snow until the team has gone.
-    const tl = ((t % CROSSING_S) + CROSSING_S) % CROSSING_S;
-    if (tl >= 4.5 && tl < 8) {
-      const dropX = Math.round(teamX(4.5)) + SLEIGH_X + 4;
-      const y = Math.min(12, SLEIGH_Y + 6 + Math.floor((tl - 4.5) * 6));
-      put(buf, dropX, y, hex("#30C060")); put(buf, dropX + 1, y, hex("#F0D040"));
-      put(buf, dropX, y + 1, hex("#F0D040")); put(buf, dropX + 1, y + 1, hex("#30C060"));
-    }
   }
   return buf;
 }
