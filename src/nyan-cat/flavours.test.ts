@@ -10,6 +10,9 @@ const hue = (hex: string): number => {
   return ((h * 60) + 360) % 360;
 };
 
+const luma = (hex: string): number =>
+  0.299 * parseInt(hex.slice(1, 3), 16) + 0.587 * parseInt(hex.slice(3, 5), 16) + 0.114 * parseInt(hex.slice(5, 7), 16);
+
 describe("Nyan Cat flavours", () => {
   it("has unique snake_case ids and Title Case names, classic first, each with a distinct asset tag", () => {
     expect(NYAN_FLAVOURS[0]).toBe(CLASSIC_NYAN);
@@ -32,14 +35,17 @@ describe("Nyan Cat flavours", () => {
     expect(CLASSIC_NYAN.asset).toBe("cat");
   });
 
-  it("purple swaps the pink frosting (M) and its sprinkles (D) for purple tones and keeps every other colour (Gavin 2026-11-09)", () => {
+  it("purple swaps the pink frosting (M) for a light purple with dark purple sprinkles (D), keeping every other colour (Gavin 2026-11-09)", () => {
     const colors = flavourColors(PURPLE_NYAN);
     expect(Object.keys(colors).sort()).toEqual(Object.keys(NYAN_COLORS).sort());
-    expect(hue(colors.M!)).toBeGreaterThanOrEqual(255);
-    expect(hue(colors.M!)).toBeLessThanOrEqual(295);
-    expect(colors.M).not.toBe(NYAN_COLORS.M);
-    expect(colors.D).not.toBe(NYAN_COLORS.D);
-    expect(colors.D).not.toBe(colors.M); // sprinkles still read against the frosting
+    for (const k of ["M", "D"]) {
+      expect(hue(colors[k]!)).toBeGreaterThanOrEqual(255);
+      expect(hue(colors[k]!)).toBeLessThanOrEqual(295);
+    }
+    // Lighter than the first cut (#B266FF, luma ~140); the specks clearly darker than the frosting.
+    expect(luma(colors.M!)).toBeGreaterThan(150);
+    expect(luma(colors.M!)).toBeLessThan(215); // still reads as purple, not lilac-white
+    expect(luma(colors.D!)).toBeLessThan(luma(colors.M!) - 60);
     for (const k of Object.keys(NYAN_COLORS)) if (k !== "M" && k !== "D") expect(colors[k]).toBe(NYAN_COLORS[k]!);
     expect(PURPLE_NYAN.name).toBe("Purple Nyan Cat");
   });

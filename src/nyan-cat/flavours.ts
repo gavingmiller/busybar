@@ -18,12 +18,12 @@ export interface NyanFlavour {
 
 export const CLASSIC_NYAN: NyanFlavour = { id: "nyan_cat", name: "Nyan Cat", asset: "cat", colors: {} };
 
-/** Purple frosting with pink sprinkles (Gavin 2026-11-09). */
+/** Light purple frosting with dark purple specks (Gavin 2026-11-09; first cut #B266FF + pink specks was too deep). */
 export const PURPLE_NYAN: NyanFlavour = {
   id: "nyan_cat_purple",
   name: "Purple Nyan Cat",
   asset: "purple",
-  colors: { M: "#B266FFFF", D: "#FF80E0FF" },
+  colors: { M: "#C9A0FFFF", D: "#5A1E9EFF" },
 };
 
 export const NYAN_FLAVOURS: readonly NyanFlavour[] = [CLASSIC_NYAN, PURPLE_NYAN];
