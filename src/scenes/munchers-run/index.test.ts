@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import {
   MUNCHERS_RUN, MUNCHERS_FPS, MUNCHERS_LOOP_S, MUNCHERS_FRAME_COUNT, GROUND_Y, STRIDE_PX,
-  RUNS, runnerX, runnerFrame, runnerSprite, runnerRows, isDancing, runDuration, activeRuns, renderFrame, DANCE_FPS, type Run,
+  RUNS, runnerX, runnerFrame, runnerSprite, runnerRows, isDancing, runDuration, activeRuns, renderFrame, DANCE_FPS, GRASS, type Run,
 } from "./index.ts";
 import { RUNNER_ART, CHICKEN, EMBER, BONEHEAD, SQUIRT } from "./art.ts";
 import { FRONT_WIDTH, FRONT_HEIGHT } from "../../lib/scene.ts";
@@ -45,11 +45,22 @@ describe("MUNCHERS_RUN scene", () => {
   it("has a fixed ground like Dino Run: the ground rows never change and are not blank", () => {
     expect(GROUND_Y).toBe(14);
     const groundOf = (f: Uint8Array) => Array.from(f.slice(GROUND_Y * FRONT_WIDTH * 4));
-    // Only a runner's cast shadow may darken the ground line (Squirt's, Gavin 2026-11-09: it must sit on the floor, not float).
-    const allowed = new Set([[140, 124, 92, 255].join(), hex(SQUIRT.colors.X!).join()]);
+    // Green grass on the line, brown dirt below it (Gavin 2026-11-09); only a runner's cast shadow
+    // may darken the grass (Squirt's: he must sit on the floor, not float).
+    const allowed = new Set([[...GRASS, 255].join(), hex(SQUIRT.colors.X!).join()]);
+    const [gr, gg, gb] = GRASS;
+    expect(gg).toBeGreaterThan(gr + 30); expect(gg).toBeGreaterThan(gb + 30); // green
+    const [sr, sg, sb] = hex(SQUIRT.colors.X!);
+    expect(sg).toBeGreaterThan(sr!); expect(sg).toBeGreaterThan(sb!); // the shadow is a darker green
+    expect(sr! + sg! + sb!).toBeLessThan(gr + gg + gb - 60);
     for (let i = 0; i < MUNCHERS_FRAME_COUNT; i += 97) {
       const g = groundOf(frames[i]!);
       for (let x = 0; x < FRONT_WIDTH; x++) expect(allowed.has(g.slice(x * 4, x * 4 + 4).join())).toBe(true);
+      // the dirt row is solid brown edge to edge, with darker pebbles allowed
+      for (let x = 0; x < FRONT_WIDTH; x++) {
+        const [r, gC, b] = px(frames[i]!, x, GROUND_Y + 1);
+        expect(r!).toBeGreaterThan(gC!); expect(gC!).toBeGreaterThan(b!); expect(r!).toBeGreaterThan(60);
+      }
     }
     // Solid, no gaps (Gavin 2026-11-09: "the ground has breaks in it, make it solid").
     for (let x = 0; x < FRONT_WIDTH; x++) expect(px(frames[0]!, x, GROUND_Y).slice(0, 3).some((c) => c! > 0)).toBe(true);
@@ -165,7 +176,6 @@ describe("MUNCHERS_RUN scene", () => {
     expect(SQUIRT.onGround).toBe(1);
     // The shadow colour is darker than the ground so it reads as a shadow, not a hole.
     const [sr, sg, sb] = hex(SQUIRT.colors.X!);
-    expect(sr! + sg! + sb!).toBeLessThan(140 + 124 + 92);
     expect(sr! + sg! + sb!).toBeGreaterThan(60);
     const r = RUNS.find((run) => run.art === SQUIRT && activeRuns(run.start + duration(run) / 2).length === 1)!;
     const t = r.start + duration(r) / 2;

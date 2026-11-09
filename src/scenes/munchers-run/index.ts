@@ -21,8 +21,10 @@ export const DANCE_FPS = 4;
 const DANCE_CHANCE = 0.4;
 
 type RGB = readonly [number, number, number];
-const GROUND: RGB = [140, 124, 92];
-const GROUND_DARK: RGB = [84, 74, 56];
+/** Ground line: green grass (Gavin 2026-11-09), with brown dirt below and a few darker pebbles in it. */
+export const GRASS: RGB = [72, 150, 52];
+const DIRT: RGB = [140, 124, 92];
+const DIRT_DARK: RGB = [84, 74, 56];
 
 export interface Run {
   art: RunnerArt;
@@ -153,9 +155,9 @@ export function renderFrame(i: number): Uint8Array {
   const buf = new Uint8Array(W * H * 4);
   for (let p = 3; p < buf.length; p += 4) buf[p] = 255; // black sky
 
-  // Fixed ground: a solid line with pebbles below (Gavin 2026-11-09: no breaks).
-  for (let x = 0; x < W; x++) put(buf, x, GROUND_Y, GROUND);
-  for (const x of [3, 11, 20, 27, 38, 46, 55, 63, 69]) put(buf, x, GROUND_Y + 1, GROUND_DARK);
+  // Fixed ground: a solid grass line over solid dirt with pebbles (Gavin 2026-11-09: no breaks).
+  for (let x = 0; x < W; x++) { put(buf, x, GROUND_Y, GRASS); put(buf, x, GROUND_Y + 1, DIRT); }
+  for (const x of [3, 11, 20, 27, 38, 46, 55, 63, 69]) put(buf, x, GROUND_Y + 1, DIRT_DARK);
 
   for (const r of activeRuns(t)) {
     const rows = runnerRows(r, t);
