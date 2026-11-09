@@ -28,7 +28,7 @@ describe("Character picks line-up (temporary comparison scene)", () => {
       expect(v.frames[0]![h - 1]!.replace(/\./g, "").length, `${v.name} rests on the bottom row`).toBeGreaterThan(0);
       const letters = new Set(v.frames[0]!.join("").replace(/\./g, ""));
       expect(letters.size, `${v.name} uses several colours`).toBeGreaterThanOrEqual(2);
-      const key = v.frames.map((f) => f.join("")).join("/") + JSON.stringify(v.colors);
+      const key = v.frames.map((f) => f.join("")).join("/") + JSON.stringify(v.colors) + (v.poseFrames ?? "");
       expect(seen.has(key)).toBe(false);
       seen.add(key);
     }

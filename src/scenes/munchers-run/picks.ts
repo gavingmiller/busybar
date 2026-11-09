@@ -4,12 +4,15 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN, round 12: legs two columns left; the
-// front hip pixel moved to the back so the hips sit over the legs.
+// Current subject: SAMUS ARAN, round 13: hip pixel dropped altogether;
+// leg frame rate varies per slot (poseFrames).
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
+
+/** A line-up entry: runner art plus an optional display-frames-per-pose override (default POSE_FRAMES). */
+export type PickVariant = RunnerArt & { poseFrames?: number };
 
 // Hollow Knight palette from fog-canyon/art.ts: bone mask, eye hollows, black body, navy cloak, pale nail.
 // Gavin 2026-11-09: the body was too dark; body takes the old cloak navy, the cloak goes a step darker.
@@ -29,81 +32,77 @@ const SAMUS_BRIGHT = { R: "#D83030", G: "#60D070", O: "#F0A030", Y: "#F8E060", C
 // Run-cycle legs: N near leg (bright), D far leg (darker), B/b boots near/far.
 const SAMUS_RUN = { ...SAMUS_BRIGHT, N: "#F0A030", D: "#B86020", B: "#D83030", b: "#901818" };
 
-export const PICK_VARIANTS: readonly RunnerArt[] = [
+export const PICK_VARIANTS: readonly PickVariant[] = [
   {
-    name: "1 hip pixel moved from front to back",
+    name: "1 hip pixel dropped, 6 poses/s",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".NND.....", ".NND....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".NDD.....", ".NDD....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".DDN.....", ".DDN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NND.....", ".NND....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DDN.....", ".DDN....."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
   },
   {
-    name: "2 hip and belly both shifted back",
+    name: "2 same, 8 poses/s",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", ".NND.....", ".NND....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", ".NDD.....", ".NDD....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", ".OOYY..CC", ".OOYY....", ".DDN.....", ".DDN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NND.....", ".NND....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DDN.....", ".DDN....."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
+    poseFrames: 3,
   },
   {
-    name: "3 as round 11 pick 3",
+    name: "3 same, 12 poses/s",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NND.....", ".NND....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".NDD.....", ".NDD....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYO...", ".DDN.....", ".DDN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NND.....", ".NND....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DDN.....", ".DDN....."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
+    poseFrames: 2,
   },
   {
-    name: "4 hip moved back, legs one column left only",
+    name: "4 four key frames, 8 poses/s",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".DD.NN...", ".DD.NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".DD.NN...", ".DD.NN..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "..DNN....", "..DNN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "..NND....", "..NND...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".NN.DD...", ".NN.DD..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".NN.DD...", ".NN.DD..."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "..NDD....", "..NDD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "..DDN....", "..DDN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
+    poseFrames: 3,
   },
   {
-    name: "5 hip moved back, front leg one pixel narrower",
+    name: "5 four key frames, 12 poses/s",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "DD.N.....", "DD.N....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "DD.N.....", "DD.N....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".NND.....", ".NND....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".NDD.....", ".NDD....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".OOYY....", ".DDN.....", ".DDN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
+    poseFrames: 2,
   },
 ];
 
@@ -135,8 +134,9 @@ function put(buf: Uint8Array, x: number, y: number, c: [number, number, number])
 export function renderPicksFrame(i: number): Uint8Array {
   const buf = new Uint8Array(W * H * 4);
   for (let p = 0; p < buf.length; p += 4) { buf[p] = PICKS_BG[0]; buf[p + 1] = PICKS_BG[1]; buf[p + 2] = PICKS_BG[2]; buf[p + 3] = 255; }
-  const k = Math.floor((((i % PICKS_FRAME_COUNT) + PICKS_FRAME_COUNT) % PICKS_FRAME_COUNT) / POSE_FRAMES);
+  const fi = ((i % PICKS_FRAME_COUNT) + PICKS_FRAME_COUNT) % PICKS_FRAME_COUNT;
   PICK_VARIANTS.forEach((v, n) => {
+    const k = Math.floor(fi / (v.poseFrames ?? POSE_FRAMES));
     const x0 = 1 + n * PICK_SLOT_W;
     const glyph = DIGITS[n + 1]!;
     for (let y = 0; y < 5; y++) for (let x = 0; x < 3; x++) if (glyph[y]![x] === "#") put(buf, x0 + 6 + x, y, DIGIT_RGB);
