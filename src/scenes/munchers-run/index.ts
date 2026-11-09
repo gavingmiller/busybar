@@ -78,10 +78,13 @@ function makeRuns(): Run[] {
       run.pause = { at: travelled / speed, duration: Math.round(between(2, 4) * 4) / 4 };
     }
     if (t + runDuration(run) > MUNCHERS_LOOP_S - 1) break;
-    // Never more than MAX_ON_SCREEN at once: wait for the earliest to leave.
+    // Never more than MAX_ON_SCREEN at once: wait for the earliest to leave. And never the same
+    // character twice on screen (Gavin 2026-11-09): wait for its earlier run to leave.
     const crowd = runs.filter((r) => r.start + runDuration(r) > t);
-    if (crowd.length >= MAX_ON_SCREEN) {
-      t = Math.min(...crowd.map((r) => r.start + runDuration(r))) + between(0.3, 1);
+    const twin = crowd.find((r) => r.art === art);
+    if (crowd.length >= MAX_ON_SCREEN || twin) {
+      const leaves = twin ? twin.start + runDuration(twin) : Math.min(...crowd.map((r) => r.start + runDuration(r)));
+      t = leaves + between(0.3, 1);
       run.start = t;
       if (t + runDuration(run) > MUNCHERS_LOOP_S - 1) break;
     }

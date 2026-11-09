@@ -82,6 +82,13 @@ describe("MUNCHERS_RUN scene", () => {
     }
   });
 
+  it("never shows the same character twice at once (Gavin 2026-11-09: unique characters on screen)", () => {
+    for (let t = 0; t < MUNCHERS_LOOP_S; t += 1 / MUNCHERS_FPS) {
+      const names = activeRuns(t).map((r) => r.art.name);
+      expect(new Set(names).size, `t=${t.toFixed(2)}: ${names.join(",")}`).toBe(names.length);
+    }
+  });
+
   it("brings runners in and out on a timer: never more than three at once, sometimes two or more, sometimes nobody", () => {
     let most = 0, empty = 0, crowd = 0;
     for (let t = 0; t < MUNCHERS_LOOP_S; t += 0.5) {
