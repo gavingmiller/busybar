@@ -4,6 +4,7 @@ import {
   JELLIES, BUBBLES, renderFrame, knightState, knightRows, jellyPos, jellyFrame, bubblePos,
   HORNET_SPEED, HORNET_STRIDE_PX, HORNET_CROSSINGS, hornetState, hornetRows,
   SAMUS_SPEED, SAMUS_START_S, samusState, samusRows,
+  CHASE, metroidState, METROID_FRAME_S, METROID_FLEE_FRAME_S,
 } from "./index.ts";
 import { KNIGHT, HORNET, UOMA, OOMA, METROID } from "./art.ts";
 import { SAMUS, SAMUS_POSE_RATE } from "../samus/art.ts";
@@ -140,7 +141,7 @@ describe("FOG_CANYON scene", () => {
     expect(coreColours.size).toBeGreaterThanOrEqual(2);
   });
 
-  it("a Metroid drifts through too (Gavin 2026-11-09): green dome, three red nuclei, claws below; two frames alternating every half second; lower than the jellies but clear of the floor", () => {
+  it("a Metroid drifts in to the quarter mark and Samus chases it off (Gavin 2026-11-09): green dome, three red nuclei, claws below; two frames; lower than the jellies but clear of the floor", () => {
     // art
     expect(METROID.frames).toHaveLength(2);
     const w = METROID.frames[0]![0]!.length, h = METROID.frames[0]!.length;
@@ -162,35 +163,73 @@ describe("FOG_CANYON scene", () => {
     expect(METROID.frames[1]!.join("")).toContain("Q");
     const dome = hex(METROID.colors.G!), bell = hex(OOMA.colors.G!);
     expect(dome[1]!).toBeGreaterThan(bell[1]! + 40); // brighter green than the Ooma bell
-    // roster: exactly one Metroid, drifting across the whole loop, lower than the others
-    const ms = JELLIES.filter((j) => j.kind === "metroid");
-    expect(ms).toHaveLength(1);
-    const m = ms[0]!;
-    expect(m.cycles).toBe(1);
-    const others = JELLIES.filter((j) => j.kind !== "metroid");
-    expect(m.yBase).toBeGreaterThanOrEqual(Math.max(...others.map((j) => j.yBase)));
-    let lowest = 0;
-    for (let t = 0; t < FOG_LOOP_S; t += 0.25) { const p = jellyPos(m, t); lowest = Math.max(lowest, p.y + h); expect(p.y + h).toBeLessThanOrEqual(FLOOR_Y); }
-    expect(lowest).toBeGreaterThan(9); // it does dip below the jellies' band
-    // frames alternate every 0.5 s and close on the loop
-    expect(jellyFrame(m, 0)).toBe(0); expect(jellyFrame(m, 0.5)).toBe(1); expect(jellyFrame(m, 1)).toBe(0);
-    expect(jellyFrame(m, FOG_LOOP_S)).toBe(jellyFrame(m, 0));
+    // the chase (Gavin 2026-11-09): it drifts in from the right to the quarter mark, hovers, then Samus
+    // comes in from the left and chases it off the right edge
+    expect(JELLIES.some((j) => j.kind === "metroid")).toBe(false); // no longer a whole-loop drifter
+    const step = 1 / FOG_FPS;
+    let entries = 0, wasOn = false, reachedMark = -1, leftMark = -1, exitT = -1, minX = Infinity, lowest = 0;
+    for (let t = 0; t < FOG_LOOP_S; t += step) {
+      const m = metroidState(t);
+      if (!m) { if (wasOn && exitT < 0) exitT = t; wasOn = false; continue; }
+      if (!wasOn) { entries++; expect(m.x).toBeGreaterThanOrEqual(FRONT_WIDTH - 1); } // enters from the right edge
+      wasOn = true;
+      minX = Math.min(minX, m.x);
+      lowest = Math.max(lowest, m.y + h);
+      expect(m.y + h).toBeLessThanOrEqual(FLOOR_Y);
+      if (reachedMark < 0 && Math.abs(m.x - CHASE.markX) <= 2) reachedMark = t;
+      if (reachedMark >= 0 && leftMark < 0 && m.x > CHASE.markX + 2) leftMark = t;
+      const n = metroidState(t + step);
+      if (n) {
+        if (reachedMark < 0) expect(n.x).toBeLessThanOrEqual(m.x); // drifting in leftward
+        if (leftMark >= 0) expect(n.x).toBeGreaterThanOrEqual(m.x); // fleeing rightward
+      }
+    }
+    expect(entries).toBe(1);
+    expect(Math.abs(minX - CHASE.markX)).toBeLessThanOrEqual(2); // about a quarter of the way across
+    expect(leftMark - reachedMark).toBeGreaterThanOrEqual(0.8); // hovers at the mark
+    expect(CHASE.fleeSpeed).toBeGreaterThan(CHASE.driftSpeed * 2); // bolts faster than it came in
+    expect(exitT).toBeGreaterThan(leftMark);
+    expect(lowest).toBeGreaterThan(9); // still hunts below the jellies' band
+    // off screen outside the chase window
+    for (let t = 0; t < CHASE.metroidEnterS - 0.5; t += 1) expect(metroidState(t)).toBeNull();
+    for (let t = exitT + 0.5; t < FOG_LOOP_S; t += 1) expect(metroidState(t)).toBeNull();
+    // frames: half a second apart while drifting, a quarter while fleeing (agitated)
+    expect(METROID_FRAME_S).toBe(0.5); expect(METROID_FLEE_FRAME_S).toBe(0.25);
+    const drift = CHASE.metroidEnterS + 1;
+    expect(metroidState(drift)!.frame).not.toBe(metroidState(drift + 0.5)!.frame);
+    expect(metroidState(drift)!.frame).toBe(metroidState(drift + 1)!.frame);
+    const flee = leftMark + 0.1;
+    expect(metroidState(flee)!.frame).not.toBe(metroidState(flee + 0.25)!.frame);
+    // Samus enters from the left no earlier than the mark is reached, stays behind it, and both are on screen together ≥ 2 s
+    expect(SAMUS_START_S).toBeGreaterThanOrEqual(reachedMark);
+    let together = 0;
+    for (let t = 0; t < FOG_LOOP_S; t += step) {
+      const m = metroidState(t), sa = samusState(t);
+      if (!m || !sa) continue;
+      together += step;
+      expect(sa.x + SAMUS.frames[0]![0]!.length).toBeLessThanOrEqual(m.x); // her front edge never passes its back edge
+    }
+    expect(together).toBeGreaterThanOrEqual(2);
+    expect(metroidState(SAMUS_START_S + (FRONT_WIDTH + 9) / SAMUS_SPEED)).toBeNull(); // the Metroid is gone before she leaves
     // never drawn over a character: wherever its box meets the Knight, Hornet or Samus, their pixels win
     let checked = 0;
-    for (let t = 0; t < FOG_LOOP_S; t += 0.5) {
-      const p = jellyPos(m, t);
+    for (let t = CHASE.metroidEnterS; t < exitT; t += 0.25) {
+      const p = metroidState(t)!;
       const chars: Array<[string[], number, number, Readonly<Record<string, string>>]> = [];
       const k = knightState(t); if (k) chars.push([knightRows(t), Math.round(k.x), FLOOR_Y - KNIGHT.frames[0]!.length, KNIGHT.colors]);
       const ho = hornetState(t); if (ho) chars.push([hornetRows(t), Math.round(ho.x), FLOOR_Y - HORNET.frames[0]!.length, HORNET.colors]);
       const sa = samusState(t); if (sa) chars.push([samusRows(t), Math.round(sa.x), FLOOR_Y - SAMUS.frames[0]!.length, SAMUS.colors]);
+      expect(k ?? ho).toBeNull(); // only Samus shares the window with it
       for (const [rows, cx, cy, colors] of chars) {
-        const cw = rows[0]!.length, ch = rows.length;
-        if (p.x + w <= cx || cx + cw <= p.x || p.y + h <= cy || cy + ch <= p.y) continue;
         const f = renderFrame(Math.round(t * FOG_FPS));
         rows.forEach((row, y) => [...row].forEach((c, x) => { const sx = cx + x; if (c !== "." && sx >= 0 && sx < FRONT_WIDTH) { expect(px(f, sx, cy + y)).toEqual(hex(colors[c]!)); checked++; } }));
       }
     }
-    expect(checked).toBeGreaterThan(0); // it does meet them, and they stay intact
+    expect(checked).toBeGreaterThan(0);
+    // and it is drawn where metroidState says, in its own colours, when alone
+    const tAlone = CHASE.metroidEnterS + 2;
+    const i = Math.round(tAlone * FOG_FPS), m = metroidState(i / FOG_FPS)!, f = renderFrame(i);
+    METROID.frames[m.frame]!.forEach((row, y) => [...row].forEach((c, x) => { const sx = Math.round(m.x) + x; if (c !== "." && sx < FRONT_WIDTH) expect(px(f, sx, m.y + y)).toEqual(hex(METROID.colors[c]!)); }));
   });
 
   it("bubbles rise from the floor to the top and the mossy floor is lit edge to edge", () => {
@@ -278,7 +317,7 @@ describe("FOG_CANYON scene", () => {
     expect(rows[8]!).toContain("K"); // feet on the row above the floor
   });
 
-  it("Samus runs through rarely: one crossing per loop, left to right, poses at 8/s, never with the Knight or Hornet, on screen 4–7 % of the loop (Gavin 2026-11-09)", () => {
+  it("Samus runs through rarely: one crossing per loop, left to right, poses at 8/s, never with the Knight or Hornet, on screen 4–8 % of the loop (Gavin 2026-11-09)", () => {
     expect(SAMUS_SPEED).toBeGreaterThanOrEqual(14);
     expect(SAMUS_SPEED).toBeLessThanOrEqual(18);
     expect(SAMUS_POSE_RATE).toBe(8);
@@ -302,7 +341,7 @@ describe("FOG_CANYON scene", () => {
     expect(others).toBe(0);
     const share = on / (FOG_LOOP_S * FOG_FPS);
     expect(share).toBeGreaterThanOrEqual(0.04);
-    expect(share).toBeLessThanOrEqual(0.07);
+    expect(share).toBeLessThanOrEqual(0.08);
     // a second of clearance either side of her crossing
     for (let t = SAMUS_START_S - 1; t < SAMUS_START_S; t += step) expect(knightState(t) ?? hornetState(t)).toBeNull();
     const end = SAMUS_START_S + (FRONT_WIDTH + 9) / SAMUS_SPEED;

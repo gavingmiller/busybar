@@ -1,12 +1,14 @@
 // Fog Canyon: Hallownest's green murk. Uomas and Oomas drift and bob in
 // the haze above a mossy floor, their cores flickering pink and orange,
-// bubbles rise through drifting fog streaks and a slow mist band, a Metroid
-// hunts lower down (Gavin 2026-11-09: one of the Fog Canyon baddies), and the
+// bubbles rise through drifting fog streaks and a slow mist band, and the
 // Knight walks through: once left to right (pausing mid-way to look up at
 // the jellies), later once right to left; Hornet dashes through twice too,
-// at other times, so the two are never on screen together; and once a loop,
-// in a gap when nobody else is about, Samus sprints through left to right
-// (Gavin 2026-11-09: "running through rarely"). Everything is a periodic function
+// at other times, so the two are never on screen together. Once a loop, in
+// a gap when nobody else is about, a Metroid drifts in from the right to
+// about a quarter of the way across and hovers; then Samus sprints in from
+// the left and it bolts, and she chases it off the right edge (Gavin
+// 2026-11-09: "when the metroid comes on screen to about the 1/4 way mark,
+// then samus comes in and chases it off screen"). Everything is a periodic function
 // of t with an integer number of cycles per 96 s loop, so the pre-rendered
 // loop closes seamlessly. Gavin 2026-11-09: "I like fog canyon, can you get
 // the actual hollow knight walking through there too?" Fan homage: shapes
@@ -30,8 +32,15 @@ export const HORNET_SPEED = 12;
 export const HORNET_STRIDE_PX = 3;
 /** Samus's sprint, px/s: about two pixels per pose at SAMUS_POSE_RATE. */
 export const SAMUS_SPEED = 16;
-/** Seconds into the loop her one crossing starts: after Hornet's first (30–36.6 s), before the Knight's second (60 s). */
-export const SAMUS_START_S = 46;
+/**
+ * The chase, seconds into the loop. It sits between Hornet's first pass (ends 36.6 s) and the Knight's
+ * second (60 s): the Metroid drifts in from the right at `driftSpeed` until its left edge reaches `markX`
+ * (a quarter of the way across), hovers, Samus enters from the left at `samusStartS`, and once she is a
+ * third of the way in (`reactS`) the Metroid bolts right at `fleeSpeed`, slower than her, so she gains.
+ */
+export const CHASE = { metroidEnterS: 40, driftSpeed: 3, markX: 54, samusStartS: 47, reactS: 48.5, fleeSpeed: 13 } as const;
+/** Seconds into the loop her one crossing starts. */
+export const SAMUS_START_S = CHASE.samusStartS;
 
 type RGB = readonly [number, number, number];
 const TAU = Math.PI * 2;
@@ -171,7 +180,7 @@ export function samusRows(t: number): string[] {
 
 // ---- jellies ----------------------------------------------------------------
 export interface Jelly {
-  kind: "uoma" | "ooma" | "metroid";
+  kind: "uoma" | "ooma";
   x0: number;
   dir: 1 | -1;
   /** Whole crossings per loop. */
@@ -188,16 +197,40 @@ export const JELLIES: readonly Jelly[] = [
   { kind: "uoma", x0: 60, dir: 1, cycles: 1, yBase: 3, amp: 1, yCycles: 11, phase: 4.0, coreCycles: 72 },
   { kind: "ooma", x0: 25, dir: -1, cycles: 1, yBase: 0, amp: 1, yCycles: 6, phase: 1.0, coreCycles: 40 },
   { kind: "ooma", x0: 55, dir: 1, cycles: 2, yBase: 2, amp: 2, yCycles: 8, phase: 5.2, coreCycles: 36 },
-  // the Metroid: one slow pass per loop, lower than the jellies, bobbing two rows, claws and nuclei pulsing on a half-second clock
-  { kind: "metroid", x0: 30, dir: -1, cycles: 1, yBase: 3, amp: 2, yCycles: 5, phase: 0.8, coreCycles: 0 },
 ];
-const jellyArt = (j: Jelly) => (j.kind === "ooma" ? OOMA : j.kind === "metroid" ? METROID : UOMA);
-/** Metroid pose clock: half a second per frame (192 swaps per loop, so it closes). */
-export const METROID_FRAME_S = 0.5;
-/** Which art frame a jelly shows at time t (only the Metroid has more than one). */
+const jellyArt = (j: Jelly) => (j.kind === "ooma" ? OOMA : UOMA);
+/** Which art frame a jelly shows at time t (the Uoma and Ooma have one). */
 export function jellyFrame(j: Jelly, t: number): number {
-  const n = jellyArt(j).frames.length;
-  return n === 1 ? 0 : Math.floor(mod(t, FOG_LOOP_S) / METROID_FRAME_S + 1e-9) % n;
+  return Math.floor(mod(t, FOG_LOOP_S)) % jellyArt(j).frames.length;
+}
+
+// ---- the Metroid --------------------------------------------------------------
+const METROID_W = artWidth(METROID), METROID_H = artHeight(METROID);
+/** Pose clock while drifting and hovering: half a second per frame. */
+export const METROID_FRAME_S = 0.5;
+/** Pose clock while fleeing: a quarter second, so it looks agitated. */
+export const METROID_FLEE_FRAME_S = 0.25;
+/** Row its dome bobs around; it hunts lower than the jellies. */
+const METROID_Y_BASE = 3, METROID_BOB = 2;
+const METROID_DRIFT_S = (W - CHASE.markX) / CHASE.driftSpeed;
+const METROID_MARK_S = CHASE.metroidEnterS + METROID_DRIFT_S;
+const METROID_FLEE_S = (W - CHASE.markX) / CHASE.fleeSpeed;
+const METROID_EXIT_S = CHASE.reactS + METROID_FLEE_S;
+
+export interface MetroidState { x: number; y: number; frame: number; phase: "drift" | "hover" | "flee" }
+
+/** Where the Metroid is at time t, or null when it is off screen (it only appears for the chase). */
+export function metroidState(t: number): MetroidState | null {
+  if (t < CHASE.metroidEnterS || t >= METROID_EXIT_S) return null;
+  let x: number, phase: MetroidState["phase"];
+  if (t < METROID_MARK_S) { x = W - (t - CHASE.metroidEnterS) * CHASE.driftSpeed; phase = "drift"; }
+  else if (t < CHASE.reactS) { x = CHASE.markX; phase = "hover"; }
+  else { x = CHASE.markX + (t - CHASE.reactS) * CHASE.fleeSpeed; phase = "flee"; }
+  const bobHz = phase === "flee" ? 2 : 0.5;
+  const y = Math.round(METROID_Y_BASE + METROID_BOB * Math.sin(TAU * bobHz * (t - CHASE.metroidEnterS)));
+  const clock = phase === "flee" ? METROID_FLEE_FRAME_S : METROID_FRAME_S;
+  const frame = Math.floor((t - CHASE.metroidEnterS) / clock + 1e-9) % METROID.frames.length;
+  return { x, y, frame, phase };
 }
 
 /** Top-left of a jelly at time t (integer pixels). */
@@ -251,9 +284,12 @@ export function renderFrame(i: number): Uint8Array {
   // jellies drifting above head height
   for (const j of JELLIES) {
     const art = jellyArt(j), p = jellyPos(j, t);
-    const swap = j.kind === "metroid" ? {} : coreLit(j, t) ? (j.kind === "ooma" ? { O: "OF" } : { C: "CF" }) : {};
+    const swap = coreLit(j, t) ? (j.kind === "ooma" ? { O: "OF" } : { C: "CF" }) : {};
     blit(buf, art.frames[jellyFrame(j, t)]!, p.x, p.y, art.colors, swap);
   }
+  // the Metroid, in for the chase only
+  const m = metroidState(t);
+  if (m) blit(buf, METROID.frames[m.frame]!, Math.round(m.x), m.y, METROID.colors);
 
   // Samus, Hornet and the Knight, drawn last so nothing crosses them (they are never on screen together)
   const sm = samusState(t);
