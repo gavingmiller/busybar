@@ -14,58 +14,11 @@ import type { RunnerArt } from "./art.ts";
 
 // Ravens palette, from js-apps/app.gavin.ravens/src/sprites.ts.
 const RAVEN = { K: "#3C4650", B: "#8A929A", E: "#FFFFFF", Y: "#E6B428" };
+const RAVEN_LIGHT = { ...RAVEN, K: "#4E5A66" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 raven 12x9",
-    frames: [
-      ["...KKK......", ".KKKKKK.....", "KKBBBKKKKKK.", "..KKBKKKKEYY", "...BBBKKKKKY", ".....KKKKKK.", ".....KKKKK..", "....KKKKKKK.", "....YY..Y.Y."],
-      [".KKKK.......", ".KKKKK......", ".KBKKKKKKK..", "..KBKKKKKEYY", "...KBKKKKKKY", ".....KKKKKKK", ".....KKKKKK.", "....KKKKKK..", "....KKKKY.Y."],
-      ["........KKK.", ".......KKEYY", "......KKKKKY", ".....KKKKKKK", "....KKKKKKK.", "...KKKKKKBK.", "...KKKKKKBK.", "...KKKKKKKK.", "....Y.KKKKK."],
-      [".......KKKK.", "......KKKEYY", ".....KKKKKKY", ".....KKKKKK.", "....KKKKKKK.", "...KKKKKKBB.", "...KKKKKKBB.", "...KKKKKKKB.", "......KKKKK."],
-      ["............", ".....KK.KKK.", "....KKKKKEYY", "...KKKKKKKKY", "...KKKKKKKKK", "...KKKKKKK..", "....KKKKKK..", "....KKKKK.Y.", "........Y..."],
-    ],
-    colors: RAVEN,
-    eye: [9, 3],
-  },
-  {
-    name: "2 raven 11x9",
-    frames: [
-      ["...KKK.....", ".KKKKKK....", "KKBBKKKKKK.", "..KKKKKKEYY", "...BBBKKKKY", "....KKKKKK.", "....KKKKK..", "...KKBKKKK.", "....YY...Y."],
-      [".KKK.......", ".KKKKK.....", ".KBKKKKKK..", "..KBKKKKEYY", "...KKKKKKKY", "....KBKKKKK", "....KKKKKK.", "...KKBKKK..", "....KKKK.Y."],
-      [".......KKK.", ".......KEYY", "......KKKKY", ".....KKKKKK", "....KKKKKK.", "...KKKKKBK.", "...KKKKKBK.", "...KKKKKKK.", ".....KKKKK."],
-      [".......KKK.", "......KKEYY", ".....KKKKKY", "....KKKKKK.", "...KKKKKKK.", "...KKKKKBB.", "...KKKKKBB.", "...KKKKKKB.", ".....KKKKK."],
-      ["...........", ".....KKKKK.", "...KKKKKEYY", "...KKKKKKKY", "...KKKKKKKK", "...KKKKKK..", "...KKBKKK..", "...KKBKK.Y.", "..........."],
-    ],
-    colors: RAVEN,
-    eye: [8, 3],
-  },
-  {
-    name: "3 raven 12x8",
-    frames: [
-      ["...KKK......", ".KKKKKK.....", "KKBBBKKKKEYY", "...BBBKKKKKY", "....KBKKKKKK", ".....KKKKKK.", "....KKKKKKK.", "....YY..Y.Y."],
-      [".KKKK.......", ".KKKKK......", ".KBKKKKKKEYY", "...KBKKKKKKY", "....KBKKKKKK", ".....KKKKKK.", "....KKKKKK..", "....KKKKY.Y."],
-      ["........KKK.", ".......KKEYY", "......KKKKKY", ".....KKKKKK.", "....KKKKKKK.", "...KKKKKKBK.", "...KKKKKKKK.", "....Y.KKKKK."],
-      [".......KKKK.", "......KKKEYY", ".....KKKKKKY", "....KKKKKKK.", "....KKKKKKK.", "...KKKKKKBB.", "...KKKKKKKB.", "......KKKKK."],
-      ["............", ".....KK.KKK.", "...KKKKKKEYY", "...KKKKKKKKK", "...KKKKKKKK.", "...KKKKKKK..", "....KKKKK.Y.", "........Y..."],
-    ],
-    colors: RAVEN,
-    eye: [9, 2],
-  },
-  {
-    name: "4 raven 11x8",
-    frames: [
-      ["...KKK.....", ".KKKKKK....", "KKBBKKKKEYY", "...BBBKKKKY", "...KBBKKKKK", "....KKKKKK.", "...KKBKKKK.", "....YY...Y."],
-      [".KKK.......", ".KKKKK.....", ".KBKKKKKEYY", "...KKKKKKKY", "...KBKKKKKK", "....KBKKKK.", "...KKBKKK..", "....KKKK.Y."],
-      [".......KKK.", ".......KEYY", ".....KKKKKY", "....KKKKKK.", "...KKKKKKK.", "...KKKKKBK.", "...KKKKKKK.", ".....KKKKK."],
-      [".......KKK.", "......KKEYY", "....KKKKKKY", "...KKKKKKK.", "...KKKKKKK.", "...KKKKKBB.", "...KKKKKKB.", ".....KKKKK."],
-      ["...........", ".....KKKKK.", "...KKKKKEYY", "...KKKKKKKK", "...KKKKKKK.", "...KKKKKK..", "...KKBKK.Y.", "..........."],
-    ],
-    colors: RAVEN,
-    eye: [8, 2],
-  },
-  {
-    name: "5 raven 10x8",
+    name: "1 10x8 as picked",
     frames: [
       ["..KKK.....", ".KKKKK....", "KKBBKKKEYY", "..BBBKKKKY", "...KBKKKKK", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
       [".KKK......", ".KKKK.....", ".KBKKKKEYY", "..KBKKKKKY", "...KBKKKKK", "....KKKKK.", "...KKKKK..", "...KKKK.Y."],
@@ -74,6 +27,54 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
       ["..........", "....KK.KK.", "...KKKKEYY", "..KKKKKKKK", "..KKKKKKK.", "...KKKKK..", "...KKKKKY.", ".........."],
     ],
     colors: RAVEN,
+    eye: [7, 2],
+  },
+  {
+    name: "2 10x7 flatter",
+    frames: [
+      ["..KKK.....", "KKKKKKKKK.", "..KBKKKEYY", "...BBKKKKY", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
+      [".KKK......", ".KKKKKKK..", "..KKKKKEYY", "...BKKKKKY", "....KKKKKK", "...KKKKKK.", "...KKKK.Y."],
+      [".......KK.", ".....KKEYY", "....KKKKKK", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", "...Y.KKKK."],
+      ["......KKK.", ".....KKEYY", "....KKKKK.", "...KKKKKK.", "..KKKKKKB.", "..KKKKKKB.", ".....KKKK."],
+      ["..........", "...KKKKEYY", "..KKKKKKKY", "..KKKKKKKK", "..KKKKKK..", "...KKKKKY.", ".........."],
+    ],
+    colors: RAVEN,
+    eye: [7, 2],
+  },
+  {
+    name: "3 9x8 narrower",
+    frames: [
+      ["..KKK....", ".KKKKK...", "KKBBKKEYY", "..BBBKKKY", "...KBKKKK", "...KKKKK.", "...KBKKK.", "...YY.Y.."],
+      [".KKK.....", ".KKKK....", ".KKKKKEYY", "..KBKKKKY", "...KKKKKK", "...KBKKK.", "...KBKKK.", "...KKKY.."],
+      ["......KK.", ".....KEYY", "....KKKKY", "...KKKKK.", "...KKKKK.", "..KKKKKB.", "..KKKKKK.", "....KKKK."],
+      [".....KKK.", ".....KEYY", "....KKKKY", "...KKKKK.", "...KKKKK.", "..KKKKKB.", "..KKKKKK.", "....KKKK."],
+      [".........", "....KKKK.", "..KKKKEYY", "..KKKKKKK", "..KKKKKK.", "..KKKKKK.", "...KBKKY.", "......Y.."],
+    ],
+    colors: RAVEN,
+    eye: [6, 2],
+  },
+  {
+    name: "4 9x7 smallest",
+    frames: [
+      ["..KKK....", "KKKKKKKK.", ".KKBKKEYY", "..BBBKKKY", "...KKKKK.", "...KKKKK.", "...YY.Y.."],
+      [".KKK.....", ".KKKKKK..", ".KBKKKEYY", "..KBKKKKY", "...KBKKKK", "...KKKKK.", "...KKKY.."],
+      ["......KK.", ".....KEYY", "....KKKKK", "...KKKKK.", "..KKKKKB.", "..KKKKKK.", "....KKKK."],
+      [".....KKK.", "....KKEYY", "...KKKKK.", "...KKKKK.", "..KKKKKB.", "..KKKKKB.", "....KKKK."],
+      [".........", "...KKKEYY", "..KKKKKKY", "..KKKKKKK", "..KKKKKK.", "...KBKKK.", "......Y.."],
+    ],
+    colors: RAVEN,
+    eye: [6, 2],
+  },
+  {
+    name: "5 10x8 solid, lighter body",
+    frames: [
+      ["..KKK.....", ".KKKKK....", "KKKKKKKEYY", "..KKKKKKKY", "...KKKKKKK", "....KKKKK.", "...KKKKKK.", "...YY...Y."],
+      [".KKK......", ".KKKK.....", ".KKKKKKEYY", "..KKKKKKKY", "...KKKKKKK", "....KKKKK.", "...KKKKK..", "...KKKK.Y."],
+      [".......KK.", "......KEYY", ".....KKKKY", "....KKKKK.", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", "...Y.KKKK."],
+      ["......KKK.", ".....KKEYY", "....KKKKKY", "...KKKKKK.", "...KKKKKK.", "..KKKKKKK.", "..KKKKKKK.", ".....KKKK."],
+      ["..........", "....KK.KK.", "...KKKKEYY", "..KKKKKKKK", "..KKKKKKK.", "...KKKKK..", "...KKKKKY.", ".........."],
+    ],
+    colors: RAVEN_LIGHT,
     eye: [7, 2],
   },
 ];
