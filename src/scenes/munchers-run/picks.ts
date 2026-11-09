@@ -4,11 +4,9 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: HORNET (Gavin: "now do hornet keeping in mind what we've
-// done so far"): the Knight lessons applied — two-row eye hollows, single-tone
-// short cape, stub feet, bright colours — with her pointed chin, red cape and
-// needle. Round 3: straight-up horns settled; one inward-set pair to compare, chin and eye variations.
-//   W mask  E eye hollow  R cape  K feet  L needle
+// Current subject: SAMUS ARAN (Gavin: "I want to do samus too"). Five suits
+// at 9x10, two-frame walk, on a black backdrop (her scenes are dark).
+//   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
 import type { RunnerArt } from "./art.ts";
@@ -22,54 +20,59 @@ const C3 = { ...MASK, K: "#4858A0", N: "#6C80D4" };
 const C4 = { ...MASK, K: "#5262B0", N: "#8094E4" };
 const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
-// Hornet: bone mask, eye hollows, red cape (single tone, bright for the LEDs), darker red feet, pale needle.
-const HORNET = { W: "#F2F2F4", E: "#0A0A12", R: "#E04050", K: "#A02838", L: "#D8DCE8" };
+// Samus Aran (Metroid), hand-drawn 9x10 facing right: helmet and visor, round shoulder pads, torso, arm cannon leading, boots.
+//   O suit  S shoulder pads  G visor  C arm cannon  B boots / zero-suit body  Y hair
+const VARIA   = { O: "#F0A020", S: "#D83030", G: "#40E080", C: "#7A9A7A", B: "#D83030" };
+const POWER   = { O: "#E8C040", S: "#F08030", G: "#40E080", C: "#7A9A7A", B: "#F08030" };
+const GRAVITY = { O: "#9050D0", S: "#E060A0", G: "#40E080", C: "#7A9A7A", B: "#E060A0" };
+const FUSION  = { O: "#3070E0", S: "#F0D040", G: "#40E080", C: "#7A9A7A", B: "#F0D040" };
+const ZERO    = { O: "#F0C8A0", G: "#40B0E0", B: "#3050C0", Y: "#F0D060" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 as picked",
+    name: "1 Varia Suit: orange, red pads, green visor",
     frames: [
-      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
     ],
-    colors: HORNET,
-    eye: [2, 3],
+    colors: VARIA,
+    eye: [5, 1],
   },
   {
-    name: "2 horns set inward",
+    name: "2 Power Suit: yellow, orange pads",
     frames: [
-      ["..W.W..", "..W.W..", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      ["..W.W..", "..W.W..", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
     ],
-    colors: HORNET,
-    eye: [2, 3],
+    colors: POWER,
+    eye: [5, 1],
   },
   {
-    name: "3 inward, leaning in at the tips",
+    name: "3 Gravity Suit: purple, pink pads",
     frames: [
-      ["..W.W..", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      ["..W.W..", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
     ],
-    colors: HORNET,
-    eye: [2, 3],
+    colors: GRAVITY,
+    eye: [5, 1],
   },
   {
-    name: "4 as picked, rounder chin",
+    name: "4 Fusion Suit: blue, yellow pads",
     frames: [
-      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..RRR..", ".RRRRR.", "..K.K.."],
-      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WEWEW.", ".WWWWW.", "..RRR..", ".RRRRR.", ".K...K."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "...O.O...", "...O.O...", "..BB.BB.."],
+      ["...OOOO..", "...OGGGO.", "...OOOOO.", "SSSOOOSSS", "SSSOOOSSS", ".O.OOO.CC", "...OOO...", "..O...O..", "..O...O..", ".BB...BB."],
     ],
-    colors: HORNET,
-    eye: [2, 3],
+    colors: FUSION,
+    eye: [5, 1],
   },
   {
-    name: "5 as picked, one-row eyes",
+    name: "5 Zero Suit: slim blue, blonde ponytail",
     frames: [
-      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WWWWW.", "..WWW..", "..RRR..", ".RRRRR.", "..K.K.."],
-      [".W...W.", ".W...W.", ".WWWWW.", ".WEWEW.", ".WWWWW.", "..WWW..", "..RRR..", ".RRRRR.", ".K...K."],
+      ["..YOOO...", "..YOGGO..", "..YOOOO..", "..YBBBB..", ".Y.BBBB..", "...BBBB..", "...B.B...", "...B.B...", "...B.B...", "..BB.BB.."],
+      ["..YOOO...", "..YOGGO..", "..YOOOO..", "..YBBBB..", ".Y.BBBB..", "...BBBB..", "..B...B..", "..B...B..", "..B...B..", ".BB...BB."],
     ],
-    colors: HORNET,
-    eye: [2, 3],
+    colors: ZERO,
+    eye: [4, 1],
   },
 ];
 
@@ -89,7 +92,7 @@ const POSE_FRAMES = 4;
 export const PICKS_FRAME_COUNT = POSE_FRAMES * 60;
 const DIGIT_RGB: [number, number, number] = [0xf0, 0xb0, 0x40];
 /** Backdrop behind the line-up: black by default; the scene colour when a character's body is black (Fog Canyon's fog). */
-export const PICKS_BG: [number, number, number] = [12, 40, 34];
+export const PICKS_BG: [number, number, number] = [0, 0, 0];
 
 const hex = (h: string): [number, number, number] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 function put(buf: Uint8Array, x: number, y: number, c: [number, number, number]): void {
