@@ -74,11 +74,15 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
   `src/scenes/index.ts`; the control server lists them automatically.
 
 - **server** — a small always-on control server (`127.0.0.1:7495`, loopback
-  only) with a web page that turns every app on the bar on and off: Nyan Cat
-  (the draw-API animation above), every registered scene, plus each JS app
-  the bar reports as installed. Pantheon embeds it as its "BUSY Bar" tab, so the toggles live in
-  the hub. One thing shows at a time, so turning anything on first quits the
-  running JS app and clears every draw.
+  only) with a web page that turns every app on the bar on and off: each
+  Nyan Cat flavour (`src/nyan-cat/flavours.ts` — the classic cat and a
+  purple-frosting one, same pixel art with colour keys swapped, each with
+  its own cat-layer asset), every registered scene, plus each JS app the
+  bar reports as installed. Pantheon embeds it as its "BUSY Bar" tab, so
+  the toggles live in the hub; the page re-reads the list every 10 s and
+  when the tab comes back into view, and shows the next shuffle change as a
+  countdown ("in 1 hr 10 min"). One thing shows at a time, so turning
+  anything on first quits the running JS app and clears every draw.
   - `bun run server` — run it by hand (`BUSYBAR_CONTROL_PORT`,
     `BUSYBAR_BASE_URL` and `BUSYBAR_STATE_FILE` override the defaults).
   - `bun run install-launchd` — installs `launchd/com.busybar.server.plist`

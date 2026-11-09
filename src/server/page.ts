@@ -8,6 +8,28 @@
  * is hidden and the page follows `prefers-color-scheme` live, per Pantheon's
  * embedding contract.
  */
+/** How often the page re-reads the app list, ms: Shuffle changes the bar behind its back. */
+export const PAGE_POLL_MS = 10_000;
+
+/**
+ * "in 1 hr 10 min" until `targetIso`, from `nowMs`. Written in ES5 style
+ * because its source is shipped verbatim into the page script below.
+ */
+export function relativeUntil(targetIso: string, nowMs: number): string {
+  if (!targetIso) return "";
+  var target = Date.parse(targetIso);
+  if (isNaN(target)) return "";
+  var minutes = Math.round((target - nowMs) / 60000);
+  if (target - nowMs < 0) return "any moment now";
+  if (minutes < 1) return "in under a minute";
+  var hours = Math.floor(minutes / 60);
+  var rest = minutes % 60;
+  var parts = [];
+  if (hours > 0) parts.push(hours + " hr");
+  if (rest > 0) parts.push(rest + " min");
+  return "in " + parts.join(" ");
+}
+
 export const CONTROL_PAGE_HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -135,6 +157,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   var shuffleEl = document.getElementById('shuffle');
   var statusEl = document.getElementById('status');
 
+  ${relativeUntil.toString()}
   function fmt(iso) {
     if (!iso) return '';
     var d = new Date(iso);
@@ -157,7 +180,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     label.appendChild(document.createTextNode('Shuffle'));
     var note = document.createElement('span');
     note.className = 'kind';
-    note.textContent = on && data.shuffle.nextChangeAt ? 'next change ' + fmt(data.shuffle.nextChangeAt) : 'a different animation every 2 hours';
+    note.textContent = on && data.shuffle.nextChangeAt ? 'next change ' + relativeUntil(data.shuffle.nextChangeAt, Date.now()) : 'a different animation every 2 hours';
     label.appendChild(note);
     var seg = document.createElement('div');
     seg.className = 'seg';
@@ -177,6 +200,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     shuffleEl.appendChild(row);
   }
   function render(data) {
+    inflight = false;
     renderShuffle(data);
     appsEl.textContent = '';
     var active = null;
@@ -220,13 +244,16 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     else if (active) statusEl.textContent = active.name + ' turned on ' + fmt(data.changedAt);
     else statusEl.textContent = 'Turned off ' + fmt(data.changedAt);
   }
+  var inflight = false;
   function setBusy(text) {
+    inflight = true;
     var buttons = document.querySelectorAll('#apps button, #shuffle button');
     for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
     statusEl.className = 'status busy';
     statusEl.textContent = text;
   }
   function setError(text) {
+    inflight = false;
     var buttons = document.querySelectorAll('#apps button, #shuffle button');
     for (var i = 0; i < buttons.length; i++) buttons[i].disabled = false;
     statusEl.className = 'status error';
@@ -255,14 +282,25 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
       .catch(function (err) { setError('Failed: ' + err.message); });
   }
 
-  setBusy('Reading the bar\\u2019s app list\\u2026');
-  fetch('/api/apps')
-    .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
-    .then(function (r) {
-      if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
-      render(r.body);
-    })
-    .catch(function (err) { setError('Could not read the bar: ' + err.message); });
+  // Shuffle (and anything else) changes the bar behind the page's back, and
+  // Pantheon keeps this tab open for hours: re-read the list on a timer and
+  // whenever the tab comes back into view. A quiet poll never disturbs a
+  // command in flight or replaces an error it would hide.
+  function load(quiet) {
+    if (quiet && inflight) return;
+    if (!quiet) setBusy('Reading the bar\\u2019s app list\\u2026');
+    fetch('/api/apps')
+      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
+        if (quiet && inflight) return;
+        render(r.body);
+      })
+      .catch(function (err) { if (!quiet) setError('Could not read the bar: ' + err.message); });
+  }
+  load(false);
+  setInterval(function () { if (!document.hidden) load(true); }, ${PAGE_POLL_MS});
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) load(true); });
 })();
 </script>
 </body>

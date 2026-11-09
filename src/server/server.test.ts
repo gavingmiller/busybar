@@ -30,6 +30,7 @@ function deps(overrides: Partial<ServerDeps> = {}): ServerDeps {
     baseUrl: BASE_URL,
     stateFile,
     fetchImpl: mock(async () => new Response("{}")) as unknown as typeof fetch,
+    nyans: [{ id: NYAN_ID, name: "Nyan Cat" }],
     runRainbow: mock(async () => {}),
     clearAllDisplays: mock(async () => {}),
     listApps: mock(async () => DEVICE_APPS),
@@ -95,6 +96,23 @@ describe("GET /api/apps", () => {
         { id: "community.dino_run", name: "Dino Run", kind: "js", state: "unknown" },
       ],
     });
+  });
+
+  it("lists every Nyan Cat flavour as its own draw app, and turning one on draws and pans that flavour (Gavin 2026-11-09: purple frosting)", async () => {
+    const d = deps({ nyans: [{ id: NYAN_ID, name: "Nyan Cat" }, { id: "nyan_cat_purple", name: "Purple Nyan Cat" }] });
+    const handler = createHandler(d);
+    const listed = (await (await handler(req("/api/apps"))).json()).apps.map((a: { id: string; name: string }) => [a.id, a.name]);
+    expect(listed.slice(0, 3)).toEqual([[NYAN_ID, "Nyan Cat"], ["nyan_cat_purple", "Purple Nyan Cat"], ["lava_lamp", "Lava Lamp"]]);
+    const res = await handler(post("nyan_cat_purple", { on: true }));
+    expect(res.status).toBe(200);
+    expect(calls(d.runRainbow)).toEqual([[BASE_URL, d.fetchImpl, "nyan_cat_purple"]]);
+    expect(calls(d.startPan)).toEqual([[BASE_URL, d.fetchImpl, "nyan_cat_purple"]]);
+    const body = await res.json();
+    expect(body.apps.filter((a: { state: string }) => a.state === "on").map((a: { id: string }) => a.id)).toEqual(["nyan_cat_purple"]);
+    // Shuffle deals flavours as separate cards.
+    await handler(req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on: true }) }));
+    const stored = JSON.parse(readFileSync(stateFile, "utf8"));
+    expect([...stored.shuffle.deck].sort()).toEqual(["aquarium", "lava_lamp", NYAN_ID]);
   });
 
   it("answers 502 when the device cannot list its apps", async () => {
@@ -284,7 +302,7 @@ describe("shuffle (global rotation)", () => {
   const shuffle = (on: boolean) => req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) });
   const ran = (d: ServerDeps): string[] => {
     const out: string[] = [];
-    for (let i = 0; i < calls(d.runRainbow).length; i++) out.push(NYAN_ID);
+    for (const c of calls(d.runRainbow)) out.push(c[2] as string);
     for (const s of d.scenes) for (let i = 0; i < calls(s.run).length; i++) out.push(s.id);
     return out;
   };

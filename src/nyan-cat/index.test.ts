@@ -1,6 +1,7 @@
 import { describe, it, expect, mock } from "bun:test";
 import { runStationary, runRainbow, NYAN_CAT_ELEMENT_ID, nyanHomeElementX, playNyanCatSection, nyanAssetNames, NYAN_APPLICATION_NAME } from "./index.ts";
 import { HOME_SECTION } from "./pan.ts";
+import { PURPLE_NYAN } from "./flavours.ts";
 
 /** A device whose asset directory already holds `files`; records every request. */
 function device(files: string[]) {
@@ -131,5 +132,34 @@ describe("runRainbow", () => {
     expect(draws).toHaveLength(1);
     // Stale files go only after the new draw is up: removing a file an element still plays wedges the device.
     expect(calls.indexOf(removes[0]!)).toBeGreaterThan(calls.indexOf(draws[0]!));
+  });
+
+  it("a flavour draws the cat from its own asset (stars shared) and never removes another flavour's cat file", async () => {
+    const classic = nyanAssetNames();
+    const purple = nyanAssetNames(PURPLE_NYAN);
+    expect(purple.stars).toBe(classic.stars);
+    expect(purple.cat).toMatch(/^nyan-purple-[0-9a-f]{8}\.anim$/);
+    expect(purple.cat).not.toBe(classic.cat);
+    const { calls, fetchMock } = device([classic.stars, classic.cat, "nyan-purple-00000000.anim"]);
+
+    await runRainbow("http://10.0.4.20", fetchMock, 0, PURPLE_NYAN);
+
+    const uploads = calls.filter((c) => c.url.includes("/api/assets/upload"));
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0]!.url).toContain(`file=${purple.cat}`);
+    const draw = calls.find((c) => c.url === "http://10.0.4.20/api/display/draw" && c.method === "POST")!;
+    const cat = (draw.body as { elements: Array<Record<string, unknown>> }).elements[1]!;
+    expect(cat.path).toBe(purple.cat);
+    const removed = calls.filter((c) => c.url.includes("/api/storage/remove")).map((c) => decodeURIComponent(c.url));
+    expect(removed).toHaveLength(1);
+    expect(removed[0]).toContain("nyan-purple-00000000.anim");
+    expect(removed.some((u) => u.includes(classic.cat))).toBe(false);
+  });
+
+  it("the pan plays sections from the flavour's own cat asset", async () => {
+    const { calls, fetchMock } = device([]);
+    await playNyanCatSection("http://10.0.4.20", "exc_s", false, fetchMock, PURPLE_NYAN);
+    const body = calls[0]!.body as { elements: Array<Record<string, unknown>> };
+    expect(body.elements[0]!.path).toBe(nyanAssetNames(PURPLE_NYAN).cat);
   });
 });

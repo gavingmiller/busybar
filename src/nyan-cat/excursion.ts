@@ -73,8 +73,8 @@ function placed(frame: Uint8Array, offset: number): Uint8Array {
 }
 
 /** The cat layer as sections: the home loop first, then one section per excursion. */
-export function catPanLayerSections(): AnimSection[] {
-  const home = catLayerFrames();
+export function catPanLayerSections(colors?: Record<string, string>): AnimSection[] {
+  const home = catLayerFrames(colors);
   return [
     { name: HOME_SECTION, frames: home.map((f) => placed(f, PAN_PAD)) },
     ...EXCURSIONS.map((e) => ({

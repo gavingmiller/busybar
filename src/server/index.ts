@@ -11,6 +11,7 @@ import {
 import { runRainbow as runRainbowReal, playNyanCatSection } from "../nyan-cat/index.ts";
 import { startPan as startPanReal, type PanHandle } from "../nyan-cat/pan.ts";
 import { EXCURSIONS, excursionDurationMs } from "../nyan-cat/excursion.ts";
+import { NYAN_FLAVOURS, CLASSIC_NYAN, flavourById } from "../nyan-cat/flavours.ts";
 import { SKY_FPS, SKY_FRAME_COUNT } from "../nyan-cat/sky.ts";
 import { CONTROL_PAGE_HTML } from "./page.ts";
 import { runScene } from "../lib/scene.ts";
@@ -54,13 +55,16 @@ export interface ServerDeps {
   /** JSON file holding the last command successfully sent to the device. */
   stateFile: string;
   fetchImpl: typeof fetch;
-  runRainbow: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
+  /** The draw-API Nyan Cat flavours, listed first as draw apps. */
+  nyans: NyanApp[];
+  /** Draws Nyan Cat in flavour `id` (nyan-cat/index.ts runRainbow). */
+  runRainbow: (baseUrl: string, fetchImpl: typeof fetch, id: string) => Promise<void>;
   clearAllDisplays: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
   listApps: (baseUrl: string, fetchImpl: typeof fetch) => Promise<DeviceApp[]>;
   launchApp: (baseUrl: string, appId: string, fetchImpl: typeof fetch) => Promise<void>;
   quitApp: (baseUrl: string, fetchImpl: typeof fetch) => Promise<void>;
   /** Starts the Nyan Cat camera pan (nyan-cat/pan.ts) against the device; returns a handle to stop it. */
-  startPan: (baseUrl: string, fetchImpl: typeof fetch) => PanHandle;
+  startPan: (baseUrl: string, fetchImpl: typeof fetch, id: string) => PanHandle;
   /** Pre-rendered full-display loops (lib/scene.ts), listed as draw apps after Nyan Cat. */
   scenes: SceneApp[];
   now: () => Date;
@@ -74,8 +78,9 @@ export interface ServerDeps {
 /** How soon Shuffle tries again after a change fails (device unreachable, upload refused). */
 export const SHUFFLE_RETRY_MS = 60 * 1000;
 
-/** The draw-API Nyan Cat; not a JS app, so it has no device id of its own. */
-export const NYAN_ID = "nyan_cat";
+/** The classic draw-API Nyan Cat; not a JS app, so it has no device id of its own. */
+export const NYAN_ID = CLASSIC_NYAN.id;
+export interface NyanApp { id: string; name: string }
 export const DEFAULT_PORT = 7495;
 export const DEFAULT_BASE_URL = "http://10.0.4.20";
 export const DEFAULT_STATE_FILE = join(
@@ -138,7 +143,7 @@ async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<A
   const stateOf = (id: string): AppState =>
     state === null ? "unknown" : state.active === id ? "on" : "off";
   const apps: AppStatus[] = [
-    { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: stateOf(NYAN_ID) },
+    ...deps.nyans.map((n) => ({ id: n.id, name: n.name, kind: "draw" as const, state: stateOf(n.id) })),
     ...deps.scenes.map((s) => ({ id: s.id, name: s.name, kind: "draw" as const, state: stateOf(s.id) })),
     ...deviceApps.map((a) => ({ id: a.id, name: a.name, kind: "js" as const, state: stateOf(a.id) })),
   ];
@@ -167,16 +172,16 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
   const showAnimation = async (id: string): Promise<void> => {
     stopPan();
     await deps.quitApp(deps.baseUrl, deps.fetchImpl);
-    if (id === NYAN_ID) {
-      await deps.runRainbow(deps.baseUrl, deps.fetchImpl);
-      pan = deps.startPan(deps.baseUrl, deps.fetchImpl);
+    if (deps.nyans.some((n) => n.id === id)) {
+      await deps.runRainbow(deps.baseUrl, deps.fetchImpl, id);
+      pan = deps.startPan(deps.baseUrl, deps.fetchImpl, id);
       return;
     }
     const scene = deps.scenes.find((s) => s.id === id);
     if (!scene) throw new Error(`Unknown animation "${id}"`);
     await scene.run(deps.baseUrl, deps.fetchImpl);
   };
-  const animationIds = (): string[] => [NYAN_ID, ...deps.scenes.map((s) => s.id)];
+  const animationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.map((s) => s.id)];
 
   // Shuffle: one timer, re-armed after every change; the round itself is in
   // the state file so a restart carries on where it left off.
@@ -331,21 +336,24 @@ if (import.meta.main) {
     baseUrl: process.env.BUSYBAR_BASE_URL ?? DEFAULT_BASE_URL,
     stateFile: process.env.BUSYBAR_STATE_FILE ?? DEFAULT_STATE_FILE,
     fetchImpl: fetch,
-    runRainbow: runRainbowReal,
+    nyans: NYAN_FLAVOURS.map((f) => ({ id: f.id, name: f.name })),
+    runRainbow: (baseUrl, fetchImpl, id) => runRainbowReal(baseUrl, fetchImpl, undefined, flavourById(id)),
     clearAllDisplays: clearAllDisplaysReal,
     listApps: listAppsReal,
     launchApp: launchAppReal,
     quitApp: quitAppReal,
-    startPan: (baseUrl, fetchImpl) =>
+    startPan: (baseUrl, fetchImpl, id) =>
       startPanReal({
         excursions: EXCURSIONS.map((e) => ({ name: e.name, durationMs: excursionDurationMs(e) })),
         loopMs: (SKY_FRAME_COUNT / SKY_FPS) * 1000,
-        play: (section, loop) => playNyanCatSection(baseUrl, section, loop, fetchImpl),
+        play: (section, loop) => playNyanCatSection(baseUrl, section, loop, fetchImpl, flavourById(id)),
         onError: (err) => console.error(`nyan pan: ${err instanceof Error ? err.message : String(err)}`),
       }),
     scenes: SCENES.map((scene) => ({ id: scene.id, name: scene.name, run: (baseUrl, fetchImpl) => runScene(baseUrl, scene, fetchImpl) })),
     now: () => new Date(),
   });
-  Bun.serve({ hostname: "127.0.0.1", port, fetch: handler });
+  // Drawing an animation uploads its asset first (up to ~100 s for a cat
+  // layer); Bun's default 10 s idle timeout cut those responses off mid-upload.
+  Bun.serve({ hostname: "127.0.0.1", port, fetch: handler, idleTimeout: 255 });
   console.log(`BUSY Bar control server listening on http://127.0.0.1:${port}`);
 }

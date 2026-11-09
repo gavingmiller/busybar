@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import {
-  skySceneFrames, skyCatOrigin, starLayerFrames, starPositions, STARS, STAR_COLORS,
+  skySceneFrames, skyCatOrigin, starLayerFrames, catLayerFrames, starPositions, STARS, STAR_COLORS,
   SKY_WIDTH, SKY_HEIGHT, SKY_FRAME_COUNT, SKY_FPS, STAR_SPEED_PX_PER_S, STAR_FRAMES_PER_PX, STAR_STRIP_WIDTH,
 } from "./sky.ts";
-import { CAT_FRAMES } from "./sprite-data.ts";
+import { CAT_FRAMES, NYAN_COLORS } from "./sprite-data.ts";
 import { CAT_FPS, TRAIL_FPS, CAT_HEIGHT } from "./sprite.ts";
 import { TRAIL_PERIOD } from "./trail.ts";
 
@@ -120,5 +120,26 @@ describe("stars", () => {
       expect(lit).toBeLessThanOrEqual(STARS.length * 2);
       expect(lit).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("catLayerFrames", () => {
+  it("paints the cat in the colour map it is given, so a flavour changes only the recoloured pixels", () => {
+    const classic = catLayerFrames();
+    const purple = catLayerFrames({ ...NYAN_COLORS, M: "#B266FFFF" });
+    expect(catLayerFrames(NYAN_COLORS)).toEqual(classic);
+    expect(purple).toHaveLength(classic.length);
+    let changed = 0, same = 0;
+    for (let i = 0; i < classic[0]!.length; i += 4) {
+      const a = classic[0]!.slice(i, i + 4), b = purple[0]!.slice(i, i + 4);
+      if (a.join() === b.join()) same++;
+      else {
+        changed++;
+        expect([...a]).toEqual([0xff, 0xb3, 0xd9, 0xff]); // only the pink frosting moved
+        expect([...b]).toEqual([0xb2, 0x66, 0xff, 0xff]);
+      }
+    }
+    expect(changed).toBeGreaterThan(50);
+    expect(same).toBeGreaterThan(changed);
   });
 });

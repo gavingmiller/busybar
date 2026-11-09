@@ -4,6 +4,7 @@ import { encodeAnimFile } from "../lib/anim-file.ts";
 import { starLayerFrames, skyCatOrigin, SKY_WIDTH, SKY_HEIGHT, SKY_FPS, CAT_LAYER_TRAIL_LENGTH } from "./sky.ts";
 import { catPanLayerSections, catPanLayerWidth, PAN_PAD } from "./excursion.ts";
 import { HOME_SECTION } from "./pan.ts";
+import { CLASSIC_NYAN, flavourColors, type NyanFlavour } from "./flavours.ts";
 import {
   nyanCatPayload,
   sceneAnimationFrames,
@@ -36,7 +37,8 @@ interface EncodedAssets {
   names: { stars: string; cat: string };
 }
 
-let encodedAssets: EncodedAssets | null = null;
+let encodedStars: { bytes: Uint8Array; name: string } | null = null;
+const encodedCats = new Map<string, { bytes: Uint8Array; name: string }>();
 
 /** First 8 hex digits of the SHA-1 of `bytes`. */
 function contentHash(bytes: Uint8Array): string {
@@ -44,22 +46,29 @@ function contentHash(bytes: Uint8Array): string {
 }
 
 /**
- * The two layer assets, encoded once per process. Their file names carry a
- * content hash, so a device that already holds them (a previous run of the
- * same code) needs no re-upload — the cat layer with its pan sections is
- * ~8 MB and takes ~20 s over the USB link.
+ * The two layer assets, encoded once per process (the stars once, the cat
+ * layer once per flavour). Their file names carry a content hash, so a
+ * device that already holds them (a previous run of the same code) needs no
+ * re-upload — the cat layer with its pan sections is ~40 MB and takes
+ * ~100 s over the USB link.
  */
-function assets(): EncodedAssets {
-  if (encodedAssets) return encodedAssets;
-  const stars = encodeAnimFile({ width: SKY_WIDTH, height: SKY_HEIGHT, fps: SKY_FPS, frames: starLayerFrames() });
-  const cat = encodeAnimFile({ width: catPanLayerWidth(), height: CAT_HEIGHT, fps: SKY_FPS, sections: catPanLayerSections() });
-  encodedAssets = { stars, cat, names: { stars: `nyan-stars-${contentHash(stars)}.anim`, cat: `nyan-cat-${contentHash(cat)}.anim` } };
-  return encodedAssets;
+function assets(flavour: NyanFlavour = CLASSIC_NYAN): EncodedAssets {
+  if (!encodedStars) {
+    const bytes = encodeAnimFile({ width: SKY_WIDTH, height: SKY_HEIGHT, fps: SKY_FPS, frames: starLayerFrames() });
+    encodedStars = { bytes, name: `nyan-stars-${contentHash(bytes)}.anim` };
+  }
+  let cat = encodedCats.get(flavour.id);
+  if (!cat) {
+    const bytes = encodeAnimFile({ width: catPanLayerWidth(), height: CAT_HEIGHT, fps: SKY_FPS, sections: catPanLayerSections(flavourColors(flavour)) });
+    cat = { bytes, name: `nyan-${flavour.asset}-${contentHash(bytes)}.anim` };
+    encodedCats.set(flavour.id, cat);
+  }
+  return { stars: encodedStars.bytes, cat: cat.bytes, names: { stars: encodedStars.name, cat: cat.name } };
 }
 
-/** The asset file names this build draws with. */
-export function nyanAssetNames(): { stars: string; cat: string } {
-  return assets().names;
+/** The asset file names this build draws with, for `flavour`. */
+export function nyanAssetNames(flavour: NyanFlavour = CLASSIC_NYAN): { stars: string; cat: string } {
+  return assets(flavour).names;
 }
 
 /**
@@ -68,11 +77,11 @@ export function nyanAssetNames(): { stars: string; cat: string } {
  * which both keeps the run cycle unbroken and is how the pan excursions
  * splice in seamlessly (excursion.ts).
  */
-export function nyanCatLayerElement(section: string, loop: boolean, awaitPreviousEnd: boolean): Record<string, unknown> {
+export function nyanCatLayerElement(section: string, loop: boolean, awaitPreviousEnd: boolean, flavour: NyanFlavour = CLASSIC_NYAN): Record<string, unknown> {
   return {
     id: NYAN_CAT_ELEMENT_ID,
     type: "animation",
-    path: assets().names.cat,
+    path: assets(flavour).names.cat,
     section,
     loop,
     ...(awaitPreviousEnd ? { await_previous_end: true } : {}),
@@ -84,8 +93,8 @@ export function nyanCatLayerElement(section: string, loop: boolean, awaitPreviou
 }
 
 /** Queues `section` of the cat layer to play after the current one ends; the pan's only device call. */
-export async function playNyanCatSection(baseUrl: string, section: string, loop: boolean, fetchImpl: typeof fetch = fetch): Promise<void> {
-  await drawElements(baseUrl, { application_name: APPLICATION_NAME, priority: DRAW_PRIORITY, elements: [nyanCatLayerElement(section, loop, true)] }, fetchImpl);
+export async function playNyanCatSection(baseUrl: string, section: string, loop: boolean, fetchImpl: typeof fetch = fetch, flavour: NyanFlavour = CLASSIC_NYAN): Promise<void> {
+  await drawElements(baseUrl, { application_name: APPLICATION_NAME, priority: DRAW_PRIORITY, elements: [nyanCatLayerElement(section, loop, true, flavour)] }, fetchImpl);
 }
 // The composited scene samples at the trail's own native cadence (see
 // sceneAnimationFrames) — a similar visual pace to the old ~150ms/frame
@@ -133,7 +142,8 @@ export async function runFlying(
 export async function runRainbow(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch,
-  settleMs: number = RAINBOW_ASSET_SETTLE_MS
+  settleMs: number = RAINBOW_ASSET_SETTLE_MS,
+  flavour: NyanFlavour = CLASSIC_NYAN
 ): Promise<void> {
   const trailLength = DEFAULT_TRAIL_LENGTH;
   const originX = stationaryOriginX(trailLength);
@@ -151,7 +161,7 @@ export async function runRainbow(
   // star field over the whole display, and the cat + a display-width trail
   // (with its pan excursions as extra sections) in front of it. Upload only
   // what the device doesn't already hold, and drop this app's stale builds.
-  const { stars, cat, names } = assets();
+  const { stars, cat, names } = assets(flavour);
   const present = new Set((await listStorage(baseUrl, assetStoragePath(APPLICATION_NAME), fetchImpl)).filter((e) => e.type === "file").map((e) => e.name));
   let uploaded = false;
   for (const [name, bytes] of [[names.stars, stars], [names.cat, cat]] as const) {
@@ -168,7 +178,7 @@ export async function runRainbow(
       priority: DRAW_PRIORITY,
       elements: [
         { id: "stars", type: "animation", path: names.stars, loop: true, x: 0, y: 0, z_index: 1, display: "front" },
-        nyanCatLayerElement(HOME_SECTION, true, false),
+        nyanCatLayerElement(HOME_SECTION, true, false, flavour),
       ],
     },
     fetchImpl
@@ -178,8 +188,10 @@ export async function runRainbow(
   // files, so nothing on the display can still hold an old one open.
   // Removing an asset that an element is playing wedges the device's HTTP
   // server until a USB power cycle (happened live 2026-11-08).
+  // Only this flavour's cat files and the stars: another flavour's cat asset stays for its turn.
+  const stale = new RegExp(`^nyan-(stars|${flavour.asset})-[0-9a-f]{8}\\.anim$`);
   for (const name of present) {
-    if (/^nyan-(stars|cat)-[0-9a-f]{8}\.anim$/.test(name) && name !== names.stars && name !== names.cat) {
+    if (stale.test(name) && name !== names.stars && name !== names.cat) {
       await removeStorageFile(baseUrl, assetStoragePath(APPLICATION_NAME, name), fetchImpl);
     }
   }

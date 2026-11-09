@@ -117,12 +117,12 @@ export const CAT_LAYER_TRAIL_LENGTH = SKY_WIDTH;
 export const CAT_LAYER_WIDTH = CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP + CAT_WIDTH;
 
 /** The cat and its trail alone, CAT_LAYER_WIDTH x CAT_HEIGHT with a transparent background, one frame per loop step. */
-export function catLayerFrames(): Uint8Array[] {
+export function catLayerFrames(colors: Record<string, string> = NYAN_COLORS): Uint8Array[] {
   return Array.from({ length: SKY_FRAME_COUNT }, (_, i) => {
     const canvas = new Canvas(CAT_LAYER_WIDTH, CAT_HEIGHT);
-    canvas.paintGrid(trailGrid(i % TRAIL_PERIOD, CAT_LAYER_TRAIL_LENGTH, CAT_HEIGHT), NYAN_COLORS, 0, 0);
+    canvas.paintGrid(trailGrid(i % TRAIL_PERIOD, CAT_LAYER_TRAIL_LENGTH, CAT_HEIGHT), colors, 0, 0);
     const catIndex = Math.floor((i * CAT_FPS) / TRAIL_FPS) % CAT_FRAMES.length;
-    canvas.paintGrid(CAT_FRAMES[catIndex]!, NYAN_COLORS, CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP, 0);
+    canvas.paintGrid(CAT_FRAMES[catIndex]!, colors, CAT_LAYER_TRAIL_LENGTH - CAT_TRAIL_OVERLAP, 0);
     return canvas.toRGBA(CLEAR);
   });
 }
