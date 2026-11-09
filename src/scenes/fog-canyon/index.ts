@@ -35,12 +35,16 @@ export const SAMUS_SPEED = 16;
 /**
  * The chase, seconds into the loop. It sits between Hornet's first pass (ends 36.6 s) and the Knight's
  * second (60 s): the Metroid drifts in from the right at `driftSpeed` until its left edge reaches `markX`
- * (a quarter of the way across), hovers, Samus enters from the left at `samusStartS`, and once she is a
- * third of the way in (`reactS`) the Metroid bolts right at `fleeSpeed`, slower than her, so she gains.
+ * (a quarter of the way across) and hovers there. Samus enters from the left at `samusStartS` WALKING at
+ * `walkSpeed`; when her x reaches `noticeX` (her front about 14 px from it) she stops for `pauseS` on her
+ * contact frame, then sprints at SAMUS_SPEED. The Metroid bolts right at `fleeSpeed` the moment she
+ * sprints (Gavin 2026-11-09), slower than her so she gains; both leave by the right edge.
  */
-export const CHASE = { metroidEnterS: 40, driftSpeed: 3, markX: 54, samusStartS: 47, reactS: 48.5, fleeSpeed: 13 } as const;
-/** Seconds into the loop her one crossing starts. */
+export const CHASE = { metroidEnterS: 41, driftSpeed: 3, markX: 54, samusStartS: 47, walkSpeed: 6, noticeX: 31, pauseS: 0.6, fleeSpeed: 13 } as const;
+/** Seconds into the loop her one appearance starts. */
 export const SAMUS_START_S = CHASE.samusStartS;
+/** Order the moving things are painted, back to front; Samus is the topmost foreground. */
+export const DRAW_ORDER = ["jellies", "metroid", "hornet", "knight", "samus"] as const;
 
 type RGB = readonly [number, number, number];
 const TAU = Math.PI * 2;
@@ -159,17 +163,31 @@ export function hornetRows(t: number): string[] {
 
 // ---- Samus ------------------------------------------------------------------
 const SAMUS_W = artWidth(SAMUS), SAMUS_H = artHeight(SAMUS);
-const SAMUS_TRAVEL_S = (W + SAMUS_W) / SAMUS_SPEED;
+/** Walk: from the left edge to noticeX. Chosen so the walk ends on a whole number of pose cycles (frame 0). */
+const SAMUS_WALK_S = (CHASE.noticeX + SAMUS_W) / CHASE.walkSpeed;
+/** When she stops, having noticed the Metroid. */
+export const SAMUS_NOTICE_S = SAMUS_START_S + SAMUS_WALK_S;
+/** When she starts sprinting; the Metroid bolts at this moment. */
+export const SAMUS_SPRINT_S = SAMUS_NOTICE_S + CHASE.pauseS;
+/** When she is off the right edge. */
+export const SAMUS_EXIT_S = SAMUS_SPRINT_S + (W - CHASE.noticeX) / SAMUS_SPEED;
 
-export interface SamusState { x: number; dir: 1; frame: number }
+export interface SamusState { x: number; dir: 1; frame: number; phase: "walk" | "stop" | "sprint" }
 
-/** Where Samus is at time t (one left-to-right sprint per loop), or null when she is off screen. Poses advance on the clock. */
+/**
+ * Where Samus is at time t, or null when she is off screen. Poses advance at speed / 2 per second within
+ * each moving phase (3/s walking, 8/s sprinting), counted from that phase's start; she holds frame 0 while
+ * stopped, and the walk ends on frame 0, so no rate change jumps a frame.
+ */
 export function samusState(t: number): SamusState | null {
-  const tl = t - SAMUS_START_S;
-  if (tl < 0 || tl >= SAMUS_TRAVEL_S) return null;
-  const x = -SAMUS_W + tl * SAMUS_SPEED;
-  const frame = Math.floor(tl * SAMUS_POSE_RATE + 1e-9) % SAMUS.frames.length;
-  return { x, dir: 1, frame };
+  if (t < SAMUS_START_S || t >= SAMUS_EXIT_S) return null;
+  if (t < SAMUS_NOTICE_S) {
+    const tl = t - SAMUS_START_S;
+    return { x: -SAMUS_W + tl * CHASE.walkSpeed, dir: 1, frame: Math.floor(tl * (CHASE.walkSpeed / 2) + 1e-9) % SAMUS.frames.length, phase: "walk" };
+  }
+  if (t < SAMUS_SPRINT_S) return { x: CHASE.noticeX, dir: 1, frame: 0, phase: "stop" };
+  const ts = t - SAMUS_SPRINT_S;
+  return { x: CHASE.noticeX + ts * SAMUS_SPEED, dir: 1, frame: Math.floor(ts * (SAMUS_SPEED / 2) + 1e-9) % SAMUS.frames.length, phase: "sprint" };
 }
 
 /** Samus's pixel rows at time t; empty when off screen. */
@@ -215,7 +233,7 @@ const METROID_Y_BASE = 3, METROID_BOB = 2;
 const METROID_DRIFT_S = (W - CHASE.markX) / CHASE.driftSpeed;
 const METROID_MARK_S = CHASE.metroidEnterS + METROID_DRIFT_S;
 const METROID_FLEE_S = (W - CHASE.markX) / CHASE.fleeSpeed;
-const METROID_EXIT_S = CHASE.reactS + METROID_FLEE_S;
+const METROID_EXIT_S = SAMUS_SPRINT_S + METROID_FLEE_S;
 
 export interface MetroidState { x: number; y: number; frame: number; phase: "drift" | "hover" | "flee" }
 
@@ -224,8 +242,8 @@ export function metroidState(t: number): MetroidState | null {
   if (t < CHASE.metroidEnterS || t >= METROID_EXIT_S) return null;
   let x: number, phase: MetroidState["phase"];
   if (t < METROID_MARK_S) { x = W - (t - CHASE.metroidEnterS) * CHASE.driftSpeed; phase = "drift"; }
-  else if (t < CHASE.reactS) { x = CHASE.markX; phase = "hover"; }
-  else { x = CHASE.markX + (t - CHASE.reactS) * CHASE.fleeSpeed; phase = "flee"; }
+  else if (t < SAMUS_SPRINT_S) { x = CHASE.markX; phase = "hover"; }
+  else { x = CHASE.markX + (t - SAMUS_SPRINT_S) * CHASE.fleeSpeed; phase = "flee"; }
   const bobHz = phase === "flee" ? 2 : 0.5;
   const y = Math.round(METROID_Y_BASE + METROID_BOB * Math.sin(TAU * bobHz * (t - CHASE.metroidEnterS)));
   const clock = phase === "flee" ? METROID_FLEE_FRAME_S : METROID_FRAME_S;
@@ -291,13 +309,14 @@ export function renderFrame(i: number): Uint8Array {
   const m = metroidState(t);
   if (m) blit(buf, METROID.frames[m.frame]!, Math.round(m.x), m.y, METROID.colors);
 
-  // Samus, Hornet and the Knight, drawn last so nothing crosses them (they are never on screen together)
-  const sm = samusState(t);
-  if (sm) blit(buf, samusRows(t), Math.round(sm.x), FLOOR_Y - SAMUS_H, SAMUS.colors);
+  // Hornet and the Knight, drawn after the jellies so nothing crosses them; Samus last of all, the topmost
+  // foreground (Gavin 2026-11-09). See DRAW_ORDER.
   const h = hornetState(t);
   if (h) blit(buf, hornetRows(t), Math.round(h.x), FLOOR_Y - HORNET_H, HORNET.colors);
   const s = knightState(t);
   if (s) blit(buf, knightRows(t), Math.round(s.x), FLOOR_Y - KNIGHT_H, KNIGHT.colors);
+  const sm = samusState(t);
+  if (sm) blit(buf, samusRows(t), Math.round(sm.x), FLOOR_Y - SAMUS_H, SAMUS.colors);
   return buf;
 }
 
