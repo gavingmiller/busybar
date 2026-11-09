@@ -7,53 +7,54 @@ import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene
 import type { RunnerArt } from "./art.ts";
 
 // Palette lifted from the Number Munchers sheet: navy outline, teal → blue → dark-blue body, dark grin line, grey shadow.
+const BRIGHT = { O: "#3D4FB0", T: "#65B1B8", M: "#4D8AB3", D: "#425B9E", G: "#33418A", W: "#FFFFFF", K: "#000000", R: "#B83048" };
 const ORIG = { O: "#1D235D", T: "#65B1B8", M: "#4D8AB3", D: "#425B9E", G: "#33418A", W: "#FFFFFF", K: "#000000", R: "#B83048", X: "#505058" };
 
 export const SQUIRT_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 faithful, outlined",
-    frames: [
-      ["............", "............", "............", "...OOOOO....", "..OWTTTTTTO.", "..OTTWTTWTO.", "..OMTKTTKTO.", "..OMMGRRGMO.", "..ODDDDDDDO.", "...OOOOOOO.."],
-      ["............", "............", "............", "............", "...OOOOOOO..", ".OOWTTTTTTOO", ".OTTWTTTWTTO", ".OMTKTTTKTMO", ".OMMMGRRGMMO", ".ODDDDDDDDDO"],
-    ],
-    colors: ORIG,
-    eye: [5, 6],
-  },
-  {
-    name: "2 no outline, side fins",
-    frames: [
-      ["............", "............", "............", "....TTTTT...", "...TWTTTTTT.", "..TTTWTTWTT.", "..TMTKTTKTT.", ".MMMMGRRGMMM", "..DDDDDDDDD.", "...DDDDDDD.."],
-      ["............", "............", "............", "............", "...TTTTTTT..", "..TWWTTTWTT.", ".TMTKTTTKTMT", "MMMMMGRRGMMM", ".DDDDDDDDDD.", "..DDDDDDDD.."],
-    ],
-    colors: ORIG,
-    eye: [5, 6],
-  },
-  {
-    name: "3 with ground shadow",
-    frames: [
-      ["............", "............", "............", "....TTTTT...", "...TWTTTTTT.", "..TTTWTTWTT.", "..TMTKTTKTT.", "..MMMGRRGMM.", "...DDDDDDD..", ".XXXXXXXXXXX"],
-      ["............", "............", "............", "............", "...TTTTTTT..", "..TWTTTTTTT.", ".TTTWTTTWTTT", ".MMTKTTTKTMM", "DDDDGRRGDDDD", ".XXXXXXXXXXX"],
-    ],
-    colors: ORIG,
-    eye: [5, 6],
-  },
-  {
-    name: "4 leaning runner",
+    name: "1 lean, brighter outline",
     frames: [
       ["............", "............", "............", ".....OOOOO..", "....OWTTTTO.", "...OTTTWTWTO", "...OMTTKTKTO", "..OMMMMGRRGO", "..ODDDDDDDO.", "...OOOOOOO.."],
       ["............", "............", "............", "............", "....OOOOOOO.", "..OOWTTTWTWO", ".OMMTTTTKTKO", ".OMMMMMGRRGO", ".ODDDDDDDDDO", "..OOOOOOOOO."],
+    ],
+    colors: BRIGHT,
+    eye: [7, 6],
+  },
+  {
+    name: "2 lean, trailing fin",
+    frames: [
+      ["............", "............", "............", ".....OOOOO..", "....OWTTTTO.", "...OTTTWTWTO", "...OMTTKTKTO", ".MOMMMMGRRGO", "..ODDDDDDDO.", "...OOOOOOO.."],
+      ["............", "............", "............", "............", "....OOOOOOO.", "..OOWTTTWTWO", ".OMMTTTTKTKO", "MOMMMMMGRRGO", ".ODDDDDDDDDO", "..OOOOOOOOO."],
     ],
     colors: ORIG,
     eye: [7, 6],
   },
   {
-    name: "5 splashy droplets",
+    name: "3 lean, droplets behind",
     frames: [
-      ["............", "............", "............", "....TTTTT.T.", "...TWTTTTTT.", "T.TTTWTTWTT.", "..TMTKTTKTT.", "..MMMGRRGMM.", "..DDDDDDDDD.", ".T.DDDDDDD.T"],
-      ["............", "............", "............", "............", "...TTTTTTT..", ".TTWTTTTTTT.", ".TTTWTTTWTT.", ".TMTKTTTKTMT", "T.MMMGRRGMMT", "..DDDDDDDDD."],
+      ["............", "............", "............", ".....OOOOO..", ".T..OWTTTTO.", "...OTTTWTWTO", "T..OMTTKTKTO", "..OMMMMGRRGO", "..ODDDDDDDO.", ".T.OOOOOOO.."],
+      ["............", "............", "............", "............", "....OOOOOOO.", "T.OOWTTTWTWO", ".OMMTTTTKTKO", ".OMMMMMGRRGO", ".ODDDDDDDDDO", "T.OOOOOOOOO."],
     ],
     colors: ORIG,
-    eye: [5, 6],
+    eye: [7, 6],
+  },
+  {
+    name: "4 lean, ground shadow",
+    frames: [
+      ["............", "............", "............", ".....OOOOO..", "....OWTTTTO.", "...OTTTWTWTO", "...OMTTKTKTO", "..OMMMMGRRGO", "...OOOOOOO..", "..XXXXXXXXX."],
+      ["............", "............", "............", "............", "....OOOOOOO.", "..OOWTTTWTWO", ".OMMTTTTKTKO", ".OMMMMMGRRGO", "..OOOOOOOOO.", "..XXXXXXXXX."],
+    ],
+    colors: ORIG,
+    eye: [7, 6],
+  },
+  {
+    name: "5 harder lean, mouth forward",
+    frames: [
+      ["............", "............", "............", "......OOOOO.", ".....OWTTTTO", "....OTTTWTWO", "...OMTTTKTKO", "..OMMMMMGRRO", ".ODDDDDDDDDO", "..OOOOOOOOO."],
+      ["............", "............", "............", "............", ".....OOOOOOO", "...OOWTTWTWO", "..OMMTTTKTKO", ".OMMMMMMGRRO", ".ODDDDDDDDDO", "..OOOOOOOOO."],
+    ],
+    colors: ORIG,
+    eye: [8, 6],
   },
 ];
 
