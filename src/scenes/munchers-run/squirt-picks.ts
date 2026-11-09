@@ -10,49 +10,49 @@ const BASE = { B: "#5CC8E0", S: "#3A80B8", H: "#A6E6F4", L: "#9EDCF0", W: "#FFFF
 
 export const SQUIRT_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 classic round, no outline",
+    name: "1 round, tiny smile",
     frames: [
-      ["............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBBBBBBB.", ".BBBRRRRBBB.", ".SBBBBRRBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
-      ["............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBRRRRBBBB", "SBBBBBRRBBBS", "SSSSSSSSSSSS", ".SSSSSSSSSS."],
-    ],
-    colors: BASE,
-    eye: [8, 4],
-  },
-  {
-    name: "2 droplet",
-    frames: [
-      [".....BB.....", "....BBBB....", "....BWBB....", "...BWBBBB...", "..BBBBBBBB..", ".BBWKBBWKBB.", ".BBBBBBBBBB.", ".BBBRRRRBBB.", ".SSBBBRRBSS.", "..SSSSSSSS.."],
-      ["............", "............", ".....BB.....", "....BWBB....", "...BBBBBB...", ".BBBBBBBBBB.", "BBWKBBBBWKBB", "BBBBRRRRBBBB", "SSBBBBRRBBSS", ".SSSSSSSSSS."],
+      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBBRRBBB.", ".SBBBBBBBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
+      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBBBRRBBBB", "SBBBBBBBBBBS", ".SSSSSSSSSS."],
     ],
     colors: BASE,
     eye: [8, 5],
   },
   {
-    name: "3 light rim",
+    name: "2 round, curved smile",
     frames: [
-      ["............", "....LLLL....", "..LLBWBBLL..", ".LBBWBBBBBL.", ".LBWKBBWKBL.", ".LBBBBBBBBL.", ".LBBRRRRBBL.", ".LSBBBRRBSL.", ".LSSSSSSSSL.", "..LLLLLLLL.."],
-      ["............", "............", "...LLLLLL...", ".LLBWBBBBLL.", "LBBBWBBBBBBL", "LBWKBBBBWKBL", "LBBBRRRRBBBL", "LSBBBBRRBBSL", "LSSSSSSSSSSL", ".LLLLLLLLLL."],
-    ],
-    colors: BASE,
-    eye: [8, 4],
-  },
-  {
-    name: "4 wobbly puddle",
-    frames: [
-      ["............", "............", "............", "...BB..BB...", "..BWBBBBBB..", ".BBWKBBWKBB.", "BBBBBBBBBBBB", "BBBBRRRRBBBB", "SBBBBBRRBBBS", ".SSSSSSSSSS."],
-      ["............", "............", "............", ".....BB.....", "...BBWBBBB..", ".BBBWKBBWKB.", "BBBBBBBBBBBB", "BBBBRRRRBBBB", "SBBBBBRRBBBS", ".SSSSSSSSSS."],
+      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBR..RBB.", ".SBBBBRRBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
+      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBBR..RBBB", "SBBBBBRRBBBS", ".SSSSSSSSSS."],
     ],
     colors: BASE,
     eye: [8, 5],
   },
   {
-    name: "5 glossy, big eyes",
+    name: "3 round, dot eyes",
     frames: [
-      ["............", "....HHHH....", "..HHHHHHHH..", ".BHWWBBWWBB.", ".BBKWBBKWBB.", ".BBBBBBBBBB.", ".BBBRRRRBBB.", ".SBBBBRRBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
-      ["............", "............", "...HHHHHH...", ".HHHHHHHHHH.", "BBWWBBBBWWBB", "BBKWBBBBKWBB", "BBBBRRRRBBBB", "SBBBBBRRBBBS", "SSSSSSSSSSSS", ".SSSSSSSSSS."],
+      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBBKBBBKBB.", ".BBBBBRRBBB.", ".SBBBBBBBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
+      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBBKBBBBKBBB", "BBBBBBRRBBBB", "SBBBBBBBBBBS", ".SSSSSSSSSS."],
     ],
     colors: BASE,
-    eye: [8, 3],
+    eye: [8, 5],
+  },
+  {
+    name: "4 smaller still, 9x7",
+    frames: [
+      ["............", "............", "............", ".....BBBB...", "...BBWBBBB..", "..BBWKBBWKB.", "..BBBBRRBBB.", "..SBBBBBBBS.", "..SSSSSSSSS.", "...SSSSSSS.."],
+      ["............", "............", "............", "............", "....BBBBBB..", "..BBBWBBBBBB", ".BBWKBBBWKBB", ".BBBBBRRBBBB", ".SBBBBBBBBBS", "..SSSSSSSSS."],
+    ],
+    colors: BASE,
+    eye: [9, 5],
+  },
+  {
+    name: "5 round, small open mouth",
+    frames: [
+      ["............", "............", "....BBBB....", "..BBWWBBBB..", ".BBBWBBBBBB.", ".BBWKBBWKBB.", ".BBBBBRRBBB.", ".SBBBBRRBBS.", ".SSSSSSSSSS.", "..SSSSSSSS.."],
+      ["............", "............", "............", "...BBBBBB...", ".BBBWWBBBBB.", "BBBBWBBBBBBB", "BBWKBBBBWKBB", "BBBBBBRRBBBB", "SBBBBBRRBBBS", ".SSSSSSSSSS."],
+    ],
+    colors: BASE,
+    eye: [8, 5],
   },
 ];
 
