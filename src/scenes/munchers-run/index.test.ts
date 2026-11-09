@@ -116,6 +116,18 @@ describe("MUNCHERS_RUN scene", () => {
     }
   });
 
+  it("the chicken's legs are orange; red is only its comb and wattle up top (Gavin 2026-11-09: a leg came out red)", () => {
+    for (const frame of CHICKEN.frames) {
+      const height = frame.length;
+      // Legs and feet: the bottom three rows, below the white body.
+      for (const row of frame.slice(height - 3)) expect(row).not.toContain("R");
+      // Red lives only in the head rows.
+      frame.forEach((row, y) => { if (y >= 4) expect(row).not.toContain("R"); });
+      expect(frame.slice(0, 4).join("")).toContain("R");
+    }
+    expect(CHICKEN.colors.O).toMatch(/^#F/); // the orange, same key the beak uses
+  });
+
   it("encodes under 25 MB", () => {
     const bytes = encodeAnimFile({ width: FRONT_WIDTH, height: FRONT_HEIGHT, fps: MUNCHERS_FPS, frames });
     expect(bytes.length).toBeLessThan(25 * 1024 * 1024);
