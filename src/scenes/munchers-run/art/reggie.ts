@@ -1,54 +1,40 @@
-// Reggie the snail, hand-drawn at bar scale from number-munchers/public/sprites/reggie
-// (walkRight frames 3-5), facing right. The head, both eyestalks and the eye tips sit at the
-// same pixels in every frame (Gavin 2026-11-09: the downscaled snail "looked back and forth");
-// only the foot ripples. Outline is a mid plum, not black: the scene's sky is black.
-
+// Reggie the snail, hand-drawn at bar scale. Gavin settled him from four
+// rounds of the numbered line-up on the bar (2026-11-09): 12 px wide (was
+// 17), no outline anywhere, a big open pink shell with a dark spiral tucked
+// over the neck so the head pokes up behind it, one dark eye, two antennae,
+// a cream foot. The walk is a head bob: head and antennae drop a row every
+// other step while the shell holds still and the foot's dark spot shifts.
+//   P pink shell  D dark spiral  T cream body  U dark cream  E eye  K antennae
 import type { RunnerArt } from "../art.ts";
 
 export const REGGIE: RunnerArt = {
   name: "Reggie",
   frames: [
     [
-      "............E..E.",
-      ".............TT..",
-      "....KKKKK...KCCK.",
-      "...KHHPPPK..KTTK.",
-      "..KHPDDDPPK.KTTK.",
-      ".KPPDPPPDPMKTTTK.",
-      ".KPPDPDDDPMKTTTK.",
-      ".KPMDDPPMMKTTTTK.",
-      "..KMMMMMMKTTTTTK.",
-      "KKKKKKKKKKTTTTUK.",
-      "KUUUUUUUUUUUUUK..",
+      ".........K.K",
+      ".........TT.",
+      "....PPPP.TE.",
+      "...PPPPPPTT.",
+      "..PPPDDDPPT.",
+      "..PPDPPDPPT.",
+      "..PPDPDDPPT.",
+      "..PPPDPPPPT.",
+      "...PPPPPPTT.",
+      "..UTTTTTTTU.",
     ],
     [
-      "............E..E.",
-      ".............TT..",
-      "....KKKKK...KCCK.",
-      "...KHHPPPK..KTTK.",
-      "..KHPDDDPPK.KTTK.",
-      ".KPPDPPPDPMKTTTK.",
-      ".KPPDPDDDPMKTTTK.",
-      ".KPMDDPPMMKTTTTK.",
-      "..KMMMMMMKTTTTTK.",
-      "KKKKKKKKKKTTTTUK.",
-      ".KUUUUUUUUUUUUUK.",
-    ],
-    [
-      "............E..E.",
-      ".............TT..",
-      "....KKKKK...KCCK.",
-      "...KHHPPPK..KTTK.",
-      "..KHPDDDPPK.KTTK.",
-      ".KPPDPPPDPMKTTTK.",
-      ".KPPDPDDDPMKTTTK.",
-      ".KPMDDPPMMKTTTTK.",
-      "..KMMMMMMKTTTTTK.",
-      "KKKKKKKKKKTTTTUK.",
-      "..KUUUUUUUUUUUUK.",
+      "............",
+      ".........K.K",
+      "....PPPP.TT.",
+      "...PPPPPPTE.",
+      "..PPPDDDPPT.",
+      "..PPDPPDPPT.",
+      "..PPDPDDPPT.",
+      "..PPPDPPPPT.",
+      "...PPPPPPTT.",
+      ".UTTTTTTTTU.",
     ],
   ],
-  colors: { K: "#5A2E3A", P: "#FFA9E1", H: "#FFD8F2", M: "#ED83C8", D: "#852E67", T: "#FCE5A9", C: "#FFF2CF", U: "#DEC481", E: "#8A5A6A" },
-  // Front eye tip.
-  eye: [15, 0],
+  colors: { P: "#FFA9E1", D: "#A03C80", T: "#FCE5A9", U: "#DEC481", E: "#140A14", K: "#3A1A33" },
+  eye: [10, 2],
 };
