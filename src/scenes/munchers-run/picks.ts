@@ -4,9 +4,8 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: the KNIGHT from Fog Canyon. Round 4: settled shape (long
-// horns, two-row eyes, standard body); body and cloak lightened in steps so
-// they read on the LEDs, plus one purple-leaning pair. Shown on the fog colour so the dark body reads as in
+// Current subject: the KNIGHT from Fog Canyon. Round 5: settled head (long
+// horns, two-row eyes) and colours (C4); five body shapes. Shown on the fog colour so the dark body reads as in
 // the scene.
 //   W mask  E eye hollow  K body  N cloak  L nail
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
@@ -24,34 +23,7 @@ const C5 = { ...MASK, K: "#4A3C8C", N: "#7A68C8" };
 
 export const PICK_VARIANTS: readonly RunnerArt[] = [
   {
-    name: "1 body #34407A cloak #4A5AA8",
-    frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
-    ],
-    colors: C1,
-    eye: [2, 3],
-  },
-  {
-    name: "2 body #3E4C8C cloak #5A6CC0",
-    frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
-    ],
-    colors: C2,
-    eye: [2, 3],
-  },
-  {
-    name: "3 body #4858A0 cloak #6C80D4",
-    frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
-    ],
-    colors: C3,
-    eye: [2, 3],
-  },
-  {
-    name: "4 body #5262B0 cloak #8094E4",
+    name: "1 standard",
     frames: [
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
       [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
@@ -60,12 +32,39 @@ export const PICK_VARIANTS: readonly RunnerArt[] = [
     eye: [2, 3],
   },
   {
-    name: "5 purple: body #4A3C8C cloak #7A68C8",
+    name: "2 shorter body",
     frames: [
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKK...", ".K..K.."],
-      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKK..", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKK..", "..K.K.."],
     ],
-    colors: C5,
+    colors: C4,
+    eye: [2, 3],
+  },
+  {
+    name: "3 flared cloak",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKNN", "NNKKKN.", ".NKK...", ".K..K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "NNKKKNN", ".NKK...", "..K.K.."],
+    ],
+    colors: C4,
+    eye: [2, 3],
+  },
+  {
+    name: "4 long cloak to the ground",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", "NNKKKN.", ".NKKKN.", ".NKKKN.", ".NNNNN."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", ".NKKKN.", "NNKKKN.", "NNNNN.."],
+    ],
+    colors: C4,
+    eye: [2, 3],
+  },
+  {
+    name: "5 slim body",
+    frames: [
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "..NKN..", "..NK...", "..K.K.."],
+      [".W...W.", "W.....W", "WWWWWWW", ".WEWEW.", ".WEWEW.", ".WWWWW.", ".NKKKN.", "..NKN..", ".NK....", "..K.K.."],
+    ],
+    colors: C4,
     eye: [2, 3],
   },
 ];
