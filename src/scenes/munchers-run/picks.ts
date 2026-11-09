@@ -4,9 +4,8 @@
 // number over top so I can choose"). The winner moves into art/<name>.ts and
 // the variants here are replaced by the next character's.
 //
-// Current subject: SAMUS ARAN, round 14: four key frames at 8 poses/s
-// settled; a SOFT (dim) hip pixel tried in place of the solid one, tied to
-// the stride.
+// Current subject: SAMUS ARAN, round 15: soft front hip + soft heel settled;
+// helmet squished horizontally to 3 / 1 / 2 red pixels per row.
 //   letters per palette below
 // Horns rise from the mask's outer edges and curve IN at the tips (Gavin 2026-11-09: "outward inward, not inward outward").
 import { FRONT_WIDTH as W, FRONT_HEIGHT as H, type Scene } from "../../lib/scene.ts";
@@ -35,63 +34,63 @@ const SAMUS_RUN = { ...SAMUS_BRIGHT, N: "#F0A030", D: "#B86020", B: "#D83030", b
 
 export const PICK_VARIANTS: readonly PickVariant[] = [
   {
-    name: "1 soft hip pixel at the front, static",
+    name: "1 helmet 3 / 1 / 2 red, visor 2 wide",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", ".NDD.....", ".NDD....."],
+      [".........", "...RRR...", "...RGG...", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "...RGG...", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNNs...."],
+      [".........", "...RRR...", "...RGG...", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "...RGG...", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDDs...."],
+    ],
+    colors: SAMUS_RUN,
+    eye: [4, 2],
+    poseFrames: 3,
+  },
+  {
+    name: "2 helmet 3 / 1 / 2 red, visor 3 wide",
+    frames: [
+      [".........", "...RRR...", "...RGGG..", "...RRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "...RGGG..", "...RRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNNs...."],
+      [".........", "...RRR...", "...RGGG..", "...RRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "...RGGG..", "...RRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDDs...."],
+    ],
+    colors: SAMUS_RUN,
+    eye: [4, 2],
+    poseFrames: 3,
+  },
+  {
+    name: "3 same, middle row nudged right",
+    frames: [
+      [".........", "...RRR...", "....RGG..", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "....RGG..", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNNs...."],
+      [".........", "...RRR...", "....RGG..", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "....RGG..", "...RRG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDDs...."],
     ],
     colors: SAMUS_RUN,
     eye: [5, 2],
     poseFrames: 3,
   },
   {
-    name: "2 soft pixel swaps front/back with the legs",
+    name: "4 same, whole helmet one left",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".sOYY....", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
+      [".........", "..RRR....", "..RGG....", "..RRG....", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
+      [".........", "..RRR....", "..RGG....", "..RRG....", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNNs...."],
+      [".........", "..RRR....", "..RGG....", "..RRG....", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
+      [".........", "..RRR....", "..RGG....", "..RRG....", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDDs...."],
     ],
     colors: SAMUS_RUN,
-    eye: [5, 2],
+    eye: [3, 2],
     poseFrames: 3,
   },
   {
-    name: "3 soft pixel over the leading leg",
+    name: "5 3 / 1 / 2 with a two-wide visor on the bottom row",
     frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OsY....", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDD....."],
+      [".........", "...RRR...", "...RGG...", "..RRGG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
+      [".........", "...RRR...", "...RGG...", "..RRGG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNNs...."],
+      [".........", "...RRR...", "...RGG...", "..RRGG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
+      [".........", "...RRR...", "...RGG...", "..RRGG...", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDDs...."],
     ],
     colors: SAMUS_RUN,
-    eye: [5, 2],
-    poseFrames: 3,
-  },
-  {
-    name: "4 two soft hip pixels, front and back",
-    frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".sOYYs...", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".sOYYs...", ".DNN.....", ".DNN....."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".sOYYs...", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", ".sOYYs...", ".NDD.....", ".NDD....."],
-    ],
-    colors: SAMUS_RUN,
-    eye: [5, 2],
-    poseFrames: 3,
-  },
-  {
-    name: "5 soft front hip, soft heel under belly on the pass",
-    frames: [
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "DD.NN....", "DD.NN...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".DNN.....", ".DNNs...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYYs...", "NN.DD....", "NN.DD...."],
-      [".........", "...RRR...", "..RRGGG..", "..RRRGG..", ".OORRRR..", ".OOYYOCCC", "..OYY..CC", "..OYY....", ".NDD.....", ".NDDs...."],
-    ],
-    colors: SAMUS_RUN,
-    eye: [5, 2],
+    eye: [4, 2],
     poseFrames: 3,
   },
 ];
