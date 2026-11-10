@@ -6,6 +6,11 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
 
 - [Bun](https://bun.sh)
 - A BUSY Bar, connected to your computer via USB
+- Panel brightness pinned to a fixed level, not `auto`. Auto brightness reads
+  the ambient light sensor, and the panel's own glow feeds back into it, so
+  mostly-black scenes like Munchers Run pulse dim/bright as sprites pass.
+  Set it with a query parameter (0–100; `auto` to restore):
+  `curl -X POST 'http://10.0.4.20/api/display/brightness?value=50'`
 
 ## Getting hello-world working
 

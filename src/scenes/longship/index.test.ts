@@ -119,6 +119,20 @@ describe("LONGSHIP scene", () => {
     expect(frames[0]!.slice(0, 2 * FRONT_WIDTH * 4)).not.toEqual(frames[48]!.slice(0, 2 * FRONT_WIDTH * 4));
   });
 
+  it("draws no oars under the longship: nothing brown or splash-white appears in the water below its keel", () => {
+    // Gavin 2026-11-10: the brown oar blades and white splash dots read as stray pixels, not paddles.
+    const OAR = [122, 74, 34], SPLASH = [200, 220, 240];
+    for (let i = 0; i < frames.length; i += 7) {
+      const f = frames[i]!;
+      for (let y = WATERLINE_Y + 1; y < FRONT_HEIGHT; y++) for (let x = 0; x < FRONT_WIDTH; x++) {
+        const [r, g, b] = px(f, x, y);
+        const isOar = r === OAR[0] && g === OAR[1] && b === OAR[2];
+        const isSplash = r === SPLASH[0] && g === SPLASH[1] && b === SPLASH[2];
+        if (isOar || isSplash) throw new Error(`oar/splash pixel at (${x},${y}) in frame ${i}`);
+      }
+    }
+  });
+
   it("encodes under 25 MB", () => {
     const bytes = encodeAnimFile({ width: FRONT_WIDTH, height: FRONT_HEIGHT, fps: LONGSHIP_FPS, frames });
     expect(bytes.length).toBeLessThan(25 * 1024 * 1024);

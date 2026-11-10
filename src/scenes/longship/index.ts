@@ -1,5 +1,5 @@
 // Longship: a Viking longship rows across a rolling night sea, right to left,
-// oars dipping in time, while two much smaller ships creep along the horizon
+// riding the swell, while two much smaller ships creep along the horizon
 // behind it (parallax: smaller, slower, duller) under a twinkling sky.
 // Pre-rendered seamless loop like the aquarium: every motion is a periodic
 // function of t with an integer number of cycles per loop.
@@ -12,7 +12,7 @@ export const LONGSHIP_LOOP_S = 96;
 export const LONGSHIP_FRAME_COUNT = LONGSHIP_FPS * LONGSHIP_LOOP_S;
 /** Row of the far sea where the background ships float. */
 export const HORIZON_Y = 11;
-/** Row the longship's keel sits on; oars splash below it. */
+/** Row the longship's keel sits on. */
 export const WATERLINE_Y = 13;
 
 type RGB = readonly [number, number, number];
@@ -23,8 +23,6 @@ const SEA_MID_CREST: RGB = [77, 127, 179];
 const SEA_NEAR: RGB = [28, 59, 92];
 const SEA_NEAR_CREST: RGB = [59, 106, 154];
 const FOAM: RGB = [223, 232, 242];
-const OAR: RGB = [122, 74, 34];
-const SPLASH: RGB = [200, 220, 240];
 
 export interface Ship {
   art: ShipArt;
@@ -133,15 +131,6 @@ export function renderFrame(i: number): Uint8Array {
     for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y]!.length; x++) {
       const ch = rows[y]![x]!;
       if (ch !== ".") put(buf, x0 + x, y0 + y, hex(s.art.colors[ch]!));
-    }
-    if (s === FOREGROUND) {
-      // Six oars along the hull; a 2 s stroke: raised (brown blade beside the hull) then dipped (splash).
-      const dipped = Math.sin((t / 2) * Math.PI * 2) > 0;
-      for (let k = 0; k < 6; k++) {
-        const ox = x0 + 4 + k * 3;
-        if (dipped) { put(buf, ox, s.waterline + 1 + bob, SPLASH); put(buf, ox, s.waterline + 2 + bob, SEA_NEAR_CREST); }
-        else put(buf, ox, s.waterline + 1 + bob, OAR);
-      }
     }
   }
   return buf;
