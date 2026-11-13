@@ -7,6 +7,7 @@ import {
   launchApp as launchAppReal,
   quitApp as quitAppReal,
   getBootTime as getBootTimeReal,
+  uninstallApp as uninstallAppReal,
   type DeviceApp,
 } from "../lib/busybar-client.ts";
 import { runRainbow as runRainbowReal, playNyanCatSection } from "../nyan-cat/index.ts";
@@ -85,7 +86,18 @@ export interface ServerDeps {
   every?: (fn: () => void, ms: number) => unknown;
   /** Informational log line (console.log). */
   log?: (message: string) => void;
+  /** Removes an installed JS app (busybar-client uninstallApp); the heartbeat uses it on stock apps. */
+  uninstallApp?: (baseUrl: string, appId: string, fetchImpl: typeof fetch) => Promise<void>;
 }
+
+/**
+ * The firmware's own JS apps (Clock, Weather, JS App Example) share this id
+ * prefix. Gavin removed them 2026-11-08; the 1.4.1 update re-installed them
+ * (2026-11-13: "make sure they never come back"), so the server hides them,
+ * refuses to launch them, and uninstalls them again on every heartbeat.
+ */
+export const STOCK_APP_PREFIX = "app.busy.";
+export const isStockApp = (id: string): boolean => id.startsWith(STOCK_APP_PREFIX);
 
 /**
  * How often the server checks that the bar still shows what the state file
@@ -163,7 +175,7 @@ function offered(s: SceneApp, now: Date): boolean {
 }
 
 async function statusFor(deps: ServerDeps, state: StoredState | null): Promise<AppsStatus> {
-  const deviceApps = await deps.listApps(deps.baseUrl, deps.fetchImpl);
+  const deviceApps = (await deps.listApps(deps.baseUrl, deps.fetchImpl)).filter((a) => !isStockApp(a.id));
   const stateOf = (id: string): AppState =>
     state === null ? "unknown" : state.active === id ? "on" : "off";
   const apps: AppStatus[] = [
@@ -205,10 +217,27 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     if (!scene) throw new Error(`Unknown animation "${id}"`);
     await scene.run(deps.baseUrl, deps.fetchImpl);
   };
-  /** Animations Shuffle may deal and the page lists: debug scenes excluded. */
+  /** Puts a JS app on the bar: stop the pan and whatever app runs, clear every draw, launch. */
+  const launchJsApp = async (id: string): Promise<void> => {
+    stopPan();
+    await deps.quitApp(deps.baseUrl, deps.fetchImpl);
+    await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
+    await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
+  };
+  /** Puts anything switchable on the bar by id. */
+  const show = async (id: string): Promise<void> => {
+    if (allAnimationIds().includes(id)) await showAnimation(id);
+    else await launchJsApp(id);
+  };
+  /** Animations the page lists and Shuffle may deal: debug scenes excluded. */
   const animationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.filter((s) => offered(s, deps.now())).map((s) => s.id)];
   /** Everything switchable by id, debug scenes included. */
   const allAnimationIds = (): string[] => [...deps.nyans.map((n) => n.id), ...deps.scenes.map((s) => s.id)];
+  /** Gavin's own JS apps installed on the bar (never the firmware's stock ones). */
+  const jsAppIds = async (): Promise<string[]> =>
+    (await deps.listApps(deps.baseUrl, deps.fetchImpl)).map((a) => a.id).filter((id) => !isStockApp(id));
+  /** Shuffle's cards: the animations plus the JS apps (Gavin 2026-11-13: Ravens and Dino Run weren't cycling). */
+  const dealIds = async (): Promise<string[]> => [...animationIds(), ...(await jsAppIds())];
 
   // Shuffle: one timer, re-armed after every change; the round itself is in
   // the state file so a restart carries on where it left off.
@@ -224,8 +253,8 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
   /** Deals the next card, shows it, persists, and books the following change. */
   const shuffleAdvance = async (previous: ShuffleState | null): Promise<StoredState> => {
     const now = deps.now();
-    const next = advanceShuffle(previous, animationIds(), now, random);
-    await showAnimation(next.showing);
+    const next = advanceShuffle(previous, await dealIds(), now, random);
+    await show(next.showing);
     const state: StoredState = { active: next.showing, changedAt: now.toISOString(), shuffle: next };
     writeState(deps.stateFile, state);
     armShuffle(SHUFFLE_INTERVAL_MS);
@@ -252,9 +281,10 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
   // is not an error here: the page already shows that, and Shuffle's own
   // retries used to fill the log with one line a minute.
   const getBootTime = deps.getBootTime ?? getBootTimeReal;
+  const uninstallApp = deps.uninstallApp ?? uninstallAppReal;
   const every = deps.every ?? ((fn, ms) => setInterval(fn, ms));
   const log = deps.log ?? ((m: string) => console.log(m));
-  const reconcile = async (): Promise<void> => {
+  const putBackAfterReboot = async (): Promise<void> => {
     const state = readState(deps.stateFile);
     if (!state?.active) return;
     let booted: Date;
@@ -265,20 +295,33 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     }
     if (booted.getTime() <= new Date(state.changedAt).getTime()) return;
     try {
-      const id = state.active;
-      if (allAnimationIds().includes(id)) {
-        await showAnimation(id);
-      } else {
-        stopPan();
-        await deps.quitApp(deps.baseUrl, deps.fetchImpl);
-        await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
-        await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
-      }
+      await show(state.active);
       writeState(deps.stateFile, { ...state, changedAt: deps.now().toISOString() });
-      log(`busybar server: the bar rebooted at ${booted.toISOString()}; put ${id} back`);
+      log(`busybar server: the bar rebooted at ${booted.toISOString()}; put ${state.active} back`);
     } catch (err) {
       report(err);
     }
+  };
+  // Firmware updates re-install the stock apps; take them off again, one line each.
+  const purgeStockApps = async (): Promise<void> => {
+    let installed: DeviceApp[];
+    try {
+      installed = await deps.listApps(deps.baseUrl, deps.fetchImpl);
+    } catch {
+      return;
+    }
+    for (const app of installed.filter((a) => isStockApp(a.id))) {
+      try {
+        await uninstallApp(deps.baseUrl, app.id, deps.fetchImpl);
+        log(`busybar server: uninstalled stock app ${app.id} (${app.name})`);
+      } catch (err) {
+        report(err);
+      }
+    }
+  };
+  const reconcile = async (): Promise<void> => {
+    await putBackAfterReboot();
+    await purgeStockApps();
   };
   every(() => { void reconcile(); }, RECONCILE_INTERVAL_MS);
 
@@ -315,9 +358,9 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
           stopShuffle();
           state = { active: current?.active ?? null, changedAt: current?.changedAt ?? deps.now().toISOString() };
           writeState(deps.stateFile, state);
-        } else if (current?.active && animationIds().includes(current.active)) {
+        } else if (current?.active && (await dealIds()).includes(current.active)) {
           // Something is already showing: it becomes this round's current card; the clock starts now.
-          const round = adoptShowing(current.shuffle ?? null, current.active, animationIds(), deps.now(), random);
+          const round = adoptShowing(current.shuffle ?? null, current.active, await dealIds(), deps.now(), random);
           state = { active: current.active, changedAt: current.changedAt, shuffle: round };
           writeState(deps.stateFile, state);
           armShuffle(SHUFFLE_INTERVAL_MS);
@@ -348,9 +391,7 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
       let state: StoredState;
       try {
         const isAnimation = allAnimationIds().includes(id);
-        const known =
-          isAnimation ||
-          (await deps.listApps(deps.baseUrl, deps.fetchImpl)).some((a) => a.id === id);
+        const known = isAnimation || (!isStockApp(id) && (await jsAppIds()).includes(id));
         if (!known) return json({ error: `Unknown app "${id}"` }, 404);
         const seasonal = deps.scenes.find((s) => s.id === id);
         if (on && seasonal?.available && !seasonal.available(deps.now())) {
@@ -360,26 +401,21 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
         // Only one thing is on the bar at a time, so turning anything on
         // means stopping whatever is running first: the pan, the JS app (a
         // 409 "not running" is fine), every draw, then start the new one.
-        // Shuffle survives a hand-picked animation (it becomes the current
-        // card) but not a JS app or turning the bar off.
+        // Shuffle survives a hand-picked app (it becomes the current card)
+        // but not turning the bar off.
         const current = readState(deps.stateFile);
         stopShuffle();
         const now = deps.now();
-        if (on && isAnimation) {
-          await showAnimation(id);
-          const round = current?.shuffle ? adoptShowing(current.shuffle, id, animationIds(), now, random) : undefined;
+        if (on) {
+          await show(id);
+          const round = current?.shuffle ? adoptShowing(current.shuffle, id, await dealIds(), now, random) : undefined;
           state = { active: id, changedAt: now.toISOString(), ...(round ? { shuffle: round } : {}) };
           if (round) armShuffle(SHUFFLE_INTERVAL_MS);
         } else {
           stopPan();
           await deps.quitApp(deps.baseUrl, deps.fetchImpl);
-          if (on) {
-            await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
-            await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
-          } else if (isAnimation) {
-            await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
-          }
-          state = { active: on ? id : null, changedAt: now.toISOString() };
+          if (isAnimation) await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
+          state = { active: null, changedAt: now.toISOString() };
         }
         writeState(deps.stateFile, state);
       } catch (err) {

@@ -2,13 +2,16 @@ import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
 import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHandler, NYAN_ID, RECONCILE_INTERVAL_MS, type ServerDeps } from "./index.ts";
+import { createHandler, NYAN_ID, RECONCILE_INTERVAL_MS, STOCK_APP_PREFIX, isStockApp, type ServerDeps } from "./index.ts";
 import { SHUFFLE_INTERVAL_MS } from "./shuffle.ts";
 
 const BASE_URL = "http://10.0.4.20";
+// The firmware ships Clock / Weather / JS App Example and re-installs them on
+// every update; Gavin removed them 2026-11-08 and wants them gone for good.
 const DEVICE_APPS = [
   { id: "app.busy.clock", name: "Clock", version: "0.6.1", is_debug: false },
   { id: "community.dino_run", name: "Dino Run", version: "1.0.0", is_debug: false },
+  { id: "app.busy.weather", name: "Weather", version: "0.3.0", is_debug: false },
 ];
 
 let tmp: string;
@@ -92,7 +95,6 @@ describe("GET /api/apps", () => {
         { id: NYAN_ID, name: "Nyan Cat", kind: "draw", state: "unknown" },
         { id: "lava_lamp", name: "Lava Lamp", kind: "draw", state: "unknown" },
         { id: "aquarium", name: "Aquarium", kind: "draw", state: "unknown" },
-        { id: "app.busy.clock", name: "Clock", kind: "js", state: "unknown" },
         { id: "community.dino_run", name: "Dino Run", kind: "js", state: "unknown" },
       ],
     });
@@ -112,7 +114,7 @@ describe("GET /api/apps", () => {
     // Shuffle deals flavours as separate cards.
     await handler(req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on: true }) }));
     const stored = JSON.parse(readFileSync(stateFile, "utf8"));
-    expect([...stored.shuffle.deck].sort()).toEqual(["aquarium", "lava_lamp", NYAN_ID]);
+    expect([...stored.shuffle.deck].sort()).toEqual(["aquarium", "community.dino_run", "lava_lamp", NYAN_ID]);
   });
 
   it("answers 502 when the device cannot list its apps", async () => {
@@ -139,7 +141,6 @@ describe("POST /api/apps/:id", () => {
       [NYAN_ID, "on"],
       ["lava_lamp", "off"],
       ["aquarium", "off"],
-      ["app.busy.clock", "off"],
       ["community.dino_run", "off"],
     ]);
     expect(existsSync(stateFile)).toBe(true);
@@ -271,7 +272,6 @@ describe("scenes (pre-rendered draw apps)", () => {
       [NYAN_ID, "off"],
       ["lava_lamp", "on"],
       ["aquarium", "off"],
-      ["app.busy.clock", "off"],
       ["community.dino_run", "off"],
     ]);
     expect(JSON.parse(readFileSync(stateFile, "utf8")).active).toBe("lava_lamp");
@@ -369,11 +369,14 @@ describe("seasonal scenes (Santa's Sleigh in December only)", () => {
 
 describe("shuffle (global rotation)", () => {
   const ANIMATIONS = [NYAN_ID, "lava_lamp", "aquarium"];
+  /** Everything Shuffle deals: the animations plus Gavin's own JS apps (never the stock ones). */
+  const DEALT = [...ANIMATIONS, "community.dino_run"];
   const shuffle = (on: boolean) => req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) });
   const ran = (d: ServerDeps): string[] => {
     const out: string[] = [];
     for (const c of calls(d.runRainbow)) out.push(c[2] as string);
     for (const s of d.scenes) for (let i = 0; i < calls(s.run).length; i++) out.push(s.id);
+    for (const c of calls(d.launchApp)) out.push(c[1] as string);
     return out;
   };
 
@@ -390,7 +393,7 @@ describe("shuffle (global rotation)", () => {
     expect(res.status).toBe(200);
     const shown = ran(d);
     expect(shown).toHaveLength(1);
-    expect(ANIMATIONS).toContain(shown[0]);
+    expect(DEALT).toContain(shown[0]);
     const body = await res.json();
     expect(body.shuffle).toEqual({ on: true, nextChangeAt: "2026-11-08T16:00:00.000Z" });
     expect(body.apps.find((a: { id: string }) => a.id === shown[0]).state).toBe("on");
@@ -400,7 +403,7 @@ describe("shuffle (global rotation)", () => {
     const stored = JSON.parse(readFileSync(stateFile, "utf8"));
     expect(stored.active).toBe(shown[0]);
     expect(stored.shuffle.nextAt).toBe("2026-11-08T16:00:00.000Z");
-    expect([stored.active, ...stored.shuffle.deck].sort()).toEqual([...ANIMATIONS].sort());
+    expect([stored.active, ...stored.shuffle.deck].sort()).toEqual([...DEALT].sort());
   });
 
   it("switching it on while an animation is already showing keeps that one as the current card and just starts the clock", async () => {
@@ -415,7 +418,7 @@ describe("shuffle (global rotation)", () => {
     const stored = JSON.parse(readFileSync(stateFile, "utf8"));
     expect(stored.active).toBe("lava_lamp");
     expect(stored.shuffle.deck).not.toContain("lava_lamp");
-    expect([...stored.shuffle.deck].sort()).toEqual(["aquarium", NYAN_ID]);
+    expect([...stored.shuffle.deck].sort()).toEqual(["aquarium", "community.dino_run", NYAN_ID]);
   });
 
   it("each tick plays a different animation until every one has been shown, then starts a fresh round", async () => {
@@ -423,11 +426,11 @@ describe("shuffle (global rotation)", () => {
     const d = deps({ random: () => (r = (r * 7.3) % 1) });
     const handler = createHandler(d);
     await handler(shuffle(true));
-    for (let i = 0; i < ANIMATIONS.length * 2 - 1; i++) { timers[timers.length - 1]!.fn(); await flush(); }
+    for (let i = 0; i < DEALT.length * 2 - 1; i++) { timers[timers.length - 1]!.fn(); await flush(); }
     const shown = ran(d);
-    expect(shown).toHaveLength(ANIMATIONS.length * 2);
-    for (const id of ANIMATIONS) expect(shown.filter((x) => x === id)).toHaveLength(2);
-    expect(timers).toHaveLength(ANIMATIONS.length * 2);
+    expect(shown).toHaveLength(DEALT.length * 2);
+    for (const id of DEALT) expect(shown.filter((x) => x === id)).toHaveLength(2);
+    expect(timers).toHaveLength(DEALT.length * 2);
     const body = await (await handler(req("/api/apps"))).json();
     expect(body.apps.filter((a: { state: string }) => a.state === "on")).toHaveLength(1);
   });
@@ -437,7 +440,7 @@ describe("shuffle (global rotation)", () => {
     const handler = createHandler(d);
     await handler(shuffle(true));
     const first = ran(d)[0]!;
-    const other = ANIMATIONS.find((a) => a !== first)!;
+    const other = DEALT.find((a) => a !== first)!;
     const res = await handler(post(other, { on: true }));
     const body = await res.json();
     expect(body.shuffle.on).toBe(true);
@@ -450,7 +453,7 @@ describe("shuffle (global rotation)", () => {
     expect(stored.shuffle.deck).not.toContain(other);
   });
 
-  it("turning the bar off, or launching a JS app, switches shuffle off; switching it off by hand leaves the bar as it is", async () => {
+  it("turning the bar off switches shuffle off; switching it off by hand leaves the bar as it is", async () => {
     const d = deps();
     const handler = createHandler(d);
     await handler(shuffle(true));
@@ -460,11 +463,6 @@ describe("shuffle (global rotation)", () => {
     expect(cancelled).toHaveLength(1);
     expect(JSON.parse(readFileSync(stateFile, "utf8")).shuffle).toBeUndefined();
 
-    await handler(shuffle(true));
-    body = await (await handler(post("community.dino_run", { on: true }))).json();
-    expect(body.shuffle).toEqual({ on: false });
-    expect(body.apps.find((a: { id: string }) => a.id === "community.dino_run").state).toBe("on");
-
     await handler(post("lava_lamp", { on: true }));
     await handler(shuffle(true));
     const before = ran(d).length;
@@ -472,7 +470,39 @@ describe("shuffle (global rotation)", () => {
     expect(body.shuffle).toEqual({ on: false });
     expect(body.apps.find((a: { id: string }) => a.id === "lava_lamp").state).toBe("on");
     expect(ran(d)).toHaveLength(before);
-    expect(d.clearAllDisplays).toHaveBeenCalledTimes(2); // the off + the JS launch, not the shuffle-off
+    expect(d.clearAllDisplays).toHaveBeenCalledTimes(1); // the off, not the shuffle-off
+  });
+
+  it("deals Gavin's JS apps like any other card: a dealt one is quit/cleared/launched, and a hand-picked one becomes the current card (Gavin 2026-11-13: Ravens and Dino Run weren't cycling)", async () => {
+    const d = deps({ random: () => 0.99 });
+    const handler = createHandler(d);
+    await handler(shuffle(true));
+    const first = ran(d)[0]!;
+    let body = await (await handler(post("community.dino_run", { on: true }))).json();
+    expect(body.shuffle.on).toBe(true);
+    expect(body.apps.find((a: { id: string }) => a.id === "community.dino_run").state).toBe("on");
+    expect(calls(d.launchApp)).toHaveLength(first === "community.dino_run" ? 2 : 1);
+    const stored = JSON.parse(readFileSync(stateFile, "utf8"));
+    expect(stored.active).toBe("community.dino_run");
+    expect(stored.shuffle.showing).toBe("community.dino_run");
+    expect(stored.shuffle.deck).not.toContain("community.dino_run");
+    // Dealing it from the deck goes through the same quit → clear → launch.
+    const order: string[] = [];
+    const d2 = deps({
+      stateFile: join(tmp, "fresh", "state.json"), // nothing showing yet, so the deal happens now
+      listApps: mock(async () => DEVICE_APPS.filter((a) => a.id === "community.dino_run")),
+      scenes: [],
+      nyans: [],
+      quitApp: mock(async () => { order.push("quit"); }),
+      clearAllDisplays: mock(async () => { order.push("clear"); }),
+      launchApp: mock(async (_b: string, id: string) => { order.push(`launch:${id}`); }),
+    });
+    const h2 = createHandler(d2);
+    const res2 = await h2(shuffle(true));
+    body = await res2.json();
+    if (res2.status !== 200) throw new Error(`shuffle on: ${res2.status} ${JSON.stringify(body)}`);
+    expect(order).toEqual(["quit", "clear", "launch:community.dino_run"]);
+    expect(body.apps.find((a: { id: string }) => a.id === "community.dino_run").state).toBe("on");
   });
 
   it("a fresh server resumes a stored round: the timer is re-armed for the remaining time, and a missed change fires straight away", async () => {
@@ -503,6 +533,7 @@ describe("shuffle (global rotation)", () => {
     await h2(shuffle(true));
     ok.runRainbow = mock(async () => { throw new Error("508"); });
     for (const sc of ok.scenes) sc.run = mock(async () => { throw new Error("508"); });
+    ok.launchApp = mock(async () => { throw new Error("508"); });
     ok.onError = (e) => errors.push(e);
     timers[timers.length - 1]!.fn();
     await flush();
@@ -632,6 +663,69 @@ describe("reconcile (the bar reboots behind the server's back)", () => {
     await beat();
     expect(errors).toHaveLength(1);
     expect(state()).toEqual(before);
+  });
+});
+
+describe("stock apps (app.busy.*: Clock, Weather, JS App Example)", () => {
+  // Gavin removed them 2026-11-08; the 1.4.1 firmware update brought them
+  // back 2026-11-13: "I don't want those, make sure they never come back."
+  it("are recognised by their id prefix", () => {
+    expect(STOCK_APP_PREFIX).toBe("app.busy.");
+    expect(isStockApp("app.busy.clock")).toBe(true);
+    expect(isStockApp("app.busy.js_example")).toBe(true);
+    expect(isStockApp("app.gavin.ravens")).toBe(false);
+    expect(isStockApp("gavin.dino_run")).toBe(false);
+  });
+
+  it("are never listed, cannot be switched on (404), and are never dealt by Shuffle", async () => {
+    const d = deps();
+    const handler = createHandler(d);
+    const ids = (await (await handler(req("/api/apps"))).json()).apps.map((a: { id: string }) => a.id);
+    expect(ids).not.toContain("app.busy.clock");
+    expect(ids).not.toContain("app.busy.weather");
+    expect((await handler(post("app.busy.clock", { on: true }))).status).toBe(404);
+    expect(d.launchApp).not.toHaveBeenCalled();
+    await handler(req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on: true }) }));
+    const stored = JSON.parse(readFileSync(stateFile, "utf8"));
+    for (const id of [stored.active, ...stored.shuffle.deck]) expect(isStockApp(id)).toBe(false);
+  });
+
+  it("the heartbeat uninstalls any that are installed, logging each, and keeps quiet once they are gone", async () => {
+    const logs: string[] = [];
+    let installed = [...DEVICE_APPS];
+    const heartbeats: Array<{ fn: () => void; ms: number }> = [];
+    const uninstallApp = mock(async (_b: string, id: string) => { installed = installed.filter((a) => a.id !== id); });
+    const d = deps({
+      listApps: mock(async () => installed),
+      uninstallApp,
+      every: (fn, ms) => { heartbeats.push({ fn, ms }); return 1; },
+      log: (m) => logs.push(m),
+    });
+    createHandler(d);
+    heartbeats[0]!.fn();
+    await flush();
+    expect(calls(uninstallApp).map((c) => c[1]).sort()).toEqual(["app.busy.clock", "app.busy.weather"]);
+    expect(logs.filter((m) => /uninstall/i.test(m))).toHaveLength(2);
+    heartbeats[0]!.fn();
+    await flush();
+    expect(calls(uninstallApp)).toHaveLength(2);
+  });
+
+  it("a failed uninstall is reported and tried again next beat", async () => {
+    const errors: unknown[] = [];
+    const heartbeats: Array<{ fn: () => void; ms: number }> = [];
+    const d = deps({
+      uninstallApp: mock(async () => { throw new Error("503 running"); }),
+      every: (fn, ms) => { heartbeats.push({ fn, ms }); return 1; },
+      onError: (e) => errors.push(e),
+    });
+    createHandler(d);
+    heartbeats[0]!.fn();
+    await flush();
+    heartbeats[0]!.fn();
+    await flush();
+    expect(errors.length).toBeGreaterThanOrEqual(2);
+    expect(calls(d.uninstallApp!).length).toBe(4);
   });
 });
 

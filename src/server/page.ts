@@ -180,7 +180,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     label.appendChild(document.createTextNode('Shuffle'));
     var note = document.createElement('span');
     note.className = 'kind';
-    note.textContent = on && data.shuffle.nextChangeAt ? 'next change ' + relativeUntil(data.shuffle.nextChangeAt, Date.now()) : 'a different animation every hour';
+    note.textContent = on && data.shuffle.nextChangeAt ? 'next change ' + relativeUntil(data.shuffle.nextChangeAt, Date.now()) : 'a different app every hour';
     label.appendChild(note);
     var seg = document.createElement('div');
     seg.className = 'seg';

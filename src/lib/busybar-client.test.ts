@@ -185,6 +185,21 @@ describe("JS apps API", () => {
     expect((init as RequestInit).method).toBe("POST");
   });
 
+  it("uninstallApp DELETEs /api/apps with the app_id", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ result: "OK" }), { status: 200 }));
+    const { uninstallApp } = require("./busybar-client.ts");
+    await uninstallApp("http://10.0.4.20", "app.busy.clock", fetchMock as unknown as typeof fetch);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("http://10.0.4.20/api/apps?app_id=app.busy.clock");
+    expect((init as RequestInit).method).toBe("DELETE");
+  });
+
+  it("uninstallApp throws on a non-OK status", async () => {
+    const fetchMock = mock(async () => new Response(JSON.stringify({ error: "running" }), { status: 503 }));
+    const { uninstallApp } = require("./busybar-client.ts");
+    await expect(uninstallApp("http://10.0.4.20", "app.busy.clock", fetchMock as unknown as typeof fetch)).rejects.toThrow(/uninstall: 503/);
+  });
+
   it("launchApp throws on a non-OK status", async () => {
     const fetchMock = mock(async () => new Response(JSON.stringify({ error: "busy" }), { status: 409 }));
     await expect(launchApp("http://10.0.4.20", "x", fetchMock as unknown as typeof fetch)).rejects.toThrow(/409/);

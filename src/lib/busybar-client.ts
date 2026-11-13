@@ -130,6 +130,26 @@ export async function launchApp(
 }
 
 /**
+ * Uninstalls a JS app by id (`DELETE /api/apps?app_id=`, the call busy-cli
+ * makes). The firmware update to 1.4.1 (2026-11-13) re-installed the stock
+ * Clock, Weather and JS App Example that Gavin had removed; the control
+ * server's heartbeat uninstalls `app.busy.*` whenever they reappear. The
+ * device answers 503 when the app is running and it failed to quit it first.
+ */
+export async function uninstallApp(
+  baseUrl: string,
+  appId: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<void> {
+  const res = await fetchImpl(`${baseUrl}/api/apps?app_id=${encodeURIComponent(appId)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`BUSY Bar rejected uninstall: ${res.status} ${await res.text()}`);
+  }
+}
+
+/**
  * Quits whichever JS app is running. The device answers 409 when nothing is
  * running; that is the state we wanted, so it counts as success.
  */

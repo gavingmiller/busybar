@@ -124,9 +124,14 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     unreachable the page shows "Bar unreachable" with every state cleared
     rather than the stale list (2026-11-13: the 1.4.1 update rebooted the
     bar overnight and Pantheon kept saying Fog Canyon was on).
+  - **Stock apps** (`app.busy.*`: Clock, Weather, JS App Example) are never
+    listed, never dealt, and refuse to switch on (404). Firmware updates
+    re-install them, so the same heartbeat uninstalls any it finds
+    (`DELETE /api/apps?app_id=`) and logs one line each. Gavin removed them
+    2026-11-08 and wants them gone for good.
   - **Shuffle** is a global switch above the app list: while it is on, a
-    different animation plays every hour — Nyan Cat and every scene —
-    dealing each one once per round before any repeats
+    different app plays every hour — Nyan Cat, every scene, and Gavin's own
+    JS apps (Ravens, Dino Run) — dealing each one once per round before any repeats
     (`src/server/shuffle.ts`). The animation currently dealt shows as the
     one that is on. Picking an animation by hand keeps shuffle on (that
     pick becomes the current card and the clock restarts); launching a JS
