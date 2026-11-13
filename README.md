@@ -117,7 +117,13 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     device has no endpoint that reports what it is showing, so the states
     come from the last command the server successfully sent, persisted in
     `~/Library/Application Support/busybar/state.json` (`unknown` until the
-    first command, or after a firmware update reboots the bar).
+    first command). Once a minute the server asks the bar when it booted
+    (`GET /api/status/system`); a boot later than `changedAt` means a
+    firmware auto-update or power cycle wiped the display, so the server
+    puts the active app back and re-stamps `changedAt`. While the bar is
+    unreachable the page shows "Bar unreachable" with every state cleared
+    rather than the stale list (2026-11-13: the 1.4.1 update rebooted the
+    bar overnight and Pantheon kept saying Fog Canyon was on).
   - **Shuffle** is a global switch above the app list: while it is on, a
     different animation plays every hour — Nyan Cat and every scene —
     dealing each one once per round before any repeats

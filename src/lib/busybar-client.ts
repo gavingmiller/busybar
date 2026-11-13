@@ -139,6 +139,22 @@ export async function quitApp(baseUrl: string, fetchImpl: typeof fetch = fetch):
   throw new Error(`BUSY Bar rejected quit: ${res.status} ${await res.text()}`);
 }
 
+/**
+ * When the device last booted (`GET /api/status/system`, `boot_time` in
+ * seconds). A boot later than our last command means every draw and running
+ * app is gone: firmware auto-updates reboot the bar (1.4.1 landed overnight
+ * 2026-11-13 and left it on its APPS menu).
+ */
+export async function getBootTime(baseUrl: string, fetchImpl: typeof fetch = fetch): Promise<Date> {
+  const res = await fetchImpl(`${baseUrl}/api/status/system`);
+  if (!res.ok) {
+    throw new Error(`BUSY Bar rejected system status request: ${res.status} ${await res.text()}`);
+  }
+  const body = (await res.json()) as { boot_time?: number };
+  if (typeof body.boot_time !== "number") throw new Error("BUSY Bar system status has no boot_time");
+  return new Date(body.boot_time * 1000);
+}
+
 /** One entry of a device storage directory (`GET /api/storage/list`). */
 export interface StorageEntry {
   type: "file" | "dir";

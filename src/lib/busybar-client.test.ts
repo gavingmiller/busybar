@@ -161,6 +161,22 @@ describe("JS apps API", () => {
     expect(apps).toEqual([{ id: "community.dino_run", name: "Dino Run" }]);
   });
 
+  it("getBootTime GETs /api/status/system and returns boot_time as a Date", async () => {
+    const fetchMock = mock(async () =>
+      new Response(JSON.stringify({ api_semver: "27.15.0", uptime: "00d 05h 44m 40s", boot_time: 1794557258, auto_update_enabled: true }), { status: 200 })
+    );
+    const { getBootTime } = require("./busybar-client.ts");
+    const boot = await getBootTime("http://10.0.4.20", fetchMock as unknown as typeof fetch);
+    expect(fetchMock.mock.calls[0]![0]).toBe("http://10.0.4.20/api/status/system");
+    expect(boot.toISOString()).toBe("2026-11-13T08:07:38.000Z");
+  });
+
+  it("getBootTime throws on a non-OK status", async () => {
+    const fetchMock = mock(async () => new Response("<h1>404</h1>", { status: 404 }));
+    const { getBootTime } = require("./busybar-client.ts");
+    await expect(getBootTime("http://10.0.4.20", fetchMock as unknown as typeof fetch)).rejects.toThrow(/404/);
+  });
+
   it("launchApp POSTs /api/apps/launch with the app_id", async () => {
     const fetchMock = mock(async () => new Response(JSON.stringify({ result: "OK" }), { status: 200 }));
     await launchApp("http://10.0.4.20", "community.dino_run", fetchMock as unknown as typeof fetch);

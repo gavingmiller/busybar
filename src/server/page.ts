@@ -105,7 +105,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
 <body>
 <main>
   <h1>BUSY Bar</h1>
-  <p class="note">One app shows at a time. The bar can't report what it is showing, so this is the last command sent from here.</p>
+  <p class="note">One app shows at a time. This is the last command sent from here; once a minute the server checks the bar's boot time and puts the app back if the bar has rebooted.</p>
   <div class="status" id="status" aria-live="polite"></div>
 
   <section class="card" id="shuffle"></section>
@@ -259,6 +259,18 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     statusEl.className = 'status error';
     statusEl.textContent = text;
   }
+  // The bar could not be read (unplugged, rebooting for a firmware update,
+  // Wi-Fi gone): whatever this page last drew is stale, so nothing may claim
+  // to be on. Dots go grey, no toggle stays pressed, and the banner says why.
+  // Gavin 2026-11-13: the bar rebooted for 1.4.1 and Pantheon kept showing
+  // Fog Canyon on for hours.
+  function markUnreachable(text) {
+    setError(text);
+    var dots = document.querySelectorAll('#apps .dot, #shuffle .dot');
+    for (var i = 0; i < dots.length; i++) dots[i].classList.remove('on');
+    var buttons = document.querySelectorAll('#apps button, #shuffle button');
+    for (var j = 0; j < buttons.length; j++) buttons[j].setAttribute('aria-pressed', 'false');
+  }
 
   function send(app, on) {
     setBusy(on ? 'Starting ' + app.name + ' on the bar\\u2026' : 'Stopping ' + app.name + '\\u2026');
@@ -285,7 +297,8 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   // Shuffle (and anything else) changes the bar behind the page's back, and
   // Pantheon keeps this tab open for hours: re-read the list on a timer and
   // whenever the tab comes back into view. A quiet poll never disturbs a
-  // command in flight or replaces an error it would hide.
+  // command in flight, but a failed one is never swallowed: the page marks
+  // the bar unreachable rather than keep showing the last known state.
   function load(quiet) {
     if (quiet && inflight) return;
     if (!quiet) setBusy('Reading the bar\\u2019s app list\\u2026');
@@ -296,7 +309,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
         if (quiet && inflight) return;
         render(r.body);
       })
-      .catch(function (err) { if (!quiet) setError('Could not read the bar: ' + err.message); });
+      .catch(function (err) { if (quiet && inflight) return; markUnreachable('Bar unreachable: ' + err.message); });
   }
   load(false);
   setInterval(function () { if (!document.hidden) load(true); }, ${PAGE_POLL_MS});

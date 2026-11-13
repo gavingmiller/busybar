@@ -2,7 +2,7 @@ import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
 import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHandler, NYAN_ID, type ServerDeps } from "./index.ts";
+import { createHandler, NYAN_ID, RECONCILE_INTERVAL_MS, type ServerDeps } from "./index.ts";
 import { SHUFFLE_INTERVAL_MS } from "./shuffle.ts";
 
 const BASE_URL = "http://10.0.4.20";
@@ -513,6 +513,125 @@ describe("shuffle (global rotation)", () => {
   it("rejects a body without a boolean `on` with 400", async () => {
     const handler = createHandler(deps());
     expect((await handler(req("/api/shuffle", { method: "POST", body: "{}" }))).status).toBe(400);
+  });
+});
+
+describe("reconcile (the bar reboots behind the server's back)", () => {
+  // 2026-11-13: the bar auto-updated to firmware 1.4.1 overnight and rebooted,
+  // which clears every draw and running app. The state file still said
+  // "Fog Canyon on" and Pantheon showed it, while the bar sat on its APPS
+  // menu. A heartbeat compares the device's boot time with when we last put
+  // something on it, and puts it back.
+  let heartbeats: Array<{ fn: () => void; ms: number }> = [];
+  const AFTER = new Date("2026-11-08T15:30:00.000Z"); // the bar rebooted after our last command (now = 15:00 at command time)
+  const BEFORE = new Date("2026-11-08T10:00:00.000Z");
+  const hb = (overrides: Partial<ServerDeps> = {}) => {
+    heartbeats = [];
+    return deps({ every: (fn, ms) => { heartbeats.push({ fn, ms }); return heartbeats.length; }, ...overrides });
+  };
+  const beat = async () => { heartbeats[0]!.fn(); await flush(); };
+  const state = () => JSON.parse(readFileSync(stateFile, "utf8"));
+
+  it("starts a heartbeat every minute", () => {
+    createHandler(hb());
+    expect(heartbeats).toHaveLength(1);
+    expect(heartbeats[0]!.ms).toBe(RECONCILE_INTERVAL_MS);
+    expect(RECONCILE_INTERVAL_MS).toBe(60 * 1000);
+  });
+
+  it("re-runs the active scene when the bar booted after we put it on, and stamps the time it was put back", async () => {
+    const logs: string[] = [];
+    let now = new Date("2026-11-08T15:00:00.000Z");
+    const d = hb({ now: () => now, getBootTime: mock(async () => AFTER), log: (m) => logs.push(m) });
+    const h = createHandler(d);
+    await h(post("aquarium", { on: true }));
+    expect(calls(d.scenes[1]!.run)).toHaveLength(1);
+    now = new Date("2026-11-08T15:31:00.000Z");
+    await beat();
+    expect(calls(d.scenes[1]!.run)).toHaveLength(2);
+    expect(calls(d.quitApp).length).toBeGreaterThanOrEqual(2);
+    expect(state().active).toBe("aquarium");
+    expect(state().changedAt).toBe("2026-11-08T15:31:00.000Z");
+    expect(logs.some((m) => /aquarium/.test(m) && /reboot/i.test(m))).toBe(true);
+    // The bar has not rebooted again since: the next beat leaves it alone.
+    now = new Date("2026-11-08T15:32:00.000Z");
+    await beat();
+    expect(calls(d.scenes[1]!.run)).toHaveLength(2);
+  });
+
+  it("keeps the Shuffle round intact when it puts the current card back", async () => {
+    let now = new Date("2026-11-08T15:00:00.000Z");
+    const d = hb({ now: () => now, getBootTime: mock(async () => AFTER) });
+    const h = createHandler(d);
+    await h(req("/api/shuffle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on: true }) }));
+    const before = state();
+    now = new Date("2026-11-08T15:31:00.000Z");
+    await beat();
+    expect(state().shuffle).toEqual(before.shuffle);
+    expect(state().active).toBe(before.active);
+    expect(state().changedAt).toBe("2026-11-08T15:31:00.000Z");
+  });
+
+  it("re-launches the active JS app after a reboot", async () => {
+    let now = new Date("2026-11-08T15:00:00.000Z");
+    const d = hb({ now: () => now, getBootTime: mock(async () => AFTER) });
+    const h = createHandler(d);
+    await h(post("community.dino_run", { on: true }));
+    expect(calls(d.launchApp)).toHaveLength(1);
+    now = new Date("2026-11-08T15:31:00.000Z");
+    await beat();
+    expect(calls(d.launchApp)).toHaveLength(2);
+    expect(calls(d.launchApp)[1]![1]).toBe("community.dino_run");
+    expect(calls(d.clearAllDisplays).length).toBeGreaterThanOrEqual(2);
+    expect(state().active).toBe("community.dino_run");
+  });
+
+  it("leaves the bar alone when it booted before our last command", async () => {
+    const d = hb({ getBootTime: mock(async () => BEFORE) });
+    const h = createHandler(d);
+    await h(post("aquarium", { on: true }));
+    const before = state();
+    await beat();
+    expect(calls(d.scenes[1]!.run)).toHaveLength(1);
+    expect(state()).toEqual(before);
+  });
+
+  it("does nothing, and asks the bar nothing, when nothing is active", async () => {
+    const d = hb({ getBootTime: mock(async () => AFTER) });
+    createHandler(d);
+    await beat();
+    expect(calls(d.getBootTime)).toHaveLength(0);
+    expect(existsSync(stateFile)).toBe(false);
+    const h = createHandler(d);
+    await h(post("aquarium", { on: true }));
+    await h(post("aquarium", { on: false }));
+    await beat();
+    expect(calls(d.getBootTime)).toHaveLength(0);
+  });
+
+  it("stays quiet while the bar is unreachable: no state change, no error spam", async () => {
+    const errors: unknown[] = [];
+    const d = hb({ getBootTime: mock(async () => { throw new Error("Unable to connect"); }), onError: (e) => errors.push(e) });
+    const h = createHandler(d);
+    await h(post("aquarium", { on: true }));
+    const before = state();
+    await beat();
+    await beat();
+    expect(state()).toEqual(before);
+    expect(errors).toHaveLength(0);
+    expect(calls(d.scenes[1]!.run)).toHaveLength(1);
+  });
+
+  it("reports a failed put-back and leaves the state untouched so the next beat retries", async () => {
+    const errors: unknown[] = [];
+    const d = hb({ getBootTime: mock(async () => AFTER), onError: (e) => errors.push(e) });
+    const h = createHandler(d);
+    await h(post("aquarium", { on: true }));
+    const before = state();
+    d.scenes[1]!.run = mock(async () => { throw new Error("508"); });
+    await beat();
+    expect(errors).toHaveLength(1);
+    expect(state()).toEqual(before);
   });
 });
 

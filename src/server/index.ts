@@ -6,6 +6,7 @@ import {
   listApps as listAppsReal,
   launchApp as launchAppReal,
   quitApp as quitAppReal,
+  getBootTime as getBootTimeReal,
   type DeviceApp,
 } from "../lib/busybar-client.ts";
 import { runRainbow as runRainbowReal, playNyanCatSection } from "../nyan-cat/index.ts";
@@ -78,7 +79,20 @@ export interface ServerDeps {
   schedule?: (fn: () => void, ms: number) => unknown;
   cancel?: (id: unknown) => void;
   onError?: (err: unknown) => void;
+  /** When the device last booted (busybar-client getBootTime); the reconcile heartbeat's one question. */
+  getBootTime?: (baseUrl: string, fetchImpl: typeof fetch) => Promise<Date>;
+  /** Fixed-interval timer for the heartbeat (setInterval), injectable for tests. */
+  every?: (fn: () => void, ms: number) => unknown;
+  /** Informational log line (console.log). */
+  log?: (message: string) => void;
 }
+
+/**
+ * How often the server checks that the bar still shows what the state file
+ * says. The bar reboots behind our back (firmware auto-update, power), which
+ * clears every draw and running app; the heartbeat puts the active one back.
+ */
+export const RECONCILE_INTERVAL_MS = 60 * 1000;
 
 /** How soon Shuffle tries again after a change fails (device unreachable, upload refused). */
 export const SHUFFLE_RETRY_MS = 60 * 1000;
@@ -231,6 +245,42 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
     const stored = readState(deps.stateFile);
     if (stored?.shuffle) armShuffle(new Date(stored.shuffle.nextAt).getTime() - deps.now().getTime());
   }
+
+  // Reconcile: once a minute, if something is meant to be on, ask the bar when
+  // it booted. A boot after our last command means the bar came up empty (its
+  // APPS menu), so put the same thing back and stamp when we did. Unreachable
+  // is not an error here: the page already shows that, and Shuffle's own
+  // retries used to fill the log with one line a minute.
+  const getBootTime = deps.getBootTime ?? getBootTimeReal;
+  const every = deps.every ?? ((fn, ms) => setInterval(fn, ms));
+  const log = deps.log ?? ((m: string) => console.log(m));
+  const reconcile = async (): Promise<void> => {
+    const state = readState(deps.stateFile);
+    if (!state?.active) return;
+    let booted: Date;
+    try {
+      booted = await getBootTime(deps.baseUrl, deps.fetchImpl);
+    } catch {
+      return;
+    }
+    if (booted.getTime() <= new Date(state.changedAt).getTime()) return;
+    try {
+      const id = state.active;
+      if (allAnimationIds().includes(id)) {
+        await showAnimation(id);
+      } else {
+        stopPan();
+        await deps.quitApp(deps.baseUrl, deps.fetchImpl);
+        await deps.clearAllDisplays(deps.baseUrl, deps.fetchImpl);
+        await deps.launchApp(deps.baseUrl, id, deps.fetchImpl);
+      }
+      writeState(deps.stateFile, { ...state, changedAt: deps.now().toISOString() });
+      log(`busybar server: the bar rebooted at ${booted.toISOString()}; put ${id} back`);
+    } catch (err) {
+      report(err);
+    }
+  };
+  every(() => { void reconcile(); }, RECONCILE_INTERVAL_MS);
 
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);

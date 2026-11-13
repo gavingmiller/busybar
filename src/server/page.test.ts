@@ -29,6 +29,17 @@ describe("control page", () => {
     expect(CONTROL_PAGE_HTML).toContain("visibilitychange");
   });
 
+  it("surfaces a failed poll instead of keeping stale state (Gavin 2026-11-13: bar rebooted for a firmware update, page still said Fog Canyon on)", () => {
+    // A quiet poll that fails must not be swallowed...
+    expect(CONTROL_PAGE_HTML).not.toContain("if (!quiet) setError(");
+    // ...it marks the bar unreachable: banner, every dot off, no toggle pressed.
+    expect(CONTROL_PAGE_HTML).toContain("function markUnreachable(");
+    expect(CONTROL_PAGE_HTML).toContain("'Bar unreachable: ' + err.message");
+    expect(CONTROL_PAGE_HTML).toMatch(/function markUnreachable\([\s\S]*?classList\.remove\('on'\)[\s\S]*?aria-pressed', 'false'[\s\S]*?\n  \}/);
+    // A command in flight still wins over a quiet poll's failure.
+    expect(CONTROL_PAGE_HTML).toMatch(/\.catch\(function \(err\) \{ if \(quiet && inflight\) return; markUnreachable\(/);
+  });
+
   it("shows the next shuffle change as a countdown, with the formatter shipped into the page", () => {
     expect(CONTROL_PAGE_HTML).toContain("'next change ' + relativeUntil(");
     expect(CONTROL_PAGE_HTML).toContain("function relativeUntil(");
