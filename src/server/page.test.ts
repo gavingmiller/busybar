@@ -44,4 +44,23 @@ describe("control page", () => {
     expect(CONTROL_PAGE_HTML).toContain("'next change ' + relativeUntil(");
     expect(CONTROL_PAGE_HTML).toContain("function relativeUntil(");
   });
+
+  it("has a Shuffle Now button that deals the next card at once (Gavin 2026-11-16), usable only while Shuffle is on", () => {
+    expect(CONTROL_PAGE_HTML).toContain("'Shuffle Now'");
+    expect(CONTROL_PAGE_HTML).toContain("fetch('/api/shuffle/next', { method: 'POST' })");
+    // Disabled, not hidden, while Shuffle is off...
+    expect(CONTROL_PAGE_HTML).toMatch(/now\.disabled = !on;/);
+    // ...and a failed command re-enabling every button must not wake it up.
+    expect(CONTROL_PAGE_HTML).toMatch(/function setError\([\s\S]*?data-needs-shuffle[\s\S]*?\n  \}/);
+    // It goes through the same busy/inflight guard and renders from the response.
+    expect(CONTROL_PAGE_HTML).toMatch(/function shuffleNow\(\) \{\s*setBusy\(/);
+    expect(CONTROL_PAGE_HTML).toMatch(/function shuffleNow\(\)[\s\S]*?render\(r\.body\)[\s\S]*?setError\('Failed: '/);
+  });
+
+  it("keeps Shuffle Now and the On/Off toggle on one line; the label wraps first, and the buttons drop below it only at phone width", () => {
+    expect(CONTROL_PAGE_HTML).toMatch(/\.actions \{[^}]*flex-wrap: nowrap;[^}]*flex-shrink: 0;/);
+    expect(CONTROL_PAGE_HTML).toMatch(/#shuffle \.row \{ flex-wrap: wrap; \}/);
+    expect(CONTROL_PAGE_HTML).toMatch(/#shuffle \.label \{ flex: 1 1 160px; min-width: 0; \}/);
+  });
 });
+

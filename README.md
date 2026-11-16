@@ -133,14 +133,16 @@ Custom apps for the [BUSY Bar](https://busy.app) HTTP display API.
     different app plays every hour — Nyan Cat, every scene, and Gavin's own
     JS apps (Ravens, Dino Run) — dealing each one once per round before any repeats
     (`src/server/shuffle.ts`). The animation currently dealt shows as the
-    one that is on. Picking an animation by hand keeps shuffle on (that
-    pick becomes the current card and the clock restarts); launching a JS
-    app or turning the bar off switches it off. The round (remaining deck,
+    one that is on. Picking any app by hand keeps shuffle on (that pick
+    becomes the current card and the clock restarts); only turning the bar
+    off switches it off. The round (remaining deck,
     next change) lives in the state file, so a server restart re-arms the
     timer for the remaining time and a missed change fires at once; a
     failed change is retried a minute later. `GET /api/apps` carries
     `shuffle: { on, nextChangeAt }`; `POST /api/shuffle` with
-    `{ "on": true | false }` flips it.
+    `{ "on": true | false }` flips it. The **Shuffle Now** button next to it
+    (`POST /api/shuffle/next`) deals the round's next card at once and
+    restarts the hour; it answers 409 while Shuffle is off.
   - `POST /api/apps/<id>` with `{ "on": true }` runs `nyan-cat:rainbow` for
     `nyan_cat` (and starts its camera pan, which the server keeps running
     until anything else is turned on), `runScene` for a scene id, or

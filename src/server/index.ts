@@ -342,6 +342,28 @@ export function createHandler(deps: ServerDeps): (req: Request) => Promise<Respo
       }
     }
 
+    // Shuffle Now (Gavin 2026-11-16): deal the round's next card at once,
+    // exactly like the hourly tick, and restart the hour from now. A card the
+    // bar refuses is reported and retried in a minute, as a failed tick is.
+    if (url.pathname === "/api/shuffle/next") {
+      if (req.method !== "POST") return json({ error: "Method Not Allowed" }, 405);
+      const current = readState(deps.stateFile);
+      if (!current?.shuffle) return json({ error: "Shuffle is off" }, 409);
+      let state: StoredState;
+      try {
+        state = await shuffleAdvance(current.shuffle);
+      } catch (err) {
+        report(err);
+        armShuffle(SHUFFLE_RETRY_MS);
+        return json({ error: err instanceof Error ? err.message : String(err) }, 502);
+      }
+      try {
+        return json(await statusFor(deps, state));
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : String(err) }, 502);
+      }
+    }
+
     if (url.pathname === "/api/shuffle") {
       if (req.method !== "POST") return json({ error: "Method Not Allowed" }, 405);
       let on: unknown;

@@ -90,6 +90,10 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   .seg button + button { border-left: 1px solid var(--border); }
   .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
   .seg button:disabled { cursor: progress; opacity: .7; }
+  .seg button.unavailable:disabled { cursor: not-allowed; opacity: .45; }
+  .actions { display: flex; flex-wrap: nowrap; flex-shrink: 0; gap: 8px; }
+  #shuffle .row { flex-wrap: wrap; }
+  #shuffle .label { flex: 1 1 160px; min-width: 0; }
   .status { margin: 0 0 16px; font-size: 14px; min-height: 1.5em; }
   .status.busy { animation: busy-pulse 1.3s ease-in-out infinite; color: var(--muted); }
   .status.error { color: var(--error); }
@@ -195,8 +199,26 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
       b.addEventListener('click', function () { sendShuffle(want); });
       seg.appendChild(b);
     });
+    // Shuffle Now: deal the next card at once (Gavin 2026-11-16). Shown
+    // always so it is findable, usable only while Shuffle is on.
+    shuffleOn = on;
+    var nowSeg = document.createElement('div');
+    nowSeg.className = 'seg';
+    var now = document.createElement('button');
+    now.type = 'button';
+    now.textContent = 'Shuffle Now';
+    now.setAttribute('data-needs-shuffle', 'true');
+    now.title = on ? 'Show the next app now; the hour restarts' : 'Turn Shuffle on first';
+    now.disabled = !on;
+    if (!on) now.className = 'unavailable';
+    now.addEventListener('click', function () { shuffleNow(); });
+    nowSeg.appendChild(now);
+    var actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.appendChild(nowSeg);
+    actions.appendChild(seg);
     row.appendChild(label);
-    row.appendChild(seg);
+    row.appendChild(actions);
     shuffleEl.appendChild(row);
   }
   function render(data) {
@@ -245,6 +267,7 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
     else statusEl.textContent = 'Turned off ' + fmt(data.changedAt);
   }
   var inflight = false;
+  var shuffleOn = false;
   function setBusy(text) {
     inflight = true;
     var buttons = document.querySelectorAll('#apps button, #shuffle button');
@@ -255,7 +278,9 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   function setError(text) {
     inflight = false;
     var buttons = document.querySelectorAll('#apps button, #shuffle button');
-    for (var i = 0; i < buttons.length; i++) buttons[i].disabled = false;
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = !shuffleOn && buttons[i].hasAttribute('data-needs-shuffle');
+    }
     statusEl.className = 'status error';
     statusEl.textContent = text;
   }
@@ -286,6 +311,17 @@ export const CONTROL_PAGE_HTML = `<!doctype html>
   function sendShuffle(on) {
     setBusy(on ? 'Starting the shuffle\\u2026' : 'Stopping the shuffle\\u2026');
     fetch('/api/shuffle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: on }) })
+      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');
+        render(r.body);
+      })
+      .catch(function (err) { setError('Failed: ' + err.message); });
+  }
+
+  function shuffleNow() {
+    setBusy('Dealing the next app\\u2026');
+    fetch('/api/shuffle/next', { method: 'POST' })
       .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
       .then(function (r) {
         if (!r.ok) throw new Error(r.body && r.body.error ? r.body.error : 'Request failed');

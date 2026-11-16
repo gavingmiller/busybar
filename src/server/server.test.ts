@@ -545,6 +545,83 @@ describe("shuffle (global rotation)", () => {
     const handler = createHandler(deps());
     expect((await handler(req("/api/shuffle", { method: "POST", body: "{}" }))).status).toBe(400);
   });
+
+  describe("Shuffle Now (POST /api/shuffle/next, Gavin 2026-11-16)", () => {
+    const next = () => req("/api/shuffle/next", { method: "POST" });
+
+    it("deals the next card from the round straight away, shows it, and books the following change a full hour later", async () => {
+      let t = new Date("2026-11-08T15:00:00.000Z");
+      const d = deps({ now: () => t, random: () => 0.99 });
+      const handler = createHandler(d);
+      await handler(shuffle(true));
+      const first = ran(d)[0]!;
+      const before = JSON.parse(readFileSync(stateFile, "utf8"));
+      const expected = before.shuffle.deck[0];
+      t = new Date("2026-11-08T15:20:00.000Z");
+      const armed = timers.length;
+      const res = await handler(next());
+      expect(res.status).toBe(200);
+      expect(ran(d)).toEqual([first, expected]);
+      expect(expected).not.toBe(first);
+      const body = await res.json();
+      expect(body.shuffle).toEqual({ on: true, nextChangeAt: "2026-11-08T16:20:00.000Z" });
+      expect(body.apps.filter((a: { state: string }) => a.state === "on").map((a: { id: string }) => a.id)).toEqual([expected]);
+      expect(body.changedAt).toBe("2026-11-08T15:20:00.000Z");
+      // The hourly timer is replaced, not doubled up.
+      expect(cancelled).toHaveLength(1);
+      expect(timers).toHaveLength(armed + 1);
+      expect(timers[timers.length - 1]!.ms).toBe(SHUFFLE_INTERVAL_MS);
+      const stored = JSON.parse(readFileSync(stateFile, "utf8"));
+      expect(stored.active).toBe(expected);
+      expect(stored.shuffle.showing).toBe(expected);
+      expect(stored.shuffle.deck).toEqual(before.shuffle.deck.slice(1));
+      expect(stored.shuffle.nextAt).toBe("2026-11-08T16:20:00.000Z");
+    });
+
+    it("keeps dealing without repeats: pressing it through a whole round shows every card once", async () => {
+      let r = 0.1;
+      const d = deps({ random: () => (r = (r * 7.3) % 1) });
+      const handler = createHandler(d);
+      await handler(shuffle(true));
+      for (let i = 0; i < DEALT.length - 1; i++) expect((await handler(next())).status).toBe(200);
+      expect([...ran(d)].sort()).toEqual([...DEALT].sort());
+    });
+
+    it("answers 409 and changes nothing while Shuffle is off", async () => {
+      const d = deps();
+      const handler = createHandler(d);
+      await handler(post("lava_lamp", { on: true }));
+      const stateBefore = readFileSync(stateFile, "utf8");
+      const res = await handler(next());
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe("Shuffle is off");
+      expect(ran(d)).toEqual(["lava_lamp"]);
+      expect(readFileSync(stateFile, "utf8")).toBe(stateBefore);
+      expect(timers).toHaveLength(0);
+    });
+
+    it("a card the bar refuses answers 502 with the reason, leaves the stored round as it was, and retries in a minute like a failed tick", async () => {
+      const errors: unknown[] = [];
+      const d = deps({ random: () => 0.99 });
+      const handler = createHandler(d);
+      await handler(shuffle(true));
+      const stateBefore = readFileSync(stateFile, "utf8");
+      d.runRainbow = mock(async () => { throw new Error("508 busy"); });
+      for (const sc of d.scenes) sc.run = mock(async () => { throw new Error("508 busy"); });
+      d.launchApp = mock(async () => { throw new Error("508 busy"); });
+      d.onError = (e) => errors.push(e);
+      const res = await handler(next());
+      expect(res.status).toBe(502);
+      expect((await res.json()).error).toContain("508 busy");
+      expect(readFileSync(stateFile, "utf8")).toBe(stateBefore);
+      expect(errors).toHaveLength(1);
+      expect(timers[timers.length - 1]!.ms).toBe(60 * 1000);
+    });
+
+    it("only takes POST", async () => {
+      expect((await createHandler(deps())(req("/api/shuffle/next"))).status).toBe(405);
+    });
+  });
 });
 
 describe("reconcile (the bar reboots behind the server's back)", () => {
