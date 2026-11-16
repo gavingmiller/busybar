@@ -184,8 +184,8 @@ the bar keeps it in its APPS menu and runs it on its own.
   the app starts, an autopilot simulates the game's own collision model one
   jump ahead over every obstacle and jumps or ducks on its own, there is no
   title screen, score or game-over screen, and the speed never changes.
-  The obstacle pool still unlocks level by level with distance run (birds,
-  bigger cacti), so the variety progresses like the game's. A (rare) hit
+  The obstacle pool stays at the opening tier (small cacti) for the whole
+  run, so the pace never changes (Gavin 2026-11-16). A (rare) hit
   just stumbles for a moment and keeps going. **Back** exits. Nothing of
   the game is vendored: `build.sh` downloads the upstream release package,
   `patch.py` rewrites `scripts/main.js` and the manifest, and

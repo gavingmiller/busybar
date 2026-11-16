@@ -10,8 +10,8 @@ except for what makes it a game:
 - no title screen and no game-over screen: the dino is already running when
   the app starts, and a (rare) hit just stumbles and keeps going;
 - no score and no speed-up: the ground and obstacles always move at the
-  first tier's speed, but the obstacle pool still unlocks level by level
-  (birds, bigger cacti) by distance run, so the variety still progresses;
+  first tier's speed, and the obstacle pool stays at the opening tier for
+  the whole run (Gavin 2026-11-16: the ramp read as "speeding up");
 - Back still exits.
 """
 import json, shutil, sys, pathlib
@@ -29,7 +29,7 @@ def sub(s, old, new, count=1):
 
 js = (dst / "scripts/main.js").read_text()
 js = sub(js, 'var APP = "community.dino_run";',
-         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\nvar level = 0;               // obstacle pool unlocked so far (speed never changes)')
+         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running')
 
 # ── Autopilot ───────────────────────────────────────────────
 js = sub(js, "function step(now) {", r'''// ── Autopilot ───────────────────────────────────────────────
@@ -94,11 +94,10 @@ js = sub(js, '''  if (inflight === 0 && now - scoreSentAt >= 100) {
     trash = [];
   }''')
 
-# ── No speed-up, but the obstacle pool still progresses ─────
-js = sub(js, "  if (pendingTier < 0 && tier + 1 < D.TIERS.length && score >= TIER_AT[tier + 1]) scheduleTier(now, tier + 1);",
-         "  if (level + 1 < POOL.length && score >= TIER_AT[level + 1]) level++;")
-js = sub(js, "  var pool = POOL[tier], type, tries = 0;", "  var pool = POOL[level], type, tries = 0;")
-js = sub(js, "  tier = 0; pendingTier = -1;", "  tier = 0; level = 0; pendingTier = -1;")
+# ── No speed-up, no obstacle-pool progression ───────────────
+js = sub(js, "  if (pendingTier < 0 && tier + 1 < D.TIERS.length && score >= TIER_AT[tier + 1]) scheduleTier(now, tier + 1);\n", "")
+js = sub(js, "  var pool = POOL[tier], type, tries = 0;",
+         "  var pool = POOL[0], type, tries = 0; // the opening tier's obstacles for the whole run (Gavin 2026-11-16: no ramp)")
 
 # ── Always running: no title, no opening hop, no game-over screen ─
 js = sub(js, '''  dinoMode = "jump"; queued = duckHeld ? "duck" : "run"; jumpAnchor = now + EXPECT;
