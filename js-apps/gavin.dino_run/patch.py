@@ -10,8 +10,9 @@ except for what makes it a game:
 - no title screen and no game-over screen: the dino is already running when
   the app starts, and a (rare) hit just stumbles and keeps going;
 - no score and no speed-up: the ground and obstacles always move at the
-  first tier's speed, and the obstacle pool stays at the opening tier for
-  the whole run (Gavin 2026-11-16: the ramp read as "speeding up");
+  first tier's speed, and one fixed obstacle mix (MIX: mostly small cacti,
+  plus the low, mid and high birds) is used for the whole run (Gavin
+  2026-11-16: the level ramp read as "speeding up", but he wants birds);
 - Back still exits.
 """
 import json, shutil, sys, pathlib
@@ -29,7 +30,7 @@ def sub(s, old, new, count=1):
 
 js = (dst / "scripts/main.js").read_text()
 js = sub(js, 'var APP = "community.dino_run";',
-         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running')
+         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\nvar MIX = ["s1", "s1", "s2", "s2", "l1", "l2", "s3", "bl", "bm", "bh"]; // one fixed pool for the whole run: small cacti most of the time, every bird (Gavin 2026-11-16: no ramp, but birds)')
 
 # ── Autopilot ───────────────────────────────────────────────
 js = sub(js, "function step(now) {", r'''// ── Autopilot ───────────────────────────────────────────────
@@ -97,7 +98,7 @@ js = sub(js, '''  if (inflight === 0 && now - scoreSentAt >= 100) {
 # ── No speed-up, no obstacle-pool progression ───────────────
 js = sub(js, "  if (pendingTier < 0 && tier + 1 < D.TIERS.length && score >= TIER_AT[tier + 1]) scheduleTier(now, tier + 1);\n", "")
 js = sub(js, "  var pool = POOL[tier], type, tries = 0;",
-         "  var pool = POOL[0], type, tries = 0; // the opening tier's obstacles for the whole run (Gavin 2026-11-16: no ramp)")
+         "  var pool = MIX, type, tries = 0; // the same mix for the whole run, birds from the first second")
 
 # ── Always running: no title, no opening hop, no game-over screen ─
 js = sub(js, '''  dinoMode = "jump"; queued = duckHeld ? "duck" : "run"; jumpAnchor = now + EXPECT;
