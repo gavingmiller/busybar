@@ -195,7 +195,17 @@ the bar keeps it in its APPS menu and runs it on its own.
   fw 27.14).
   The obstacle pool is one fixed mix for the whole run (mostly small cacti,
   plus the low and high birds; the mid bird looked weird), so the pace never
-  changes (Gavin 2026-11-16: no ramp, but birds). A (rare) hit
+  changes (Gavin 2026-11-16: no ramp, but birds). Six more obstacles Gavin
+  picked from hand-drawn line-ups the same day — skull, granite, sandstone,
+  snake, scorpion, tortoise — are in `js-apps/gavin.dino_run/art/obstacles.ts`
+  and baked by `build-extra-anim.ts` into their own `anims/extra.anim` (the
+  upstream obstacle file is mask-compressed and cannot be appended to);
+  `patch.py` registers their collision masks in `D.OBST`, draws them from the
+  extra file and deals them with the cacti still in the majority. Drawn from
+  references, nothing vendored: Wikimedia "Tumbleweed rolling" (CC BY-SA 2.0),
+  OpenGameArt "Desert Tileset" by Beast (CC-BY 3.0), "Shiny Boulders" (CC0),
+  "Scorpy Scorp" (CC0), "Animated Snake" by calciumtrice (CC-BY 3.0) and
+  "Zombies & Skeletons" (CC0). A (rare) hit
   just stumbles for a moment and keeps going. **Back** exits. Nothing of
   the game is vendored: `build.sh` downloads the upstream release package,
   `patch.py` rewrites `scripts/main.js` and the manifest, and

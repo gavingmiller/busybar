@@ -2,8 +2,9 @@
 """Turn the Dino Run release into a stand-alone, self-running animation.
 
 Reads an unpacked community.dino_run package dir (argv[1]) and writes the
-patched package to argv[2]/gavin.dino_run. The game logic is left intact
-except for what makes it a game:
+patched package to argv[2]/gavin.dino_run; argv[3] is the dir where
+build-extra-anim.ts put anims/extra.anim + obst.json (the six hand-drawn
+obstacles). The game logic is left intact except for what makes it a game:
 
 - an autopilot in step() simulates the game's own collision model: it plans
   each obstacle once (a few probes per tick) and jumps at the centre of the
@@ -15,6 +16,12 @@ except for what makes it a game:
   plus the low and high birds; the mid bird looked weird) is used for the
   whole run (Gavin 2026-11-16: the level ramp read as "speeding up", but he
   wants birds);
+- six more obstacles Gavin picked from hand-drawn line-ups (2026-11-16):
+  skull, granite, sandstone, snake, scorpion, tortoise (art/obstacles.ts,
+  drawn from CC0 / CC-BY references, see art/obstacles.ts; nothing vendored).
+  They live in their own anims/extra.anim (the upstream obst.anim cannot be
+  appended to) and are registered in D.OBST with their collision masks so the
+  jump windows are baked for them like any cactus;
 - Back still exits.
 """
 import json, re, shutil, sys, pathlib
@@ -31,8 +38,25 @@ def sub(s, old, new, count=1):
     return s.replace(old, new)
 
 js = (dst / "scripts/main.js").read_text()
+
+# ── The six hand-drawn obstacles: anims/extra.anim + their D.OBST entries ──
+extra_dir = pathlib.Path(sys.argv[3])
+EXTRA = json.loads((extra_dir / "obst.json").read_text())
+assert all(not t.startswith("b") and len(t) == 2 for t in EXTRA), EXTRA.keys()   # "b" = bird to the no-repeat rule
+shutil.copy(extra_dir / "anims/extra.anim", dst / "anims/extra.anim")
+D_LINE = re.search(r"^var D = (\{.*\});$", js, re.M)
+D = json.loads(D_LINE.group(1))
+for t, ot in EXTRA.items():
+    D["OBST"][t] = ot
+js = sub(js, D_LINE.group(0), "var D = " + json.dumps(D, separators=(',', ':')) + ";")
+js = sub(js, 'function obst(o, sec, loop) { return anim(o.id, "obst", sec, loop, 0, 0, 3); }',
+         'var EXTRA = ' + json.dumps({t: True for t in EXTRA}, separators=(',', ':')) + ';   // drawn from anims/extra.anim, not obst.anim\n'
+         'function obst(o, sec, loop) { return anim(o.id, EXTRA[o.type] ? "extra" : "obst", sec, loop, 0, 0, 3); }')
+
 js = sub(js, 'var APP = "community.dino_run";',
-         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\nvar MIX = ["s1", "s1", "s2", "s2", "l1", "l2", "s3", "bl", "bh"]; // one fixed pool for the whole run: small cacti most of the time, low and high birds only; the mid bird looked weird (Gavin 2026-11-16)')
+         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\n'
+         'var MIX = ["s1", "s1", "s2", "s2", "l1", "l2", "s3", "bl", "bh", ' + ", ".join(f'"{t}"' for t in EXTRA) + ']; '
+         '// one fixed pool for the whole run: cacti most of the time, low and high birds (the mid bird looked weird), and the six hand-drawn extras (Gavin 2026-11-16)')
 
 # ── Frame period: fw 1.4.1 renders a frame every 18.81 ms, not 16.03 ──────
 # Measured 2026-11-16 three ways on the bar (ground scroll, obstacle edges, the
@@ -48,7 +72,6 @@ js = sub(js, "var F = 16.03;               // ms per animation frame (measured o
 # old per-tick autopilot therefore decided 4-8 frames late and the 7-frame windows
 # of l2/s3 went by (22/26 l2 jumps stumbled, telemetry 2026-11-16). patch.test.ts
 # checks these windows against the game's own wouldHit.
-D = json.loads(re.search(r"^var D = (\{.*\});$", js, re.M).group(1))
 _JUMP, _HIT, _DINO_X, _DINO_TOP, _W = D["JUMP"], D["HIT_STAND"], D["DINO_X"], 6, 72
 
 def _hits(ot, x, dH):
@@ -92,6 +115,8 @@ for name, ot in D["OBST"].items():
             runs.append([j, j])
     assert len(runs) == 1, (name, runs)   # one window per type, or the model changed
     WINDOW[name] = runs[0]
+for t in EXTRA:   # every extra must be cleanly jumpable with the slack the double large cactus has (7 frames)
+    assert t in WINDOW and WINDOW[t][1] - WINDOW[t][0] + 1 >= 7, (t, WINDOW.get(t))
 
 # ── Autopilot ───────────────────────────────────────────────
 js = sub(js, "function step(now) {", r'''// ── Autopilot ───────────────────────────────────────────────

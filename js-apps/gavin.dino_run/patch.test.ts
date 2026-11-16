@@ -13,13 +13,24 @@ import { join } from "node:path";
 const here = import.meta.dir;
 const upstream = join(here, "build", "src", "community.dino_run");
 
+/** The six hand-drawn obstacles: build-extra-anim.ts writes anims/extra.anim + obst.json into a dir patch.py takes as argv[3]. */
+function builtExtra(): string {
+  const extra = mkdtempSync(join(tmpdir(), "dino-extra-"));
+  const r = spawnSync("bun", ["run", "build-extra-anim.ts", extra], { cwd: here, encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`build-extra-anim.ts failed: ${r.stdout}${r.stderr}`);
+  return extra;
+}
+let outDir = "";
 function patched(): string {
   if (!existsSync(upstream)) throw new Error(`${upstream} is missing — run ./build.sh first to download and unpack the upstream release`);
+  if (outDir) return readFileSync(join(outDir, "gavin.dino_run", "scripts", "main.js"), "utf8");
   const out = mkdtempSync(join(tmpdir(), "dino-patch-"));
-  const r = spawnSync("python3", ["-I", "patch.py", join(here, "build", "src"), out], { cwd: here, encoding: "utf8" });
+  const r = spawnSync("python3", ["-I", "patch.py", join(here, "build", "src"), out, builtExtra()], { cwd: here, encoding: "utf8" });
   if (r.status !== 0) throw new Error(`patch.py failed: ${r.stdout}${r.stderr}`);
+  outDir = out;
   return readFileSync(join(out, "gavin.dino_run", "scripts", "main.js"), "utf8");
 }
+const EXTRA_TYPES = ["sk", "gr", "sa", "sn", "sc", "to"];
 
 describe("patch.py gives Dino Run one fixed obstacle pool for the whole run", () => {
   const js = patched();
@@ -36,7 +47,11 @@ describe("patch.py gives Dino Run one fixed obstacle pool for the whole run", ()
     expect(mix).not.toContain("bm");
     expect(mix).toContain("bh");
     expect(mix).not.toContain("l3");
-    expect(mix.filter((t) => t.startsWith("s")).length).toBeGreaterThan(mix.filter((t) => t.startsWith("b")).length);
+    const cacti = mix.filter((t) => /^[sl]\d$/.test(t)).length;
+    expect(cacti).toBeGreaterThan(mix.filter((t) => t.startsWith("b")).length);
+    // Gavin's six picks (2026-11-16) are all dealt, and the cacti still outnumber them.
+    for (const t of EXTRA_TYPES) expect(mix).toContain(t);
+    expect(cacti).toBeGreaterThan(mix.filter((t) => EXTRA_TYPES.includes(t)).length);
   });
   test("has no level progression at all", () => {
     expect(js).not.toMatch(/\blevel\b/);
@@ -72,7 +87,7 @@ describe("patch.py bakes the jump windows so the autopilot never simulates at ru
   }
   test("a WINDOW table of safe jump-start frames covers every jumpable type in the mix, and the high bird is run under", () => {
     const w = table();
-    for (const t of ["s1", "s2", "s3", "l1", "l2", "bl"]) expect(w[t]).toBeDefined();
+    for (const t of ["s1", "s2", "s3", "l1", "l2", "bl", ...EXTRA_TYPES]) expect(w[t], t).toBeDefined();
     expect(w["bh"]).toBeUndefined();
     expect(js).toMatch(/var RUN_SAFE = \{[^;]*"bh":true[^;]*\};/);
   });
@@ -112,8 +127,8 @@ describe("patch.py bakes the jump windows so the autopilot never simulates at ru
       expect([type, "after", probe(b + 2)]).toEqual([type, "after", true]);
     }
   });
-  test("plans a jump centred in the window with 2+ frames of slack each side for the narrow-window cacti (l2, s3)", () => {
-    for (const type of ["l2", "s3"]) {
+  test("plans a jump centred in the window with 2+ frames of slack each side for the narrow-window cacti (l2, s3) and the six extras", () => {
+    for (const type of ["l2", "s3", ...EXTRA_TYPES]) {
       const { g, o, anchor } = planned(type);
       expect(o.plan).toBe("done");
       expect(o.action).toBe("jump");
@@ -143,5 +158,39 @@ describe("patch.py bakes the jump windows so the autopilot never simulates at ru
     expect(g.mode()).toBe("run");
     g.autopilot(anchor + o.fdTarget * g.F);
     expect(g.mode()).toBe("jump");
+  });
+});
+
+// Gavin's six picks from the obstacle line-ups (2026-11-16): skull, granite,
+// sandstone, snake, scorpion, tortoise, hand-drawn in art/obstacles.ts and
+// baked into anims/extra.anim by build-extra-anim.ts. patch.py registers them
+// in D.OBST (collision masks), draws them from the extra file and deals them.
+describe("patch.py wires the six hand-drawn obstacles in anims/extra.anim", () => {
+  const js = patched();
+  test("D.OBST carries an entry per type with the baked collision mask and tier-0 frame count", () => {
+    const m = js.match(/^var D = (\{.*\});$/m);
+    expect(m).not.toBeNull();
+    const D = JSON.parse(m![1]!) as { OBST: Record<string, { w: number; top: number; hit: number[]; frames: Record<string, number> }> };
+    for (const t of EXTRA_TYPES) {
+      const o = D.OBST[t]!;
+      expect(o, t).toBeDefined();
+      expect(o.frames["0"]).toBe(72 + o.w);
+      expect(o.hit.length).toBe(13 - o.top);         // bottom row on 12, like the cacti
+      expect(o.w).toBeLessThanOrEqual(11);
+    }
+  });
+  test("obstacle elements for those types point at anims/extra.anim; cacti and birds keep obst.anim", () => {
+    expect(js).toMatch(/function obst\(o, sec, loop\) \{ return anim\(o\.id, EXTRA\[o\.type\] \? "extra" : "obst"/);
+    expect(js).toMatch(/var EXTRA = \{"sk":true,"gr":true,"sa":true,"sn":true,"sc":true,"to":true\};/);
+  });
+  test("the package ships anims/extra.anim with a crossing section and stills for every type", () => {
+    const bytes = readFileSync(join(outDir, "gavin.dino_run", "anims", "extra.anim"));
+    expect(bytes.subarray(0, 8).toString()).toBe("bicycle1");
+    const text = bytes.subarray(0, 60000).toString("latin1");
+    for (const t of EXTRA_TYPES) {
+      expect(text).toContain(`${t}_0\0`);
+      expect(text).toContain(`${t}@0\0`);
+      expect(text).toContain(`${t}@71\0`);
+    }
   });
 });

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds dist/gavin.dino_run.tgz from the upstream Dino Run release plus patch.py.
+# Builds dist/gavin.dino_run.tgz from the upstream Dino Run release plus patch.py
+# and the hand-drawn extra obstacles (build-extra-anim.ts). Needs gh, python3, bun.
 # Usage: ./build.sh [--install]   (install stages + installs on the bar over USB)
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -8,9 +9,11 @@ BAR="${BUSYBAR_BASE_URL:-http://10.0.4.20}"
 mkdir -p build dist
 tgz="build/community.dino_run-$VERSION.tgz"
 [ -f "$tgz" ] || gh release download "v$VERSION" -R alexseminoisok/busybar-dino-run -p "community.dino_run-$VERSION.tgz" -O "$tgz"
-rm -rf build/src build/out && mkdir -p build/src build/out
+rm -rf build/src build/out build/extra && mkdir -p build/src build/out build/extra
 tar xzf "$tgz" -C build/src
-python3 -I patch.py build/src build/out
+# The six hand-drawn obstacles (art/obstacles.ts) -> build/extra/anims/extra.anim + obst.json
+bun run build-extra-anim.ts build/extra > /dev/null
+python3 -I patch.py build/src build/out build/extra
 tar czf dist/gavin.dino_run.tgz -C build/out gavin.dino_run
 echo "built dist/gavin.dino_run.tgz"
 if [ "${1:-}" = "--install" ]; then
