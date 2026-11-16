@@ -28,12 +28,12 @@ describe("patch.py gives Dino Run one fixed obstacle pool for the whole run", ()
     expect(js).not.toContain("POOL[tier]");
     expect(js).not.toContain("POOL[0]");
   });
-  test("MIX has every bird from the start and no l3 (it has no tier-0 frames)", () => {
+  test("MIX has the low and high birds from the start, no mid bird (looked weird) and no l3 (no tier-0 frames)", () => {
     const m = js.match(/var MIX = (\[[^\]]*\]);/);
     expect(m).not.toBeNull();
     const mix = JSON.parse(m![1]!) as string[];
     expect(mix).toContain("bl");
-    expect(mix).toContain("bm");
+    expect(mix).not.toContain("bm");
     expect(mix).toContain("bh");
     expect(mix).not.toContain("l3");
     expect(mix.filter((t) => t.startsWith("s")).length).toBeGreaterThan(mix.filter((t) => t.startsWith("b")).length);

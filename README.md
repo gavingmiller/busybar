@@ -185,8 +185,8 @@ the bar keeps it in its APPS menu and runs it on its own.
   jump ahead over every obstacle and jumps or ducks on its own, there is no
   title screen, score or game-over screen, and the speed never changes.
   The obstacle pool is one fixed mix for the whole run (mostly small cacti,
-  plus the low, mid and high birds), so the pace never changes (Gavin
-  2026-11-16: no ramp, but birds). A (rare) hit
+  plus the low and high birds; the mid bird looked weird), so the pace never
+  changes (Gavin 2026-11-16: no ramp, but birds). A (rare) hit
   just stumbles for a moment and keeps going. **Back** exits. Nothing of
   the game is vendored: `build.sh` downloads the upstream release package,
   `patch.py` rewrites `scripts/main.js` and the manifest, and

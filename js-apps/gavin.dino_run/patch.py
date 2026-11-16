@@ -11,8 +11,9 @@ except for what makes it a game:
   the app starts, and a (rare) hit just stumbles and keeps going;
 - no score and no speed-up: the ground and obstacles always move at the
   first tier's speed, and one fixed obstacle mix (MIX: mostly small cacti,
-  plus the low, mid and high birds) is used for the whole run (Gavin
-  2026-11-16: the level ramp read as "speeding up", but he wants birds);
+  plus the low and high birds; the mid bird looked weird) is used for the
+  whole run (Gavin 2026-11-16: the level ramp read as "speeding up", but he
+  wants birds);
 - Back still exits.
 """
 import json, shutil, sys, pathlib
@@ -30,7 +31,7 @@ def sub(s, old, new, count=1):
 
 js = (dst / "scripts/main.js").read_text()
 js = sub(js, 'var APP = "community.dino_run";',
-         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\nvar MIX = ["s1", "s1", "s2", "s2", "l1", "l2", "s3", "bl", "bm", "bh"]; // one fixed pool for the whole run: small cacti most of the time, every bird (Gavin 2026-11-16: no ramp, but birds)')
+         f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\nvar MIX = ["s1", "s1", "s2", "s2", "l1", "l2", "s3", "bl", "bh"]; // one fixed pool for the whole run: small cacti most of the time, low and high birds only; the mid bird looked weird (Gavin 2026-11-16)')
 
 # ── Autopilot ───────────────────────────────────────────────
 js = sub(js, "function step(now) {", r'''// ── Autopilot ───────────────────────────────────────────────
