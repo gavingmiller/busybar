@@ -30,15 +30,15 @@ describe("extra.anim for the six chosen obstacles", () => {
     expect(sections[0]).toEqual({ name: "default", start: 0, end: header.frameCount - 1 });
   });
 
-  it("has a <t>_0 crossing of 72+w frames and a one-frame still for every x in -w+1..71, for all six types", () => {
+  it("has a <t>_0 crossing of 73+w frames (like upstream's: s1 is 78 at w 5) and a one-frame still for every x in -w+1..71, for all six types", () => {
     const { bytes, entries } = buildExtraAnim();
     const { sections } = readSections(bytes);
     const byName = new Map(sections.map((s) => [s.name, s.end - s.start + 1]));
     expect(Object.keys(entries).sort()).toEqual(["gr", "sa", "sc", "sk", "sn", "to"]);
     for (const { type, art } of CHOSEN) {
       const w = spriteWidth(art);
-      expect(byName.get(`${type}_0`)).toBe(LAYER_W + w);
-      expect(entries[type]!.frames).toEqual({ "0": LAYER_W + w });
+      expect(byName.get(`${type}_0`)).toBe(LAYER_W + w + 1);
+      expect(entries[type]!.frames).toEqual({ "0": LAYER_W + w + 1 });
       for (let x = -w + 1; x < LAYER_W; x++) expect(byName.get(`${type}@${x}`), `${type}@${x}`).toBe(1);
       expect(byName.has(`${type}@${-w}`)).toBe(false);
     }
@@ -49,15 +49,19 @@ describe("extra.anim for the six chosen obstacles", () => {
     expect(two.header.sectionCount).toBe(1 + 2 + (LAYER_W + spriteWidth(TUMBLEWEEDS[2]!) - 1) + (LAYER_W + spriteWidth(BOULDERS[1]!) - 1));
   });
 
-  it("moves the sprite one pixel left per frame, starting with its left edge at x = 71", () => {
+  // Upstream's convention, which the game's obstX models: frame f has its left edge at
+  // x = 72 - f, so frame 0 is just off the right edge. Drawing frame 0 at 71 put the
+  // six extras a frame ahead of the model (2026-11-16).
+  it("moves the sprite one pixel left per frame with its left edge at x = 72 - f, like upstream's obstacles", () => {
     const art = BOULDERS[0]!;
     const [crossing] = obstacleSections("rk", art);
     const alpha = (frame: Uint8Array, x: number, y: number) => frame[(y * LAYER_W + x) * 4 + 3];
-    const bottom = 12;
-    expect(alpha(crossing!.frames[0]!, 71, bottom)).toBe(255);
-    expect(alpha(crossing!.frames[0]!, 70, bottom)).toBe(0);
-    expect(alpha(crossing!.frames[10]!, 61, bottom)).toBe(255);
-    expect(alpha(crossing!.frames[10]!, 60, bottom)).toBe(0);
+    const bottom = 13; // the upstream cacti's bottom row: on the ground, not 1 px above it
+    expect(crossing!.frames[0]!.every((b) => b === 0)).toBe(true); // x = 72: just off the right edge
+    expect(alpha(crossing!.frames[1]!, 71, bottom)).toBe(255);
+    expect(alpha(crossing!.frames[1]!, 70, bottom)).toBe(0);
+    expect(alpha(crossing!.frames[11]!, 61, bottom)).toBe(255);
+    expect(alpha(crossing!.frames[11]!, 60, bottom)).toBe(0);
     expect(crossing!.frames.at(-1)!.every((b) => b === 0)).toBe(true); // fully off the left edge
   });
 

@@ -192,7 +192,13 @@ the bar keeps it in its APPS menu and runs it on its own.
   and triple cacti. The frame period
   `F` is calibrated to fw 1.4.1 (18.81 ms, measured 2026-11-16 from the
   ground scroll, obstacle edges and the dino's airtime; the upstream 16.03 was
-  fw 27.14).
+  fw 27.14). Correcting `F` exposed a second error the old value had been
+  cancelling: on fw 1.4.1 a new obstacle shows *before* its draw response
+  returns, so upstream's `OBST_LAG` (+64 ms, tuned by feel) put every obstacle
+  ~13 frames behind where the screen shows it and the dino visibly ran into
+  them. `OBST_LAG` / `EXTRA_LAG` are calibrated from screen readbacks so jumps
+  land on the window centre on the bar (2026-11-16); judge any timing change
+  by what the screen shows, not by the game's own stumble count.
   The obstacle pool is one fixed mix for the whole run (mostly small cacti,
   plus the low and high birds; the mid bird looked weird), so the pace never
   changes (Gavin 2026-11-16: no ramp, but birds). Six more obstacles Gavin
@@ -201,7 +207,10 @@ the bar keeps it in its APPS menu and runs it on its own.
   and baked by `build-extra-anim.ts` into their own `anims/extra.anim` (the
   upstream obstacle file is mask-compressed and cannot be appended to);
   `patch.py` registers their collision masks in `D.OBST`, draws them from the
-  extra file and deals them with the cacti still in the majority. Drawn from
+  extra file and deals them with the cacti still in the majority. Like the
+  cacti they stand on the ground (bottom row 13; row 12 left them floating),
+  cross with their left edge at x = 72 - frame, and keep every drawn pixel in
+  their collision mask so the baked window is the visible one. Drawn from
   references, nothing vendored: Wikimedia "Tumbleweed rolling" (CC BY-SA 2.0),
   OpenGameArt "Desert Tileset" by Beast (CC-BY 3.0), "Shiny Boulders" (CC0),
   "Scorpy Scorp" (CC0), "Animated Snake" by calciumtrice (CC-BY 3.0) and

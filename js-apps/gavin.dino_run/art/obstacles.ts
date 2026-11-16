@@ -7,7 +7,9 @@
 // Envelope at the fixed tier-0 speed (1 px/frame): ≤ 11 px wide and ≤ 5 rows
 // tall keeps an obstacle jumpable by the 36-frame jump. Every obstacle sits on
 // the ground: the obstacle layer is 72x14 (screen rows 0–13), the ground line
-// is screen row 13, so an obstacle's bottom row is 12, like the cacti.
+// is screen row 14, so an obstacle's bottom row is 13, like the upstream cacti
+// (s1 top 10 + 4 rows, l1 top 9 + 5 rows). Row 12 left them floating 1 px
+// above the ground (Gavin 2026-11-16, confirmed on a screen readback).
 //
 // Five numbered candidates each, with real variance per round, for the picks
 // line-up on the bar; the chosen pair becomes TUMBLEWEED / BOULDER below.
@@ -31,7 +33,7 @@ export interface ObstacleArt {
 export const LAYER_W = 72;
 export const LAYER_H = 14;
 /** Bottom row of a ground obstacle inside the layer (the ground line is the row below). */
-export const GROUND_ROW = 12;
+export const GROUND_ROW = 13;
 export const MAX_W = 11;
 export const MAX_H = 5;
 
@@ -203,7 +205,7 @@ export function obstEntry(art: ObstacleArt): { w: number; top: number; hit: numb
     for (const frame of art.frames) for (let c = 0; c < w; c++) if (frame[r]![c] !== ".") mask |= 1 << c;
     hit.push(mask);
   }
-  return { w, top: GROUND_ROW - h + 1 + soft, hit, frames: { "0": LAYER_W + w } };
+  return { w, top: GROUND_ROW - h + 1 + soft, hit, frames: { "0": LAYER_W + w + 1 } }; // frames 0..72+w, like upstream
 }
 
 /** The frame of a rolling obstacle shown on display frame `f` (one roll step every ROLL_FRAMES frames). */
@@ -251,14 +253,15 @@ export const KIND_PICKS: readonly PickShape[] = KINDS.map(toPick);
  * bird no-repeat rule keys on that letter).
  */
 export interface ChosenObstacle { type: string; art: ObstacleArt }
-// softTop: the 5-row skull, granite, scorpion and tortoise had 3-5 frame windows;
-// with their top row (crown, lit cap, sting tip, shell cap) soft they get 7-9,
-// like the double large cactus. Snake and sandstone are 4 rows and fine as drawn.
+// No softTop: on the ground (bottom row 13, like the cacti) every one has a 9+ frame
+// window with all its drawn pixels in the collision mask. Trimming the top row (crown,
+// lit cap, sting tip, shell cap) had let the planner aim where those visible pixels
+// clip the dino (Gavin 2026-11-16: "jumping through them").
 export const CHOSEN: readonly ChosenObstacle[] = [
-  { type: "sk", art: { ...KINDS[2]!, softTop: 1 } },     // skull
-  { type: "gr", art: { ...BOULDERS[1]!, softTop: 1 } },  // granite, cracked face
+  { type: "sk", art: KINDS[2]! },                        // skull
+  { type: "gr", art: BOULDERS[1]! },                     // granite, cracked face
   { type: "sa", art: BOULDERS[0]! },                     // sandstone lump
   { type: "sn", art: KINDS[1]! },                        // snake
-  { type: "sc", art: { ...KINDS[0]!, softTop: 1 } },     // scorpion
-  { type: "to", art: { ...KINDS[4]!, softTop: 1 } },     // tortoise
+  { type: "sc", art: KINDS[0]! },                        // scorpion
+  { type: "to", art: KINDS[4]! },                        // tortoise
 ];

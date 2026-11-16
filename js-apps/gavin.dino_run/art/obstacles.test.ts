@@ -63,18 +63,25 @@ describe("extra Dino Run obstacles (tumbleweed + boulder, Gavin 2026-11-16)", ()
     expect(rollingFrame(TUMBLEWEED, 17)).toBe(TUMBLEWEED.frames[0]!);
   });
 
-  it("builds the game's D.OBST entry: bottom row 12, row bitmasks with bit i = column i, 72+w crossing frames", () => {
+  it("sits on the ground like the upstream cacti: bottom row 13 of the 72x14 layer", () => {
+    expect(GROUND_ROW).toBe(13);
+    expect(GROUND_ROW).toBe(LAYER_H - 1);
+  });
+  it("builds the game's D.OBST entry: bottom row on GROUND_ROW, row bitmasks with bit i = column i, 73+w crossing frames", () => {
     const e = obstEntry({ name: "x", frames: [[".LLLLL.", "LMMMMMD", "DDDDDDD"]], colors: {} });
     expect(e.w).toBe(7);
     expect(e.top).toBe(GROUND_ROW - 3 + 1);
     expect(e.hit).toEqual([0b0111110, 0b1111111, 0b1111111]);
-    expect(e.frames).toEqual({ "0": LAYER_W + 7 });
+    expect(e.frames).toEqual({ "0": LAYER_W + 7 + 1 });
     for (const art of all) expect(obstEntry(art).top + obstEntry(art).hit.length - 1).toBe(GROUND_ROW);
     // `softTop` rows (thin tips: a sting, a shell cap) stay in the art but leave the collision mask,
     // so the jump window is judged on the solid body; the dino may brush them.
     const soft = obstEntry({ name: "x", frames: [["...L...", ".LLLLL.", "LLLLLLL"]], colors: {}, softTop: 1 });
-    expect(soft).toEqual({ w: 7, top: GROUND_ROW - 1, hit: [0b0111110, 0b1111111], frames: { "0": LAYER_W + 7 } });
-    for (const { type, art } of CHOSEN) if (["sc", "to", "gr", "sk"].includes(type)) expect(art.softTop, type).toBe(1);
+    expect(soft).toEqual({ w: 7, top: GROUND_ROW - 1, hit: [0b0111110, 0b1111111], frames: { "0": LAYER_W + 7 + 1 } });
+    // On the ground (bottom row 13) every chosen obstacle has a 9+ frame window with ALL its drawn
+    // pixels in the mask, so none trims a top row: a trimmed row let the planner aim where the
+    // visible crown / sting / shell cap clips the dino (Gavin 2026-11-16: "jumping through them").
+    for (const { type, art } of CHOSEN) expect(obstEntry(art).hit.length, type).toBe(spriteHeight(art));
     // A rolling obstacle's mask is the union of its frames, so no frame pokes outside the collision shape.
     const t = obstEntry(TUMBLEWEED);
     for (const frame of TUMBLEWEED.frames) frame.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] !== ".") expect(t.hit[r]! & (1 << c)).toBeTruthy(); });
@@ -88,7 +95,7 @@ describe("extra Dino Run obstacles (tumbleweed + boulder, Gavin 2026-11-16)", ()
     expect(alpha(10, GROUND_ROW)).toBe(255);
     expect(alpha(10, GROUND_ROW - 2)).toBe(0); // the top row's corner is transparent
     expect(alpha(11, GROUND_ROW - 2)).toBe(255);
-    expect(alpha(10, GROUND_ROW + 1)).toBe(0);
+    expect(GROUND_ROW + 1).toBe(LAYER_H); // nothing is drawn below the bottom row: it is the layer's last
     const partly = rasterize(rock, rock.frames[0]!, -5);
     expect(partly[(GROUND_ROW * LAYER_W + 0) * 4 + 3]).toBe(255);
     expect(partly[(GROUND_ROW * LAYER_W + 2) * 4 + 3]).toBe(0);

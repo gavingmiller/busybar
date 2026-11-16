@@ -80,6 +80,22 @@ describe("patch.py bakes the jump windows so the autopilot never simulates at ru
     expect(js).toContain("var F = 18.81;");
     expect(js).not.toContain("var F = 16.03;");
   });
+  // Screen readbacks + telemetry (2026-11-16): fw 1.4.1 shows a new obstacle ~108 ms BEFORE its
+  // draw response returns, while upstream's OBST_LAG (64, tuned by feel on fw 27.14) placed it
+  // 78 ms after. With F corrected to 18.81 nothing cancelled that any more, so every jump came
+  // 13-14 frames late and the dino visibly ran into obstacles. The lag is calibrated to where the
+  // screen shows them; extra.anim (3.9 MB) opens ~36 ms slower than obst.anim.
+  test("obstacles are anchored where fw 1.4.1 shows them, per anim file", () => {
+    // Aimed past the median: bar stalls only ever delay an obstacle (the jump comes early), never the reverse.
+    expect(js).toMatch(/^var OBST_LAG = -159; /m);
+    expect(js).toMatch(/^var EXTRA_LAG = 17; /m);
+    expect(js).toContain("o.anchor = t + ANCHOR + OBST_LAG + (EXTRA[o.type] ? EXTRA_LAG : 0);");
+    expect(js).toContain("anchor: now + EXPECT + OBST_LAG + (EXTRA[type] ? EXTRA_LAG : 0) };");
+  });
+  test("an obstacle element is deleted only well after it has left the screen (anchors now lean early)", () => {
+    expect(js).toContain("if (f > o.life + 6) {");
+    expect(js).not.toContain("if (f > o.life + 2) {");
+  });
   function table(): Record<string, [number, number]> {
     const m = js.match(/var WINDOW = (\{[^;]*\});/);
     expect(m).not.toBeNull();
@@ -174,8 +190,13 @@ describe("patch.py wires the six hand-drawn obstacles in anims/extra.anim", () =
     for (const t of EXTRA_TYPES) {
       const o = D.OBST[t]!;
       expect(o, t).toBeDefined();
-      expect(o.frames["0"]).toBe(72 + o.w);
-      expect(o.hit.length).toBe(13 - o.top);         // bottom row on 12, like the cacti
+      // Same crossing length convention as upstream (frame f at x = 72 - f, f = 0..72+w).
+      expect(o.frames["0"] - o.w, t).toBe(D.OBST.s1!.frames["0"]! - D.OBST.s1!.w);
+      // Sits ON the ground like the cacti (Gavin 2026-11-16: "the new sprites are
+      // floating 1px off the ground"): the bottom row equals the upstream cacti's.
+      const cactusBottom = D.OBST.s1!.top + D.OBST.s1!.hit.length - 1;
+      expect(cactusBottom).toBe(D.OBST.l1!.top + D.OBST.l1!.hit.length - 1);
+      expect(o.top + o.hit.length - 1, t).toBe(cactusBottom);
       expect(o.w).toBeLessThanOrEqual(11);
     }
   });

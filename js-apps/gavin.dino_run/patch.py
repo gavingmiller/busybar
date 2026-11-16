@@ -64,6 +64,26 @@ js = sub(js, 'var APP = "community.dino_run";',
 js = sub(js, "var F = 16.03;               // ms per animation frame (measured on fw 27.14)",
          "var F = 18.81;               // ms per animation frame (measured on fw 1.4.1, 2026-11-16; was 16.03 on fw 27.14)")
 
+# ── Obstacle anchor: where fw 1.4.1 actually shows a new obstacle ──────────
+# Screen readbacks with bar telemetry (2026-11-16): a new obstacle's frame 0 shows ~108 ms
+# BEFORE its draw response returns; upstream's OBST_LAG (64, tuned by feel on fw 27.14) put
+# it 78 ms after. The old F (16.03) happened to cancel most of that; with F corrected every
+# jump came 13-14 frames late and the dino visibly ran into obstacles ("jumping through
+# them", Gavin). Calibrated on screen: obst.anim needed the anchor 256 ms earlier to centre the
+# jumps, extra.anim (3.9 MB, opens slower) 220 ms. Then aimed ~1.75 / ~0.75 frames PAST the centre:
+# bar render stalls only ever delay an obstacle (its jump comes early, by up to ~9 frames on a
+# double large cactus), never the reverse, so the late side of each window has spare room.
+js = sub(js, "var OBST_LAG = 64;           // a new obstacle element starts later than a section",
+         "var OBST_LAG = -159; // fw 1.4.1: obstacle frame 0 shows before the draw response returns (calibrated on screen 2026-11-16, aimed late of centre; was 64)\n"
+         "var EXTRA_LAG = 17; // anims/extra.anim starts later than obst.anim (bigger file); its jumps were already centred, so it is aimed less late\n"
+         "                             // (upstream: a new obstacle element starts later than a section")
+js = sub(js, "    life: m.frames[tier], anchor: now + EXPECT + OBST_LAG };",
+         "    life: m.frames[tier], anchor: now + EXPECT + OBST_LAG + (EXTRA[type] ? EXTRA_LAG : 0) };")
+js = sub(js, "  send(els, function (t) { o.anchor = t + ANCHOR + OBST_LAG; });",
+         "  send(els, function (t) { o.anchor = t + ANCHOR + OBST_LAG + (EXTRA[o.type] ? EXTRA_LAG : 0); });")
+# The anchor now leans early, so give the delete a few frames' margin past the left edge.
+js = sub(js, "    if (f > o.life + 2) {", "    if (f > o.life + 6) {")
+
 # ── Jump windows, baked ────────────────────────────────────────────────────
 # A replica of main.js's collision model (hits/dinoAt/obstX) run here, once, so the
 # bar never simulates: for every obstacle type the contiguous range of jump-START
