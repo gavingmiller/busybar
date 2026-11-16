@@ -49,3 +49,99 @@ describe("patch.py gives Dino Run one fixed obstacle pool for the whole run", ()
     expect(js).not.toContain("score >= TIER_AT[");
   });
 });
+
+// Gavin (2026-11-16): "the dino is still hitting obstacles". Telemetry from the bar
+// showed 22 of 26 double large cacti (l2) ending in a stumble while every other type
+// was clean: the autopilot re-simulated three jumps per 10 ms tick, JerryScript took
+// ~30 ms per simulation, and the decision landed 4-8 frames after l2's 7-frame window
+// had opened. A first fix that planned each obstacle with a few probes per tick was
+// slower still (jumps 7-14 frames late, 73 stumbles in 5 min). So the simulation
+// leaves the bar: patch.py bakes each type's safe jump-start window into the script
+// and the runtime only looks it up and jumps at its CENTRE. F is calibrated to
+// fw 1.4.1 (18.81 ms/frame, measured three ways).
+describe("patch.py bakes the jump windows so the autopilot never simulates at runtime", () => {
+  const js = patched();
+  test("the frame period is calibrated to fw 1.4.1", () => {
+    expect(js).toContain("var F = 18.81;");
+    expect(js).not.toContain("var F = 16.03;");
+  });
+  function table(): Record<string, [number, number]> {
+    const m = js.match(/var WINDOW = (\{[^;]*\});/);
+    expect(m).not.toBeNull();
+    return JSON.parse(m![1]!);
+  }
+  test("a WINDOW table of safe jump-start frames covers every jumpable type in the mix, and the high bird is run under", () => {
+    const w = table();
+    for (const t of ["s1", "s2", "s3", "l1", "l2", "bl"]) expect(w[t]).toBeDefined();
+    expect(w["bh"]).toBeUndefined();
+    expect(js).toMatch(/var RUN_SAFE = \{[^;]*"bh":true[^;]*\};/);
+  });
+
+  // Run the real script with stubs: spawn one obstacle, let planStep assign its plan.
+  function game() {
+    const body = js.replace(/startGame\(Date\.now\(\)\);\ntick\(\);\s*$/, "");
+    const stubs: Record<string, unknown> = {
+      fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }),
+      Request: class { constructor(public u: string, public o: unknown) {} },
+      listen: () => () => {}, localStorage: { getItem: () => null, setItem: () => {} },
+      setTimeout: () => 0, setInterval: () => 0, Date, Math, JSON, String, console,
+    };
+    const tail = `
+      return {
+        F: F, EXPECT: EXPECT, JUMP_MS: JUMP_MS,
+        spawnAt: function (type, anchor) { var m = D.OBST[type]; var o = { id: "o1", type: type, s: 1, w: m.w, ys: m.ys, ms: m.ms, life: m.frames[0], anchor: anchor }; obstacles = [o]; dinoMode = "run"; queued = "run"; duckHeld = false; jumpAnchor = 0; duckAnchor = 0; near.length = 0; return o; },
+        planStep: function (now) { planStep(now); },
+        autopilot: function (now) { autopilot(now); },
+        wouldHit: function (mode, anchor, from, to) { return wouldHit(mode, anchor, from, to); },
+        mode: function () { return dinoMode; },
+      };`;
+    return new Function(...Object.keys(stubs), body + tail)(...Object.values(stubs));
+  }
+  function planned(type: string) {
+    const g = game(); const anchor = 1e6; const o = g.spawnAt(type, anchor);
+    g.planStep(anchor);
+    return { g, o, anchor };
+  }
+  test("the baked windows agree with the game's own collision model (inside clears, 2 frames outside hits)", () => {
+    const g = game(); const anchor = 1e6;
+    for (const [type, [a, b]] of Object.entries(table())) {
+      g.spawnAt(type, anchor);
+      const probe = (j: number) => g.wouldHit("jump", anchor + j * g.F, anchor + (j - 4) * g.F, anchor + (j + 42) * g.F);
+      for (let j = a; j <= b; j++) expect([type, j, probe(j)]).toEqual([type, j, false]);
+      expect([type, "before", probe(a - 2)]).toEqual([type, "before", true]);
+      expect([type, "after", probe(b + 2)]).toEqual([type, "after", true]);
+    }
+  });
+  test("plans a jump centred in the window with 2+ frames of slack each side for the narrow-window cacti (l2, s3)", () => {
+    for (const type of ["l2", "s3"]) {
+      const { g, o, anchor } = planned(type);
+      expect(o.plan).toBe("done");
+      expect(o.action).toBe("jump");
+      const [a, b] = table()[type]!;
+      const start = o.fdTarget + g.EXPECT / g.F;        // decision frame + request latency = jump start
+      expect(start - a).toBeGreaterThanOrEqual(2);
+      expect(b - start).toBeGreaterThanOrEqual(2);
+      for (const d of [-2, 0, 2]) {
+        const tDec = anchor + (o.fdTarget + d) * g.F;
+        expect(g.wouldHit("jump", tDec + g.EXPECT, tDec, tDec + g.JUMP_MS + 6 * g.F)).toBe(false);
+      }
+    }
+  });
+  test("plans no move for the high bird, which the dino runs under", () => {
+    const { o } = planned("bh");
+    expect(o.plan).toBe("done");
+    expect(o.action).toBe("none");
+  });
+  test("planning is a table lookup: one planStep call finishes the plan, no simulation", () => {
+    const { o } = planned("l2");
+    expect(o.plan).toBe("done");
+    expect(js).not.toContain("PROBES_PER_TICK");
+  });
+  test("the autopilot jumps at the planned frame and not before", () => {
+    const { g, o, anchor } = planned("l2");
+    g.autopilot(anchor + (o.fdTarget - 3) * g.F);
+    expect(g.mode()).toBe("run");
+    g.autopilot(anchor + o.fdTarget * g.F);
+    expect(g.mode()).toBe("jump");
+  });
+});

@@ -5,8 +5,9 @@ Reads an unpacked community.dino_run package dir (argv[1]) and writes the
 patched package to argv[2]/gavin.dino_run. The game logic is left intact
 except for what makes it a game:
 
-- an autopilot in step() simulates the game's own collision model a jump
-  ahead over every obstacle and jumps or ducks when staying put would hit;
+- an autopilot in step() simulates the game's own collision model: it plans
+  each obstacle once (a few probes per tick) and jumps at the centre of the
+  window that clears it, reacting tick by tick only as a fallback;
 - no title screen and no game-over screen: the dino is already running when
   the app starts, and a (rare) hit just stumbles and keeps going;
 - no score and no speed-up: the ground and obstacles always move at the
@@ -16,7 +17,7 @@ except for what makes it a game:
   wants birds);
 - Back still exits.
 """
-import json, shutil, sys, pathlib
+import json, re, shutil, sys, pathlib
 
 APP_ID = "gavin.dino_run"
 src = pathlib.Path(sys.argv[1]) / "community.dino_run"
@@ -32,6 +33,65 @@ def sub(s, old, new, count=1):
 js = (dst / "scripts/main.js").read_text()
 js = sub(js, 'var APP = "community.dino_run";',
          f'var APP = "{APP_ID}";\nvar AUTO_DEAD_MS = 700;      // a hit: stumble this long, then keep running\nvar MIX = ["s1", "s1", "s2", "s2", "l1", "l2", "s3", "bl", "bh"]; // one fixed pool for the whole run: small cacti most of the time, low and high birds only; the mid bird looked weird (Gavin 2026-11-16)')
+
+# ── Frame period: fw 1.4.1 renders a frame every 18.81 ms, not 16.03 ──────
+# Measured 2026-11-16 three ways on the bar (ground scroll, obstacle edges, the
+# dino's 35-frame airtime = 658 ms); the autopilot's whole timeline runs on F.
+js = sub(js, "var F = 16.03;               // ms per animation frame (measured on fw 27.14)",
+         "var F = 18.81;               // ms per animation frame (measured on fw 1.4.1, 2026-11-16; was 16.03 on fw 27.14)")
+
+# ── Jump windows, baked ────────────────────────────────────────────────────
+# A replica of main.js's collision model (hits/dinoAt/obstX) run here, once, so the
+# bar never simulates: for every obstacle type the contiguous range of jump-START
+# frames (obstacle frames since its anchor, 1 px/frame) that clears it, and which
+# types the dino simply runs under. One wouldHit on JerryScript costs ~30 ms; the
+# old per-tick autopilot therefore decided 4-8 frames late and the 7-frame windows
+# of l2/s3 went by (22/26 l2 jumps stumbled, telemetry 2026-11-16). patch.test.ts
+# checks these windows against the game's own wouldHit.
+D = json.loads(re.search(r"^var D = (\{.*\});$", js, re.M).group(1))
+_JUMP, _HIT, _DINO_X, _DINO_TOP, _W = D["JUMP"], D["HIT_STAND"], D["DINO_X"], 6, 72
+
+def _hits(ot, x, dH):
+    dx = x - _DINO_X
+    if dx > 10 or dx <= -ot["w"]:
+        return False
+    d_top = _DINO_TOP - dH
+    for r, m in enumerate(ot["hit"]):
+        if not m:
+            continue
+        dj = ot["top"] + r - d_top
+        if dj < 0 or dj > 7:
+            continue
+        if _HIT[dj] & (m << dx if dx >= 0 else m >> -dx):
+            return True
+    return False
+
+def _clears(ot, j):
+    """A jump starting at obstacle frame j never touches the obstacle while it crosses."""
+    for f in range(_W + ot["w"] + 2):
+        k = f - j
+        if _hits(ot, _W - f, _JUMP[k] if 0 <= k < len(_JUMP) else 0):
+            return False
+    return True
+
+WINDOW, RUN_SAFE = {}, {}
+for name, ot in D["OBST"].items():
+    if "0" not in ot["frames"]:
+        continue                      # not available at the fixed speed (l3)
+    if all(not _hits(ot, _W - f, 0) for f in range(_W + ot["w"] + 2)):
+        RUN_SAFE[name] = True         # the dino runs under it (high bird)
+        continue
+    safe = [j for j in range(20, 90) if _clears(ot, j)]
+    if not safe:
+        continue                      # no clean jump (the mid bird is ducked, not in the mix)
+    runs = [[safe[0], safe[0]]]
+    for j in safe[1:]:
+        if j == runs[-1][1] + 1:
+            runs[-1][1] = j
+        else:
+            runs.append([j, j])
+    assert len(runs) == 1, (name, runs)   # one window per type, or the model changed
+    WINDOW[name] = runs[0]
 
 # ── Autopilot ───────────────────────────────────────────────
 js = sub(js, "function step(now) {", r'''// ── Autopilot ───────────────────────────────────────────────
@@ -55,9 +115,44 @@ function wouldHit(mode, anchor, from, to) {
   return hit;
 }
 
+// Plans each obstacle from the baked WINDOW table: jump at the CENTRE of its
+// window of safe start frames, so request latency a few frames either way still
+// clears. Deciding by simulation on the bar was too slow (see patch.py).
+var WINDOW = ''' + json.dumps(WINDOW, separators=(',', ':')) + r''';   // type -> [first, last] safe jump-start frame
+var RUN_SAFE = ''' + json.dumps(RUN_SAFE, separators=(',', ':')) + r''';  // the dino runs under these
+
+function planStep(now) {
+  for (var i = 0; i < obstacles.length; i++) {
+    var o = obstacles[i];
+    if (o.plan) continue;
+    o.plan = "done";
+    if (RUN_SAFE[o.type]) { o.action = "none"; continue; }
+    var w = WINDOW[o.type];
+    if (!w) { o.action = "react"; continue; }     // no clean jump: fall back to reacting
+    o.action = "jump";
+    // Decision frame = start frame minus the request latency the start allows for.
+    o.fdTarget = (w[0] + w[1]) / 2 - EXPECT / F;
+  }
+}
+
 function autopilot(now) {
   if (!obstacles.length) { if (duckHeld) setDuck(false); return; }
   if (dinoMode === "jump" && !landed(now)) return;
+  planStep(now);
+  // The nearest obstacle still ahead of the dino decides.
+  var o = null;
+  for (var i = 0; i < obstacles.length; i++) {
+    var c = obstacles[i];
+    if (c.jumped || (now >= c.anchor && obstX(c, obstFrame(c, now)) < -c.w)) continue;
+    if (!o || c.anchor < o.anchor) o = c;
+  }
+  if (!o) return;
+  if (o.plan === "done" && o.action === "none") { if (duckHeld) setDuck(false); return; }
+  if (o.plan === "done" && o.action === "jump") {
+    if ((now - o.anchor) / F >= o.fdTarget) { o.jumped = true; if (duckHeld) setDuck(false); doJump(); }
+    return;
+  }
+  // Still planning, or no clean jump exists: react the old way.
   var horizon = now + JUMP_MS + 6 * F;
   var cur = dinoMode === "duck" ? "duck" : "run";
   if (!wouldHit(cur, duckAnchor, now, horizon)) {
@@ -65,7 +160,7 @@ function autopilot(now) {
     if (duckHeld && !wouldHit("run", 0, now, horizon)) setDuck(false);
     return;
   }
-  if (!wouldHit("jump", now + EXPECT, now, horizon)) { if (duckHeld) setDuck(false); doJump(); return; }
+  if (!wouldHit("jump", now + EXPECT, now, horizon)) { o.jumped = true; if (duckHeld) setDuck(false); doJump(); return; }
   if (!duckHeld && !wouldHit("duck", now + EXPECT, now, horizon)) setDuck(true);
   // Otherwise neither move is safe yet: wait a tick and re-check.
 }

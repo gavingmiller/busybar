@@ -181,9 +181,18 @@ the bar keeps it in its APPS menu and runs it on its own.
 - **js-apps/gavin.dino_run** — *Dino Run*, as a stand-alone animation. The
   community [Dino Run](https://github.com/alexseminoisok/busybar-dino-run)
   endless runner with the game taken out: the dino is already running when
-  the app starts, an autopilot simulates the game's own collision model one
-  jump ahead over every obstacle and jumps or ducks on its own, there is no
-  title screen, score or game-over screen, and the speed never changes.
+  the app starts, an autopilot simulates the game's own collision model and
+  jumps or ducks on its own, there is no title screen, score or game-over
+  screen, and the speed never changes. The jump windows are baked by
+  `patch.py` (a replica of the game's collision model computes, per obstacle
+  type, the frames at which a jump clears it) and the autopilot jumps at the
+  centre of the window, so request latency a few frames either way still
+  clears; simulating on the bar's JS engine cost ~30 ms per probe and the
+  decision came 4-8 frames late, past the 7-frame windows of the double large
+  and triple cacti. The frame period
+  `F` is calibrated to fw 1.4.1 (18.81 ms, measured 2026-11-16 from the
+  ground scroll, obstacle edges and the dino's airtime; the upstream 16.03 was
+  fw 27.14).
   The obstacle pool is one fixed mix for the whole run (mostly small cacti,
   plus the low and high birds; the mid bird looked weird), so the pace never
   changes (Gavin 2026-11-16: no ramp, but birds). A (rare) hit
